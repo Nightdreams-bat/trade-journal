@@ -52,7 +52,7 @@
 
   /* --- type --- */
   --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
-  --font-body: 'Geist Variable', 'Geist', Inter, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter Variable', 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
 
   font-family: var(--font-body);
@@ -73,8 +73,8 @@ body {
     radial-gradient(1200px 600px at 78% -10%, rgba(91, 194, 216, 0.06), transparent 60%),
     var(--bg);
   color: var(--text);
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -131,7 +131,7 @@ a:hover {
 
 .mono-label {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -140,7 +140,7 @@ a:hover {
 
 .mono-chip {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -151,6 +151,45 @@ a:hover {
 
 .accent-word {
   color: var(--accent);
+}
+
+/* ---------- liquid glass ---------- */
+
+.glass {
+  background: rgba(19, 28, 46, 0.55);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border: 1px solid rgba(245, 243, 238, 0.07);
+}
+.glass--rail {
+  border: none;
+  border-bottom: 1px solid rgba(245, 243, 238, 0.08);
+  box-shadow: 0 6px 20px -14px rgba(0, 0, 0, 0.7);
+}
+
+/* ---------- ambient background (CSS-only, compositor-driven) ---------- */
+
+.ambient-root {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ambient-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  will-change: transform;
+  animation: ambient-drift 52s ease-in-out infinite alternate;
+}
+.ambient-blob.b2 { animation-duration: 61s; animation-delay: -8s; }
+.ambient-blob.b3 { animation-duration: 47s; animation-delay: -20s; }
+.ambient-blob.b4 { animation-duration: 68s; animation-delay: -34s; }
+
+@keyframes ambient-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(4%, -5%, 0) scale(1.14); }
 }
 
 /* ---------- surfaces ---------- */
@@ -186,7 +225,7 @@ a:hover {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 500;
   letter-spacing: 0.02em;
   transition: background var(--dur) var(--ease-out),
@@ -256,7 +295,7 @@ label.field {
   flex-direction: column;
   gap: 4px;
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -301,16 +340,19 @@ label.field {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(5, 9, 18, 0.66);
-  backdrop-filter: blur(2px);
+  background: rgba(5, 9, 18, 0.62);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
 }
 .modal-panel {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
+  background: rgba(19, 28, 46, 0.82);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(245, 243, 238, 0.09);
   border-radius: var(--radius);
   width: 560px;
   max-width: 92vw;
@@ -328,14 +370,14 @@ label.field {
 table.data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 table.data-table th {
   text-align: left;
   padding: 9px 10px;
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -358,6 +400,92 @@ table.data-table tbody tr:hover {
   cursor: pointer;
 }
 
+/* ---------- what's new / updates tab ---------- */
+
+.wn-timeline {
+  position: relative;
+  padding-left: 26px;
+}
+/* the vertical rail */
+.wn-timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: linear-gradient(var(--border), var(--border-soft));
+}
+.wn-node {
+  position: absolute;
+  left: -26px;
+  top: 4px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-border);
+  background: var(--bg);
+}
+.wn-node.latest {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+.wn-node.latest::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* grid-rows collapse — no JS height measurement, compositor-friendly */
+.wn-collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-medium) var(--ease-sig);
+}
+.wn-collapsible.open {
+  grid-template-rows: 1fr;
+}
+.wn-collapsible > .wn-collapsible-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.wn-chip {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.wn-chip.new { color: var(--accent-bright); background: var(--accent-bg); border-color: var(--accent-border); }
+.wn-chip.improved { color: var(--text-strong); background: rgba(245, 243, 238, 0.06); border-color: var(--border); }
+.wn-chip.fixed { color: var(--green); background: var(--green-soft); }
+
+.wn-demo {
+  margin-top: 10px;
+  padding: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+}
+
+/* one-shot line draw for the equity-curve demo */
+@keyframes wn-draw {
+  from { stroke-dashoffset: var(--wn-path-len, 600); }
+  to { stroke-dashoffset: 0; }
+}
+/* staggered fade-in for calendar-heatmap demo cells */
+@keyframes wn-cell-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
 /* ---------- reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
@@ -373,5 +501,11 @@ table.data-table tbody tr:hover {
   .card--interactive:hover {
     transform: none !important;
     box-shadow: none !important;
+  }
+  .ambient-blob {
+    animation: none !important;
+  }
+  .wn-collapsible {
+    transition-duration: 1ms !important;
   }
 }

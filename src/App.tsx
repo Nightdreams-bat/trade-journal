@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { usePrefersReducedMotion } from './anim'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { PlaybooksPage } from './pages/PlaybooksPage'
@@ -45,11 +45,11 @@ function App() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <AmbientBackground />
-      <header style={{ padding: '22px 32px 0', position: 'relative', zIndex: 1 }}>
+      <header style={{ padding: '22px 32px 0', position: 'relative', zIndex: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
             <span className="mono-label">// Trading Journal &middot; Analytics</span>
-            <h1 style={{ fontSize: 30, margin: 0, fontWeight: 340, lineHeight: 1 }}>
+            <h1 style={{ fontSize: 34, margin: 0, fontWeight: 340, lineHeight: 1 }}>
               Trade <span className="accent-word">Journal</span>
             </h1>
           </div>
@@ -62,7 +62,10 @@ function App() {
           </div>
         </div>
 
-        <nav style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--border)' }}>
+        <nav
+          className="glass glass--rail"
+          style={{ display: 'flex', gap: 2, flexWrap: 'nowrap', position: 'sticky', top: 0, zIndex: 20, padding: '0 8px' }}
+        >
           {TABS.map((t, i) => (
             <button
               key={t.key}
@@ -124,37 +127,59 @@ function App() {
       </header>
 
       <main style={{ padding: 24, flex: 1, position: 'relative', zIndex: 1 }}>
-        {tab === 'analytics' && (
-          <AnalyticsPage
-            accounts={accounts}
-            strategies={strategies}
-            confluences={confluences}
-            onConfluencesChanged={loadLookups}
-            refreshKey={refreshKey}
-            bumpRefresh={bumpRefresh}
-          />
-        )}
-        {tab === 'playbooks' && <PlaybooksPage refreshKey={refreshKey} onStrategiesChanged={loadLookups} />}
-        {tab === 'review' && <ReviewPage jumpToDate={reviewJumpDate} />}
-        {tab === 'trades' && (
-          <TradesDbPage
-            accounts={accounts}
-            strategies={strategies}
-            confluences={confluences}
-            onConfluencesChanged={loadLookups}
-            refreshKey={refreshKey}
-            bumpRefresh={bumpRefresh}
-          />
-        )}
-        {tab === 'missed' && (
-          <MissedTradesPage
-            strategies={strategies}
-            confluences={confluences}
-            onConfluencesChanged={loadLookups}
-            refreshKey={refreshKey}
-            bumpRefresh={bumpRefresh}
-          />
-        )}
+        {(() => {
+          const pages = (
+            <>
+              {tab === 'analytics' && (
+                <AnalyticsPage
+                  accounts={accounts}
+                  strategies={strategies}
+                  confluences={confluences}
+                  onConfluencesChanged={loadLookups}
+                  refreshKey={refreshKey}
+                  bumpRefresh={bumpRefresh}
+                />
+              )}
+              {tab === 'playbooks' && <PlaybooksPage refreshKey={refreshKey} onStrategiesChanged={loadLookups} />}
+              {tab === 'review' && <ReviewPage jumpToDate={reviewJumpDate} />}
+              {tab === 'trades' && (
+                <TradesDbPage
+                  accounts={accounts}
+                  strategies={strategies}
+                  confluences={confluences}
+                  onConfluencesChanged={loadLookups}
+                  refreshKey={refreshKey}
+                  bumpRefresh={bumpRefresh}
+                />
+              )}
+              {tab === 'missed' && (
+                <MissedTradesPage
+                  strategies={strategies}
+                  confluences={confluences}
+                  onConfluencesChanged={loadLookups}
+                  refreshKey={refreshKey}
+                  bumpRefresh={bumpRefresh}
+                />
+              )}
+            </>
+          )
+          return reducedMotion ? (
+            pages
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={tab}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                style={{ position: 'relative', zIndex: 1 }}
+              >
+                {pages}
+              </motion.div>
+            </AnimatePresence>
+          )
+        })()}
       </main>
 
       {showNewTrade && (

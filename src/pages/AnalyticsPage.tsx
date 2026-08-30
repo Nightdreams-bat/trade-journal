@@ -45,18 +45,18 @@ export function AnalyticsPage({
   const [accountId, setAccountId] = useState<number | null>(null)
   const [strategyId, setStrategyId] = useState<number | null>(null)
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [openTrade, setOpenTrade] = useState<Trade | null>(null)
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
+    setRefreshing(true)
     window.api.analytics.getSummary({ accountId, strategyId, month }).then((s) => {
       if (!cancelled) {
         setSummary(s)
-        setLoading(false)
+        setRefreshing(false)
       }
     })
     return () => {
@@ -68,20 +68,23 @@ export function AnalyticsPage({
     sectionRefs.current[key]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  if (loading || !summary) {
+  if (!summary) {
     return <div style={{ padding: 24, color: 'var(--text-muted)' }}>Loading analytics…</div>
   }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <div className="glass" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '5px 6px', borderRadius: 3 }}>
           {SECTIONS.map((s) => (
             <button key={s.key} className="btn" style={{ fontSize: 11.5, padding: '5px 10px' }} onClick={() => scrollTo(s.key)}>
               {s.label}
             </button>
           ))}
         </div>
+        {refreshing && (
+          <span className="mono-label" style={{ color: 'var(--accent)', alignSelf: 'center' }}>// updating…</span>
+        )}
         <FilterBar
           accounts={accounts}
           strategies={strategies}

@@ -1,8 +1,9 @@
 import { Fragment, useMemo, useState } from 'react'
 import { addDays, addMonths, endOfMonth, format, isSameMonth, startOfMonth, startOfWeek } from 'date-fns'
 import type { AnalyticsSummary, Trade } from '../types'
+import { AnimatePresence, motion } from 'motion/react'
 import { Modal } from './Modal'
-import { Reveal } from '../anim'
+import { Reveal, usePrefersReducedMotion } from '../anim'
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -20,6 +21,7 @@ export function CalendarHeatmap({
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [dayTrades, setDayTrades] = useState<Trade[]>([])
   const [loadingDay, setLoadingDay] = useState(false)
+  const reduced = usePrefersReducedMotion()
 
   const current = useMemo(() => new Date(`${month}-01T00:00:00`), [month])
   const monthStart = startOfMonth(current)
@@ -63,7 +65,9 @@ export function CalendarHeatmap({
         </div>
       </div>
 
-      <Reveal style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr) 1.1fr', gap: 6 }}>
+      {(() => {
+        const grid = (
+        <Reveal key={month} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr) 1.1fr', gap: 6 }}>
         {WEEKDAY_LABELS.map((d) => (
           <div key={d} style={{ color: 'var(--text-dim)', fontSize: 11, textAlign: 'left', paddingLeft: 4 }}>{d}</div>
         ))}
@@ -138,7 +142,24 @@ export function CalendarHeatmap({
             </Fragment>
           )
         })}
-      </Reveal>
+        </Reveal>
+        )
+        return reduced ? (
+          <div key={month}>{grid}</div>
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={month}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.16, ease: [0.2, 0.8, 0.2, 1] }}
+            >
+              {grid}
+            </motion.div>
+          </AnimatePresence>
+        )
+      })()}
 
       {selectedDate && (
         <Modal title={`Trades on ${selectedDate}`} onClose={() => setSelectedDate(null)}>

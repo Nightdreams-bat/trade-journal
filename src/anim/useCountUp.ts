@@ -6,9 +6,15 @@ function easeOut(t: number): number {
   return 1 - Math.pow(1 - t, 3)
 }
 
+const CHANGE_MS = 380
+
 /**
- * Tweens from 0 to `target` once, on mount. Returns `target` immediately when
- * reduced-motion is on or `enabled` is false. StrictMode-safe (runs once).
+ * Tweens toward `target`. On first mount it counts up from 0 over `duration`;
+ * every later change to `target` glides from the currently displayed value to
+ * the new one over a shorter beat. Returns `target` immediately when
+ * reduced-motion is on, `enabled` is false, or `target` is not finite.
+ * StrictMode-safe: the tween always resumes from the last emitted value, so it
+ * can never get stuck.
  */
 export function useCountUp(
   target: number,
@@ -17,25 +23,39 @@ export function useCountUp(
   const reduced = usePrefersReducedMotion()
   const skip = reduced || !enabled || !Number.isFinite(target)
   const [value, setValue] = useState(skip ? target : 0)
-  // True once the intro tween has completed — later target changes snap.
-  const hasRun = useRef(false)
+  // Last value we emitted — the start point for the next tween.
+  const fromRef = useRef(skip ? target : 0)
+  // Whether the intro count-up has already been kicked off.
+  const startedRef = useRef(false)
 
   useEffect(() => {
-    if (skip || hasRun.current) {
+    if (skip) {
+      fromRef.current = target
       setValue(target)
       return
     }
 
+    const from = fromRef.current
+    if (from === target) {
+      setValue(target)
+      return
+    }
+
+    const dur = startedRef.current ? CHANGE_MS : duration
+    startedRef.current = true
+
     let raf = 0
-    const start = performance.now()
+    const t0 = performance.now()
     const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / duration)
-      setValue(target * easeOut(p))
+      const p = Math.min(1, (now - t0) / dur)
+      const v = from + (target - from) * easeOut(p)
+      fromRef.current = v
+      setValue(v)
       if (p < 1) {
         raf = requestAnimationFrame(tick)
       } else {
+        fromRef.current = target
         setValue(target)
-        hasRun.current = true
       }
     }
     raf = requestAnimationFrame(tick)
