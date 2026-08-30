@@ -7,9 +7,90 @@ in the journal**, with a heavy **prop-firm** emphasis.
 Everything listed here is **MIT-licensed and free** unless noted. "Effort" = porting cost
 into this app (Vite + React 19 + TypeScript + Electron + better-sqlite3).
 
+> **Order of work:** PART 0 (UI pass) is TOP priority — do it before PART 1 (prop-firm)
+> and PART 2 (analytics).
+
 ---
 
-## PART 1 — Prop-firm features (priority)
+## PART 0 — UI / polish pass (TOP priority, do first)
+
+Requested 2026-08-31. All of this lands on a dedicated branch and is committed early —
+another Claude session concurrently reworks `polish/animations` and rebases/resets it,
+which destroys uncommitted work. These items touch `theme.css` + `App.tsx` + the page
+rails, so coordinate/merge with that branch.
+
+### 0.1 — Liquid-glass surface, properly
+
+- The user asked for `npx uilayouts@latest add liquid-glass`. **That command will not
+  work as-is**: `uilayouts` is a shadcn-style registry that expects Next.js + Tailwind +
+  the shadcn `components.json`. This app is **Vite + plain CSS**, no Tailwind, no shadcn.
+- There is **already a `.glass` / `.glass--rail` utility** in `theme.css` (added by the
+  `polish/animations` work — frosted `backdrop-filter: blur() saturate()`). Decide:
+  extend that, or fetch the uilayouts source manually and translate its CSS.
+- Approach: open the component at ui-layouts.com (or `npx uilayouts@latest add
+  liquid-glass --help` to see the registry URL), read its CSS/SVG-filter technique
+  (the "liquid" look is usually an SVG `feTurbulence` + `feDisplacementMap` displacement
+  filter behind a translucent panel), and reimplement as a `.liquid-glass` class in
+  `theme.css` using our tokens. Keep `prefers-reduced-motion` and a non-blur fallback.
+- Performance: `backdrop-filter` + an animated SVG displacement filter is GPU-heavy if
+  applied to many elements. Use it on **one or two hero surfaces** (nav rail, modal
+  panels), not every card.
+
+### 0.2 — Smooth cursor follower
+
+User supplied a Next.js/Tailwind `SmoothFollower` component. **Adapt, don't paste** —
+issues to fix:
+- Strip `"use client"` and Tailwind classes (`dark:bg-white` etc.) → plain inline styles
+  / a `.cursor-follower` class with our tokens (`--accent`, `--text-strong`).
+- **Perf:** the original calls `setRenderPos` (React state) every rAF frame → a full
+  re-render 60×/s. Instead write `transform: translate3d(x,y,0)` straight to the two
+  dot elements via refs in the rAF loop; never touch React state per frame.
+- Interactive-element detection: it queries `a, button, img, input…` **once on mount**,
+  so it misses everything rendered later (every modal, every dynamically added row).
+  Use event delegation: one `mouseover`/`mouseout` on `document`, check
+  `e.target.closest('a,button,input,textarea,select,[role="button"],.card--interactive')`.
+- Gate on a real pointer + not reduced-motion:
+  `window.matchMedia('(pointer: fine)').matches && !usePrefersReducedMotion()`.
+  Hide the OS cursor only while the follower is active (`* { cursor: none }` is risky —
+  scope it, and keep text inputs showing the caret).
+- Mount once in `App.tsx` (Electron desktop only — it's always a fine pointer there).
+- lerp factors from the user's code: dot `0.2`, ring `0.1`. Ring grows 28→44px on hover.
+
+### 0.3 — All sub-tab / section rails use liquid glass
+
+- Inventory every secondary nav in the app and give them one shared glass rail component:
+  - top tab bar in `App.tsx` (already `.glass glass--rail`)
+  - AnalyticsPage section-pill rail ("glass section-pill rail" per the polish commit)
+  - `WhatsNewPage` — currently plain; align it
+  - any filter bars (`FilterBar.tsx`), modal tab strips (`StrategyDetailModal`)
+- Extract a `<GlassRail>` / `.glass-rail` so the treatment is defined once and every
+  rail is visually identical. Watch contrast of active vs inactive items on the
+  translucent background (see 0.4).
+
+### 0.4 — Font legibility at any screen size
+
+- The Electron window is freely resizable and runs at arbitrary DPI. Current body is a
+  flat 14px Inter Variable (bumped from 13px in the polish commit).
+- Do:
+  - Set a **fluid base**: `font-size: clamp(13px, 0.8vw + 9px, 15px)` on `:root`, or a
+    couple of breakpoints on window width — verify at a ~900px-wide window and at 4K.
+  - Enforce **minimum sizes**: nothing below 11px for real content; the 9–10.5px
+    `mono-label` / `mono-chip` are decorative only — audit that none carry essential text.
+  - Check contrast on glass surfaces: `--text-muted` (#8e97a8) on a blurred translucent
+    panel can drop below WCAG AA. Bump muted text one step where it sits on glass.
+  - `-webkit-font-smoothing: antialiased` is already set; also set
+    `text-rendering: optimizeLegibility` and test the Fraunces display weight (340) —
+    it can look thin/blurry at small sizes on Windows, may need weight 400 under ~20px.
+  - Respect an optional user zoom (`Ctrl +/-` in Electron `webFrame.setZoomFactor`) —
+    make sure layouts don't break at 125–150%.
+
+### Order within PART 0
+0.4 (legibility) and 0.1 (define `.liquid-glass`) first — they set the foundation —
+then 0.3 (roll the rail out everywhere), then 0.2 (cursor follower, independent).
+
+---
+
+## PART 1 — Prop-firm features
 
 ### Current state
 `electron/analytics.ts :: simulateFundedChallenge()` + `src/components/PropFirmToolsPanel.tsx`
@@ -87,6 +168,7 @@ criterion box.
 
 ## Suggested order of work
 
+0. **PART 0 — UI pass (legibility → `.liquid-glass` → roll rails out → cursor follower).**
 1. Prop gaps #1–#5 — one focused pass on `analytics.ts` + `PropFirmToolsPanel.tsx` (block bootstrap, trailing-DD variants, consistency rule, firm presets, credibility blend).
 2. quantstats metrics pack in `analytics.ts` → surface per-strategy in `StrategyDetailModal`.
 3. Prop gap #6 — per-strategy "Prop Firm" tab, persisted results.
