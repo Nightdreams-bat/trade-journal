@@ -6,9 +6,12 @@ import { PlaybooksPage } from './pages/PlaybooksPage'
 import { ReviewPage } from './pages/ReviewPage'
 import { TradesDbPage } from './pages/TradesDbPage'
 import { MissedTradesPage } from './pages/MissedTradesPage'
+import { WhatsNewPage } from './pages/WhatsNewPage'
 import { TradeFormModal } from './components/TradeFormModal'
 import { AccountsModal } from './components/AccountsModal'
 import { AmbientBackground } from './components/AmbientBackground'
+import { LATEST_VERSION } from './changelog'
+import { getLastSeenVersion } from './whatsNewSeen'
 import type { Account, Confluence, Strategy } from './types'
 
 const TABS = [
@@ -17,6 +20,7 @@ const TABS = [
   { key: 'review', label: 'Review' },
   { key: 'trades', label: 'Trades' },
   { key: 'missed', label: 'Missed Trades' },
+  { key: 'whatsnew', label: "What's New" },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -30,6 +34,7 @@ function App() {
   const [showNewTrade, setShowNewTrade] = useState(false)
   const [showAccounts, setShowAccounts] = useState(false)
   const [reviewJumpDate, setReviewJumpDate] = useState<string | null>(null)
+  const [seenVersion, setSeenVersion] = useState<string | null>(getLastSeenVersion)
 
   const loadLookups = () => {
     window.api.accounts.getAll().then(setAccounts)
@@ -69,7 +74,10 @@ function App() {
           {TABS.map((t, i) => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => {
+                setTab(t.key)
+                if (t.key === 'whatsnew') setSeenVersion(LATEST_VERSION)
+              }}
               className="btn"
               style={{
                 position: 'relative',
@@ -95,6 +103,21 @@ function App() {
                 {String(i + 1).padStart(2, '0')}
               </span>
               {t.label}
+              {t.key === 'whatsnew' && seenVersion !== LATEST_VERSION && (
+                <span
+                  aria-label="new updates"
+                  style={{
+                    position: 'absolute',
+                    top: 7,
+                    right: 3,
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: 'var(--accent)',
+                    boxShadow: '0 0 0 2px var(--accent-bg)',
+                  }}
+                />
+              )}
               {tab === t.key &&
                 (reducedMotion ? (
                   <span
@@ -161,6 +184,7 @@ function App() {
                   bumpRefresh={bumpRefresh}
                 />
               )}
+              {tab === 'whatsnew' && <WhatsNewPage />}
             </>
           )
           return reducedMotion ? (
