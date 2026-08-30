@@ -2,6 +2,7 @@ import { Fragment, useMemo, useState } from 'react'
 import { addDays, addMonths, endOfMonth, format, isSameMonth, startOfMonth, startOfWeek } from 'date-fns'
 import type { AnalyticsSummary, Trade } from '../types'
 import { Modal } from './Modal'
+import { Reveal } from '../anim'
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -62,7 +63,7 @@ export function CalendarHeatmap({
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr) 1.1fr', gap: 6 }}>
+      <Reveal style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr) 1.1fr', gap: 6 }}>
         {WEEKDAY_LABELS.map((d) => (
           <div key={d} style={{ color: 'var(--text-dim)', fontSize: 11, textAlign: 'left', paddingLeft: 4 }}>{d}</div>
         ))}
@@ -89,6 +90,7 @@ export function CalendarHeatmap({
                 return (
                   <div
                     key={key}
+                    className={hasData ? 'card--interactive' : undefined}
                     onClick={() => hasData && openDay(key)}
                     style={{
                       minHeight: 58,
@@ -116,7 +118,7 @@ export function CalendarHeatmap({
                 key={`summary-${wi}`}
                 style={{
                   minHeight: 58,
-                  borderRadius: 6,
+                  borderRadius: 'var(--radius-sm)',
                   padding: '6px 8px',
                   background: 'var(--bg-elevated)',
                   border: '1px solid var(--border-soft)',
@@ -136,7 +138,7 @@ export function CalendarHeatmap({
             </Fragment>
           )
         })}
-      </div>
+      </Reveal>
 
       {selectedDate && (
         <Modal title={`Trades on ${selectedDate}`} onClose={() => setSelectedDate(null)}>

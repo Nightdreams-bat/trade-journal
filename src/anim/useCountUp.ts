@@ -17,23 +17,26 @@ export function useCountUp(
   const reduced = usePrefersReducedMotion()
   const skip = reduced || !enabled || !Number.isFinite(target)
   const [value, setValue] = useState(skip ? target : 0)
-  const ran = useRef(false)
+  // True once the intro tween has completed — later target changes snap.
+  const hasRun = useRef(false)
 
   useEffect(() => {
-    if (skip) {
+    if (skip || hasRun.current) {
       setValue(target)
       return
     }
-    if (ran.current) return
-    ran.current = true
 
     let raf = 0
     const start = performance.now()
     const tick = (now: number) => {
       const p = Math.min(1, (now - start) / duration)
       setValue(target * easeOut(p))
-      if (p < 1) raf = requestAnimationFrame(tick)
-      else setValue(target)
+      if (p < 1) {
+        raf = requestAnimationFrame(tick)
+      } else {
+        setValue(target)
+        hasRun.current = true
+      }
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)

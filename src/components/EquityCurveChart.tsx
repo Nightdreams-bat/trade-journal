@@ -1,5 +1,6 @@
 import { Area, AreaChart, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts'
 import { COLORS } from '../colors'
+import { TOOLTIP_STYLE, TOOLTIP_LABEL_STYLE, TOOLTIP_ITEM_STYLE, CHART_ANIM } from '../charts/chartTheme'
 import type { AnalyticsSummary } from '../types'
 
 export function EquityCurveChart({
@@ -38,10 +39,12 @@ export function EquityCurveChart({
             <XAxis dataKey="date" tick={{ fill: COLORS.textMuted, fontSize: 10 }} axisLine={{ stroke: COLORS.border }} tickLine={false} minTickGap={30} />
             <YAxis tick={{ fill: COLORS.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
             <Tooltip
-              contentStyle={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, fontSize: 12 }}
+              contentStyle={TOOLTIP_STYLE}
+              labelStyle={TOOLTIP_LABEL_STYLE}
+              itemStyle={TOOLTIP_ITEM_STYLE}
               formatter={(v) => [`$${v}`, 'Cumulative P&L']}
             />
-            <Area type="monotone" dataKey="equity" stroke={COLORS.green} strokeWidth={2} fill="url(#equityFill)" />
+            <Area type="monotone" dataKey="equity" stroke={COLORS.green} strokeWidth={2} fill="url(#equityFill)" {...CHART_ANIM} />
           </AreaChart>
         </ResponsiveContainer>
       )}

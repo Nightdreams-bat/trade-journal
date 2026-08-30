@@ -2,6 +2,7 @@ import { useEffect, useState, type MouseEvent } from 'react'
 import type { StrategyPerformance } from '../types'
 import { formatRatio } from '../format'
 import { StrategyDetailModal } from '../components/StrategyDetailModal'
+import { Stagger, Reveal } from '../anim'
 
 export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey: number; onStrategiesChanged: () => void }) {
   const [perf, setPerf] = useState<StrategyPerformance[]>([])
@@ -59,11 +60,11 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
       {perf.length === 0 ? (
         <div style={{ color: 'var(--text-muted)', padding: 12 }}>No playbooks yet. Add one above, then tag trades with it from the Trade Entry form.</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+        <Stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
           {perf.map((s) => (
+            <Reveal key={s.id}>
             <div
-              key={s.id}
-              className="card"
+              className="card card--interactive"
               onClick={() => setOpenStrategyId(s.id)}
               style={{ padding: 16, cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
             >
@@ -110,8 +111,9 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
                 </div>
               </div>
             </div>
+            </Reveal>
           ))}
-        </div>
+        </Stagger>
       )}
 
       {openStrategyId !== null && (

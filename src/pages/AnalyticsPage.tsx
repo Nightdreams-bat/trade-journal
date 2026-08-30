@@ -13,6 +13,7 @@ import { InsightsPanel } from '../components/InsightsPanel'
 import { FilterBar } from '../components/FilterBar'
 import { TradeFormModal } from '../components/TradeFormModal'
 import { formatRatio } from '../format'
+import { Stagger, Reveal } from '../anim'
 import type { Account, AnalyticsSummary, Confluence, Strategy, Trade } from '../types'
 
 const SECTIONS = [
@@ -91,41 +92,55 @@ export function AnalyticsPage({
         />
       </div>
 
-      <div ref={(el) => { sectionRefs.current.overview = el }} style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <KpiCard label="Win Rate" value={`${summary.kpis.winRate}%`} />
-        <KpiCard label="Total P&L" value={`$${summary.kpis.totalPnl.toLocaleString()}`} positive={summary.kpis.totalPnl >= 0} />
-        <KpiCard label="Returns" value={`${summary.kpis.returnsPct}%`} positive={summary.kpis.returnsPct >= 0} />
-        <KpiCard label="Profit Factor" value={formatRatio(summary.kpis.profitFactor)} positive={summary.kpis.profitFactor >= 1} />
+      <div ref={(el) => { sectionRefs.current.overview = el }}>
+        <Stagger style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <Reveal><KpiCard label="Win Rate" value={`${summary.kpis.winRate}%`} /></Reveal>
+          <Reveal><KpiCard label="Total P&L" value={`$${summary.kpis.totalPnl.toLocaleString()}`} positive={summary.kpis.totalPnl >= 0} /></Reveal>
+          <Reveal><KpiCard label="Returns" value={`${summary.kpis.returnsPct}%`} positive={summary.kpis.returnsPct >= 0} /></Reveal>
+          <Reveal><KpiCard label="Profit Factor" value={formatRatio(summary.kpis.profitFactor)} positive={summary.kpis.profitFactor >= 1} /></Reveal>
+        </Stagger>
       </div>
 
-      <div ref={(el) => { sectionRefs.current.equity = el }} style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-        <PerformanceRadar data={summary.radar} />
-        <EquityCurveChart equityCurve={summary.equityCurve} drawdown={summary.drawdown} />
-      </div>
-
-      <div ref={(el) => { sectionRefs.current.daily = el }} style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-        <DailyBarChart data={summary.dailyBars} />
-        <DayOfWeekChart data={summary.dayOfWeek} />
-      </div>
-
-      <div ref={(el) => { sectionRefs.current.monthly = el }}>
-        <MonthlyPnlPanel accountId={accountId} strategyId={strategyId} refreshKey={refreshKey} />
-      </div>
-
-      <div ref={(el) => { sectionRefs.current.calendar = el }} style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 420 }}>
-          <CalendarHeatmap month={month} onMonthChange={setMonth} calendar={summary.calendar} onOpenTrade={setOpenTrade} />
+      <Reveal index={0}>
+        <div ref={(el) => { sectionRefs.current.equity = el }} style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <PerformanceRadar data={summary.radar} />
+          <EquityCurveChart equityCurve={summary.equityCurve} drawdown={summary.drawdown} />
         </div>
-        <MonthlyStatsPanel stats={summary.monthlyStats} />
-      </div>
+      </Reveal>
 
-      <div ref={(el) => { sectionRefs.current.propfirm = el }}>
-        <PropFirmToolsPanel overall={summary.overall} />
-      </div>
+      <Reveal index={1}>
+        <div ref={(el) => { sectionRefs.current.daily = el }} style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <DailyBarChart data={summary.dailyBars} />
+          <DayOfWeekChart data={summary.dayOfWeek} />
+        </div>
+      </Reveal>
 
-      <div ref={(el) => { sectionRefs.current.insights = el }}>
-        <InsightsPanel insights={summary.insights} />
-      </div>
+      <Reveal index={2}>
+        <div ref={(el) => { sectionRefs.current.monthly = el }}>
+          <MonthlyPnlPanel accountId={accountId} strategyId={strategyId} refreshKey={refreshKey} />
+        </div>
+      </Reveal>
+
+      <Reveal index={3}>
+        <div ref={(el) => { sectionRefs.current.calendar = el }} style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 420 }}>
+            <CalendarHeatmap month={month} onMonthChange={setMonth} calendar={summary.calendar} onOpenTrade={setOpenTrade} />
+          </div>
+          <MonthlyStatsPanel stats={summary.monthlyStats} />
+        </div>
+      </Reveal>
+
+      <Reveal index={4}>
+        <div ref={(el) => { sectionRefs.current.propfirm = el }}>
+          <PropFirmToolsPanel overall={summary.overall} />
+        </div>
+      </Reveal>
+
+      <Reveal index={5}>
+        <div ref={(el) => { sectionRefs.current.insights = el }}>
+          <InsightsPanel insights={summary.insights} />
+        </div>
+      </Reveal>
 
       {openTrade && (
         <TradeFormModal

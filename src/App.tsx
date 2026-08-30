@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { motion } from 'motion/react'
+import { usePrefersReducedMotion } from './anim'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { PlaybooksPage } from './pages/PlaybooksPage'
 import { ReviewPage } from './pages/ReviewPage'
@@ -38,6 +40,7 @@ function App() {
   useEffect(loadLookups, [])
 
   const bumpRefresh = () => setRefreshKey((k) => k + 1)
+  const reducedMotion = usePrefersReducedMotion()
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
@@ -66,9 +69,10 @@ function App() {
               onClick={() => setTab(t.key)}
               className="btn"
               style={{
+                position: 'relative',
                 border: 'none',
                 borderRadius: 0,
-                borderBottom: tab === t.key ? '1px solid var(--accent)' : '1px solid transparent',
+                borderBottom: '1px solid transparent',
                 background: 'transparent',
                 color: tab === t.key ? 'var(--text-strong)' : 'var(--text-muted)',
                 fontWeight: 500,
@@ -88,6 +92,32 @@ function App() {
                 {String(i + 1).padStart(2, '0')}
               </span>
               {t.label}
+              {tab === t.key &&
+                (reducedMotion ? (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      right: 0,
+                      bottom: -1,
+                      height: 1,
+                      background: 'var(--accent)',
+                    }}
+                  />
+                ) : (
+                  <motion.span
+                    layoutId="tab-underline"
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      right: 0,
+                      bottom: -1,
+                      height: 1,
+                      background: 'var(--accent)',
+                    }}
+                    transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
+                  />
+                ))}
             </button>
           ))}
         </nav>
