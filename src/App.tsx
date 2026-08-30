@@ -6,6 +6,7 @@ import { TradesDbPage } from './pages/TradesDbPage'
 import { MissedTradesPage } from './pages/MissedTradesPage'
 import { TradeFormModal } from './components/TradeFormModal'
 import { AccountsModal } from './components/AccountsModal'
+import { AmbientBackground } from './components/AmbientBackground'
 import type { Account, Confluence, Strategy } from './types'
 
 const TABS = [
@@ -39,12 +40,15 @@ function App() {
   const bumpRefresh = () => setRefreshKey((k) => k + 1)
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header style={{ padding: '20px 28px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 22 }}>📈</span>
-            <h1 style={{ fontSize: 18, letterSpacing: 0.5, margin: 0, fontWeight: 700 }}>TRADE JOURNAL + ANALYTICS</h1>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+      <AmbientBackground />
+      <header style={{ padding: '22px 32px 0', position: 'relative', zIndex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <span className="mono-label">// Trading Journal &middot; Analytics</span>
+            <h1 style={{ fontSize: 30, margin: 0, fontWeight: 340, lineHeight: 1 }}>
+              Trade <span className="accent-word">Journal</span>
+            </h1>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn" onClick={() => setShowAccounts(true)}>Accounts</button>
@@ -55,8 +59,8 @@ function App() {
           </div>
         </div>
 
-        <nav style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)' }}>
-          {TABS.map((t) => (
+        <nav style={{ display: 'flex', gap: 2, borderBottom: '1px solid var(--border)' }}>
+          {TABS.map((t, i) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
@@ -64,20 +68,32 @@ function App() {
               style={{
                 border: 'none',
                 borderRadius: 0,
-                borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
+                borderBottom: tab === t.key ? '1px solid var(--accent)' : '1px solid transparent',
                 background: 'transparent',
-                color: tab === t.key ? 'var(--text)' : 'var(--text-muted)',
-                fontWeight: tab === t.key ? 600 : 400,
+                color: tab === t.key ? 'var(--text-strong)' : 'var(--text-muted)',
+                fontWeight: 500,
+                letterSpacing: '0.02em',
                 padding: '10px 14px',
               }}
             >
+              <span
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 9,
+                  letterSpacing: '0.1em',
+                  color: tab === t.key ? 'var(--accent)' : 'var(--text-dim)',
+                  marginRight: 7,
+                }}
+              >
+                {String(i + 1).padStart(2, '0')}
+              </span>
               {t.label}
             </button>
           ))}
         </nav>
       </header>
 
-      <main style={{ padding: 24, flex: 1 }}>
+      <main style={{ padding: 24, flex: 1, position: 'relative', zIndex: 1 }}>
         {tab === 'analytics' && (
           <AnalyticsPage
             accounts={accounts}

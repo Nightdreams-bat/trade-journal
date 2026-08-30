@@ -1,21 +1,61 @@
+/* ============================================================
+   Trade Journal — "Digitz" theme
+   Editorial dark-marine palette, Fraunces display serif,
+   Geist body, JetBrains Mono for technical labels.
+   Adapted from the design language of https://digitz.fr
+   ============================================================ */
+
 :root {
-  --bg: #0b0d0f;
-  --bg-elevated: #111417;
-  --card: #15181b;
-  --card-hover: #1a1e22;
-  --border: #262b2f;
-  --border-soft: #1e2226;
-  --text: #e8eaed;
-  --text-muted: #8b9299;
-  --text-dim: #5b6167;
-  --green: #34d399;
-  --green-soft: rgba(52, 211, 153, 0.14);
-  --red: #f87171;
-  --red-soft: rgba(248, 113, 113, 0.14);
-  --accent: #3ecf8e;
-  --radius: 10px;
-  --radius-sm: 6px;
-  font-family: -apple-system, 'Segoe UI', Inter, Roboto, Helvetica, Arial, sans-serif;
+  /* --- surfaces --- */
+  --ink: #0a101c;
+  --bg: #0d1828;
+  --bg-elevated: #131c2e;
+  --card: #1b2436;
+  --card-hover: #222d43;
+  --border: #243049;
+  --border-soft: #1a2335;
+
+  /* --- text --- */
+  --text-strong: #f5f3ee;
+  --text: #e5e3db;
+  --text-muted: #8e97a8;
+  --text-dim: #5b6577;
+
+  /* --- accents --- */
+  --accent: #5bc2d8;
+  --accent-bright: #3fe4e4;
+  --accent-bg: rgba(91, 194, 216, 0.12);
+  --accent-border: rgba(91, 194, 216, 0.45);
+
+  /* --- semantic (P&L) --- */
+  --green: #5bb98f;
+  --green-soft: rgba(91, 185, 143, 0.14);
+  --red: #e6886e;
+  --red-soft: rgba(230, 136, 110, 0.14);
+  --ember: #e6886e;
+
+  /* --- geometry --- */
+  --radius: 3px;
+  --radius-sm: 2px;
+
+  /* --- motion --- */
+  --dur-fast: 0.12s;
+  --dur: 0.18s;
+  --dur-medium: 0.26s;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-sig: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* --- elevation --- */
+  --glow-accent: 0 0 0 1px var(--accent-border), 0 4px 16px -4px rgba(91, 194, 216, 0.35);
+  --shadow-lift: 0 2px 10px -4px rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+
+  /* --- type --- */
+  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body: 'Geist Variable', 'Geist', Inter, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+
+  font-family: var(--font-body);
   color-scheme: dark;
 }
 
@@ -29,9 +69,21 @@ html, body, #root {
 }
 
 body {
-  background: var(--bg);
+  background:
+    radial-gradient(1200px 600px at 78% -10%, rgba(91, 194, 216, 0.06), transparent 60%),
+    var(--bg);
   color: var(--text);
   font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 340;
+  color: var(--text-strong);
+  letter-spacing: -0.01em;
 }
 
 button, input, select, textarea {
@@ -45,7 +97,11 @@ button {
 }
 
 a {
-  color: inherit;
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--accent-bright);
 }
 
 ::-webkit-scrollbar {
@@ -53,47 +109,128 @@ a {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #23272b;
-  border-radius: 6px;
+  background: #223052;
+  border-radius: 0;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+::selection {
+  background: var(--accent-bg);
+  color: var(--text-strong);
+}
+
+/* ---------- editorial helpers ---------- */
+
+.display {
+  font-family: var(--font-display);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  color: var(--text-strong);
+}
+
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mono-chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+}
+
+.accent-word {
+  color: var(--accent);
+}
+
+/* ---------- surfaces ---------- */
 
 .card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  transition: background var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
 }
+
+/* Opt-in hover elevation for clickable cards (add alongside .card). */
+.card--interactive {
+  cursor: pointer;
+}
+.card--interactive:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-border);
+  box-shadow: var(--shadow-card);
+}
+
+/* ---------- buttons ---------- */
 
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 12px;
-  background: var(--card);
+  padding: 7px 13px;
+  background: transparent;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
-  font-size: 12.5px;
-  transition: background 0.12s, border-color 0.12s;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  transition: background var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 .btn:hover {
   background: var(--card-hover);
-  border-color: #34393e;
+  border-color: var(--accent-border);
+  color: var(--text-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lift);
+}
+.btn:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: var(--dur-fast);
+}
+.btn:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
 }
 .btn-primary {
-  background: var(--accent);
+  background: var(--accent-bg);
   border-color: var(--accent);
-  color: #06231a;
+  color: var(--accent-bright);
   font-weight: 600;
 }
 .btn-primary:hover {
-  background: #4fdba0;
+  background: rgba(91, 194, 216, 0.2);
+  border-color: var(--accent-bright);
+  color: var(--text-strong);
+  box-shadow: var(--glow-accent);
 }
 .btn-danger {
-  color: var(--red);
+  color: var(--ember);
+  border-color: rgba(230, 136, 110, 0.4);
 }
+.btn-danger:hover {
+  background: var(--red-soft);
+  border-color: var(--ember);
+  color: var(--ember);
+}
+
+/* ---------- form controls ---------- */
 
 .input, .select, textarea.input {
   background: var(--bg-elevated);
@@ -102,19 +239,30 @@ a {
   padding: 7px 9px;
   color: var(--text);
   width: 100%;
+  transition: border-color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
 }
 .input:focus, .select:focus, textarea.input:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-bg);
+}
+.input::placeholder, textarea.input::placeholder {
+  color: var(--text-dim);
 }
 
 label.field {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--text-muted);
 }
+
+/* ---------- P&L ---------- */
 
 .pnl-positive { color: var(--green); }
 .pnl-negative { color: var(--red); }
@@ -130,17 +278,31 @@ label.field {
   align-items: center;
   gap: 4px;
   padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
   border: 1px solid var(--border);
+  color: var(--text-muted);
+  transition: background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  animation: tag-pop var(--dur-fast) var(--ease-sig);
 }
 .tag-pill.positive { background: var(--green-soft); color: var(--green); border-color: transparent; }
 .tag-pill.negative { background: var(--red-soft); color: var(--red); border-color: transparent; }
 
+@keyframes tag-pop {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- modal ---------- */
+
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(5, 9, 18, 0.66);
+  backdrop-filter: blur(2px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -149,16 +311,19 @@ label.field {
 .modal-panel {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   width: 560px;
   max-width: 92vw;
   max-height: 88vh;
   overflow-y: auto;
-  padding: 20px 22px;
+  padding: 22px 24px;
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.6);
 }
 .modal-panel.wide {
   width: 760px;
 }
+
+/* ---------- data table ---------- */
 
 table.data-table {
   width: 100%;
@@ -167,21 +332,46 @@ table.data-table {
 }
 table.data-table th {
   text-align: left;
-  padding: 8px 10px;
+  padding: 9px 10px;
   color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
   font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
   position: sticky;
   top: 0;
-  background: var(--card);
+  background: var(--bg-elevated);
 }
 table.data-table td {
   padding: 8px 10px;
   border-bottom: 1px solid var(--border-soft);
   white-space: nowrap;
 }
+table.data-table tbody tr {
+  transition: background var(--dur-fast) var(--ease-out);
+}
 table.data-table tbody tr:hover {
   background: var(--card-hover);
   cursor: pointer;
+}
+
+/* ---------- reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+  .btn:hover,
+  .card--interactive:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
 }

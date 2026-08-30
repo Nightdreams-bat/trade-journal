@@ -92,10 +92,10 @@ export function CalendarHeatmap({
                     onClick={() => hasData && openDay(key)}
                     style={{
                       minHeight: 58,
-                      borderRadius: 6,
+                      borderRadius: 'var(--radius-sm)',
                       padding: '6px 8px',
                       cursor: hasData ? 'pointer' : 'default',
-                      background: hasData ? (entry!.pnl >= 0 ? 'rgba(52,211,153,0.14)' : 'rgba(248,113,113,0.14)') : 'transparent',
+                      background: hasData ? (entry!.pnl >= 0 ? 'var(--green-soft)' : 'var(--red-soft)') : 'transparent',
                       border: `1px solid ${hasData ? 'transparent' : 'var(--border-soft)'}`,
                       opacity: inMonth ? 1 : 0.35,
                     }}
