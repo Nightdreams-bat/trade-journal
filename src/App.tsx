@@ -4,8 +4,11 @@ import { PlaybooksPage } from './pages/PlaybooksPage'
 import { ReviewPage } from './pages/ReviewPage'
 import { TradesDbPage } from './pages/TradesDbPage'
 import { MissedTradesPage } from './pages/MissedTradesPage'
+import { WhatsNewPage } from './pages/WhatsNewPage'
 import { TradeFormModal } from './components/TradeFormModal'
 import { AccountsModal } from './components/AccountsModal'
+import { LATEST_VERSION } from './changelog'
+import { getLastSeenVersion } from './whatsNewSeen'
 import type { Account, Confluence, Strategy } from './types'
 
 const TABS = [
@@ -14,6 +17,7 @@ const TABS = [
   { key: 'review', label: 'Review' },
   { key: 'trades', label: 'Trades' },
   { key: 'missed', label: 'Missed Trades' },
+  { key: 'whatsnew', label: "What's New" },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
@@ -27,6 +31,7 @@ function App() {
   const [showNewTrade, setShowNewTrade] = useState(false)
   const [showAccounts, setShowAccounts] = useState(false)
   const [reviewJumpDate, setReviewJumpDate] = useState<string | null>(null)
+  const [seenVersion, setSeenVersion] = useState<string | null>(getLastSeenVersion)
 
   const loadLookups = () => {
     window.api.accounts.getAll().then(setAccounts)
@@ -59,9 +64,13 @@ function App() {
           {TABS.map((t) => (
             <button
               key={t.key}
-              onClick={() => setTab(t.key)}
+              onClick={() => {
+                setTab(t.key)
+                if (t.key === 'whatsnew') setSeenVersion(LATEST_VERSION)
+              }}
               className="btn"
               style={{
+                position: 'relative',
                 border: 'none',
                 borderRadius: 0,
                 borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
@@ -72,6 +81,20 @@ function App() {
               }}
             >
               {t.label}
+              {t.key === 'whatsnew' && seenVersion !== LATEST_VERSION && (
+                <span
+                  aria-label="new updates"
+                  style={{
+                    position: 'absolute',
+                    top: 6,
+                    right: 2,
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background: 'var(--accent)',
+                  }}
+                />
+              )}
             </button>
           ))}
         </nav>
@@ -109,6 +132,7 @@ function App() {
             bumpRefresh={bumpRefresh}
           />
         )}
+        {tab === 'whatsnew' && <WhatsNewPage />}
       </main>
 
       {showNewTrade && (

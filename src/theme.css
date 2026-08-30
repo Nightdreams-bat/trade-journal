@@ -185,3 +185,158 @@ table.data-table tbody tr:hover {
   background: var(--card-hover);
   cursor: pointer;
 }
+
+/* ============================================================
+   What's New / Feature & Updates tab
+   Self-contained: only base tokens + the helpers defined here.
+   ============================================================ */
+
+.mono-label {
+  font-family: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.mono-chip {
+  font-family: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Consolas, monospace;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+.accent-word {
+  color: var(--accent);
+}
+
+.wn-timeline {
+  position: relative;
+  padding-left: 26px;
+}
+.wn-timeline::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: var(--border);
+}
+.wn-node {
+  position: absolute;
+  left: -26px;
+  top: 4px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+.wn-node.latest {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.14);
+}
+.wn-node.latest::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* grid-rows collapse — no JS height measurement, compositor-friendly */
+.wn-collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.wn-collapsible.open {
+  grid-template-rows: 1fr;
+}
+.wn-collapsible > .wn-collapsible-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.wn-chip {
+  font-family: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Consolas, monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.wn-chip.new {
+  color: var(--accent);
+  background: rgba(62, 207, 142, 0.12);
+  border-color: rgba(62, 207, 142, 0.4);
+}
+.wn-chip.improved {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--border);
+}
+.wn-chip.fixed {
+  color: var(--green);
+  background: var(--green-soft);
+}
+
+.wn-demo {
+  margin-top: 10px;
+  padding: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm);
+}
+
+.wn-item {
+  animation: wn-item-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.wn-pop {
+  animation: wn-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.wn-draw {
+  stroke-dasharray: var(--wn-len, 600);
+  animation: wn-draw 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.wn-cell {
+  opacity: 0;
+  animation: wn-cell-in 0.24s ease-out forwards;
+}
+
+@keyframes wn-item-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes wn-pop {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes wn-draw {
+  from { stroke-dashoffset: var(--wn-len, 600); }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes wn-cell-in {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wn-collapsible { transition-duration: 1ms; }
+  .wn-item, .wn-pop, .wn-draw, .wn-cell {
+    animation-duration: 1ms;
+    animation-delay: 0ms !important;
+  }
+  .wn-cell { opacity: 1; }
+}
