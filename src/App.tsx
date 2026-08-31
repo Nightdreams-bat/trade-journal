@@ -10,6 +10,8 @@ import { WhatsNewPage } from './pages/WhatsNewPage'
 import { TradeFormModal } from './components/TradeFormModal'
 import { AccountsModal } from './components/AccountsModal'
 import { AmbientBackground } from './components/AmbientBackground'
+import { CursorFollower } from './components/CursorFollower'
+import { GlassRail } from './components/GlassRail'
 import { LATEST_VERSION } from './changelog'
 import { getLastSeenVersion } from './whatsNewSeen'
 import type { Account, Confluence, Strategy } from './types'
@@ -50,6 +52,7 @@ function App() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <AmbientBackground />
+      <CursorFollower />
       <header style={{ padding: '22px 32px 0', position: 'relative', zIndex: 20 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -67,13 +70,17 @@ function App() {
           </div>
         </div>
 
-        <nav
-          className="glass glass--rail"
-          style={{ display: 'flex', gap: 2, flexWrap: 'nowrap', position: 'sticky', top: 0, zIndex: 20, padding: '0 8px' }}
+        <GlassRail
+          role="tablist"
+          variant="flush"
+          className="liquid-glass"
+          style={{ gap: 2, position: 'sticky', top: 0, zIndex: 20, padding: '0 8px' }}
         >
           {TABS.map((t, i) => (
             <button
               key={t.key}
+              role="tab"
+              aria-selected={tab === t.key}
               onClick={() => {
                 setTab(t.key)
                 if (t.key === 'whatsnew') setSeenVersion(LATEST_VERSION)
@@ -146,7 +153,7 @@ function App() {
                 ))}
             </button>
           ))}
-        </nav>
+        </GlassRail>
       </header>
 
       <main style={{ padding: 24, flex: 1, position: 'relative', zIndex: 1 }}>

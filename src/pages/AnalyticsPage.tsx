@@ -10,6 +10,7 @@ import { MonthlyStatsPanel } from '../components/MonthlyStatsPanel'
 import { MonthlyPnlPanel } from '../components/MonthlyPnlPanel'
 import { PropFirmToolsPanel } from '../components/PropFirmToolsPanel'
 import { InsightsPanel } from '../components/InsightsPanel'
+import { GlassRail } from '../components/GlassRail'
 import { FilterBar } from '../components/FilterBar'
 import { TradeFormModal } from '../components/TradeFormModal'
 import { formatRatio } from '../format'
@@ -75,13 +76,13 @@ export function AnalyticsPage({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
-        <div className="glass" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '5px 6px', borderRadius: 3 }}>
+        <GlassRail style={{ gap: 6 }}>
           {SECTIONS.map((s) => (
             <button key={s.key} className="btn" style={{ fontSize: 11.5, padding: '5px 10px' }} onClick={() => scrollTo(s.key)}>
               {s.label}
             </button>
           ))}
-        </div>
+        </GlassRail>
         {refreshing && (
           <span className="mono-label" style={{ color: 'var(--accent)', alignSelf: 'center' }}>// updating…</span>
         )}
