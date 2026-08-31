@@ -90,7 +90,7 @@ function CalendarHeatmapDemo() {
             title={v === 0 ? 'no trades' : v > 0 ? 'green day' : 'red day'}
             style={{
               aspectRatio: '1',
-              borderRadius: 'var(--radius-pill)',
+              borderRadius: 4,
               background: cell(v),
               opacity: reduced ? 1 : 0,
               animation: reduced ? undefined : `wn-cell-in 0.24s var(--ease-out) forwards`,

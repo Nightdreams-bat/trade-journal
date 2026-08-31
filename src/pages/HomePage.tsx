@@ -169,7 +169,10 @@ export function HomePage({
   })()
 
   const loading = !summary || !trades
-  const empty = !loading && trades!.length === 0
+  // "empty" = genuinely no history. In the browser dev-preview `trades.getAll()`
+  // is stubbed empty while `getSummary` still returns demo data, so fall back to
+  // the summary's trade count before showing the first-run CTA.
+  const empty = !loading && trades!.length === 0 && summary!.overall.totalTrades === 0
 
   const skel = (h = 16) => (
     <div style={{ height: h, borderRadius: 8, background: 'rgba(255,255,255,0.05)', width: '70%' }} />
@@ -202,7 +205,7 @@ export function HomePage({
               ) : (
                 <div style={{ marginTop: 'auto', display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)' }}>
                   <Flame size={13} strokeWidth={1.75} color="var(--accent)" />
-                  {trades!.length} trades logged
+                  {summary!.overall.totalTrades} trades logged
                 </div>
               )}
             </>
@@ -288,7 +291,7 @@ export function HomePage({
                 {propAccount.name}
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                Drawdown used {money(summary!.drawdown.maxDrawdown)} of{' '}
+                Drawdown used {money(Math.abs(summary!.drawdown.maxDrawdown))} of{' '}
                 {money(propAccount.starting_balance * 0.1)} limit
               </div>
               <div style={{ height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.08)', marginTop: 'auto' }}>
@@ -296,7 +299,13 @@ export function HomePage({
                   style={{
                     height: '100%',
                     borderRadius: 999,
-                    width: `${Math.min(100, (summary!.drawdown.maxDrawdown / (propAccount.starting_balance * 0.1)) * 100)}%`,
+                    width: `${Math.max(
+                      2,
+                      Math.min(
+                        100,
+                        (Math.abs(summary!.drawdown.maxDrawdown) / (propAccount.starting_balance * 0.1)) * 100,
+                      ),
+                    )}%`,
                     background: 'var(--red)',
                   }}
                 />
@@ -364,7 +373,9 @@ export function HomePage({
               {skel(14)}
             </div>
           ) : recent.length === 0 ? (
-            <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 6 }}>Nothing logged yet.</div>
+            <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 6 }}>
+              {empty ? 'Nothing logged yet.' : 'Open the Trades tab to browse your history.'}
+            </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', marginTop: 4 }}>
               {recent.map((t) => (
