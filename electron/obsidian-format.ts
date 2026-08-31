@@ -165,6 +165,9 @@ function embeds(basenames: string[]): string {
 // paths  (relative to the vault root, always POSIX separators)
 // ---------------------------------------------------------------------------
 
+/** Everything the app manages lives inside this one folder in the vault. */
+export const ROOT_DIR = 'Trading Journal'
+
 const yearOf = (date: string): string => (/^\d{4}/.test(date) ? date.slice(0, 4) : 'undated')
 
 export function tradeNoteBasename(t: TradeRow): string {
@@ -173,7 +176,7 @@ export function tradeNoteBasename(t: TradeRow): string {
 }
 
 export function tradeNotePath(t: TradeRow): string {
-  return `Trades/${yearOf(t.date)}/${tradeNoteBasename(t)}.md`
+  return `${ROOT_DIR}/Trades/${yearOf(t.date)}/${tradeNoteBasename(t)}.md`
 }
 
 export function missedNoteBasename(t: MissedTradeRow): string {
@@ -182,17 +185,17 @@ export function missedNoteBasename(t: MissedTradeRow): string {
 }
 
 export function missedNotePath(t: MissedTradeRow): string {
-  return `Missed Trades/${yearOf(t.date)}/${missedNoteBasename(t)}.md`
+  return `${ROOT_DIR}/Missed Trades/${yearOf(t.date)}/${missedNoteBasename(t)}.md`
 }
 
 export const dailyReviewBasename = (date: string): string => slugifyTitle(date)
 export const dailyReviewPath = (date: string): string =>
-  `Daily Reviews/${dailyReviewBasename(date)}.md`
+  `${ROOT_DIR}/Daily Reviews/${dailyReviewBasename(date)}.md`
 
-export const strategyNotePath = (s: StrategyRow): string => `Strategies/${slugifyTitle(s.name)}.md`
-export const accountNotePath = (a: AccountRow): string => `Accounts/${slugifyTitle(a.name)}.md`
+export const strategyNotePath = (s: StrategyRow): string => `${ROOT_DIR}/Strategies/${slugifyTitle(s.name)}.md`
+export const accountNotePath = (a: AccountRow): string => `${ROOT_DIR}/Accounts/${slugifyTitle(a.name)}.md`
 export const confluenceNotePath = (c: ConfluenceRow): string =>
-  `Confluences/${slugifyTitle(c.name)}.md`
+  `${ROOT_DIR}/Confluences/${slugifyTitle(c.name)}.md`
 
 // ---------------------------------------------------------------------------
 // note bodies
@@ -335,17 +338,17 @@ export function confluenceNote(c: ConfluenceRow): string {
 // ---------------------------------------------------------------------------
 
 export const VAULT_SUBDIRS = [
-  'Trades',
-  'Missed Trades',
-  'Daily Reviews',
-  'Strategies',
-  'Accounts',
-  'Confluences',
-  'Attachments',
+  `${ROOT_DIR}/Trades`,
+  `${ROOT_DIR}/Missed Trades`,
+  `${ROOT_DIR}/Daily Reviews`,
+  `${ROOT_DIR}/Strategies`,
+  `${ROOT_DIR}/Accounts`,
+  `${ROOT_DIR}/Confluences`,
+  `${ROOT_DIR}/Attachments`,
 ]
 
 export const OBSIDIAN_APP_JSON = {
-  attachmentFolderPath: 'Attachments',
+  attachmentFolderPath: `${ROOT_DIR}/Attachments`,
   newLinkFormat: 'shortest',
   useMarkdownLinks: false,
   alwaysUpdateLinks: true,
@@ -369,13 +372,14 @@ export function readmeContents(): string {
   return `# Trade Journal Vault
 
 This vault is **generated and kept in sync by the Trade Journal desktop app**.
-It is a one-way mirror of the app's database.
+It is a one-way mirror of the app's database. Everything it manages lives inside
+the \`${ROOT_DIR}/\` folder.
 
-- \`Trades/\` — one note per trade, foldered by year
-- \`Missed Trades/\` — trades you passed on ("fails")
-- \`Daily Reviews/\` — one note per day, links every trade logged that day
-- \`Strategies/\`, \`Accounts/\`, \`Confluences/\` — index notes so \`[[links]]\` resolve
-- \`Attachments/\` — trade screenshots
+- \`${ROOT_DIR}/Trades/\` — one note per trade, foldered by year
+- \`${ROOT_DIR}/Missed Trades/\` — trades you passed on ("fails")
+- \`${ROOT_DIR}/Daily Reviews/\` — one note per day, links every trade logged that day
+- \`${ROOT_DIR}/Strategies/\`, \`${ROOT_DIR}/Accounts/\`, \`${ROOT_DIR}/Confluences/\` — index notes so \`[[links]]\` resolve
+- \`${ROOT_DIR}/Attachments/\` — trade screenshots
 
 > **Do not rely on edits made here.** Changing a note in Obsidian does not update
 > the Trade Journal database, and the next sync (or "Rebuild vault") will overwrite it.

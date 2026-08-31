@@ -14,6 +14,7 @@ import {
   dailyReviewPath,
   tradeNote,
   dailyReviewNote,
+  ROOT_DIR,
   type TradeRow,
 } from './obsidian-format.ts'
 
@@ -73,17 +74,17 @@ const baseTrade: TradeRow = {
 
 test('note paths are year-foldered and id-suffixed', () => {
   assert.equal(tradeNoteBasename(baseTrade), '2026-08-31 EURUSD Long (t42)')
-  assert.equal(tradeNotePath(baseTrade), 'Trades/2026/2026-08-31 EURUSD Long (t42).md')
+  assert.equal(tradeNotePath(baseTrade), `${ROOT_DIR}/Trades/2026/2026-08-31 EURUSD Long (t42).md`)
   assert.equal(
     missedNotePath({ ...baseTrade, id: 7 } as never),
-    'Missed Trades/2026/2026-08-31 EURUSD Long (m7).md'
+    `${ROOT_DIR}/Missed Trades/2026/2026-08-31 EURUSD Long (m7).md`
   )
-  assert.equal(dailyReviewPath('2026-08-31'), 'Daily Reviews/2026-08-31.md')
+  assert.equal(dailyReviewPath('2026-08-31'), `${ROOT_DIR}/Daily Reviews/2026-08-31.md`)
 })
 
 test('note paths degrade gracefully when fields are missing', () => {
   const sparse: TradeRow = { ...baseTrade, pair: null, direction: null }
-  assert.equal(tradeNotePath(sparse), 'Trades/2026/2026-08-31 (t42).md')
+  assert.equal(tradeNotePath(sparse), `${ROOT_DIR}/Trades/2026/2026-08-31 (t42).md`)
 })
 
 test('tradeNote emits frontmatter, wikilinks and screenshot embeds', () => {

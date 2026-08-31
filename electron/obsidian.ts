@@ -166,7 +166,7 @@ export function ensureVault(): string {
     path.join(dotObsidian, 'core-plugins.json'),
     JSON.stringify(fmt.OBSIDIAN_CORE_PLUGINS, null, 2)
   )
-  writeIfAbsent(path.join(vault, 'README.md'), fmt.readmeContents())
+  writeIfAbsent(path.join(vault, fmt.ROOT_DIR, 'README.md'), fmt.readmeContents())
   return vault
 }
 
@@ -309,7 +309,7 @@ function copyAttachments(
       'SELECT path FROM entity_images WHERE entity_type = ? AND entity_id = ? ORDER BY id ASC'
     )
     .all(entityType, entityId) as { path: string }[]
-  const attachDir = path.join(vault, 'Attachments')
+  const attachDir = path.join(vault, fmt.ROOT_DIR, 'Attachments')
   const basenames: string[] = []
   for (const r of rows) {
     if (!r.path || !fs.existsSync(r.path)) continue
