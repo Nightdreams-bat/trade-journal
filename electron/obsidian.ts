@@ -1,324 +1,598 @@
+/**
+ * Obsidian vault mirror — one-way sync of the Trade Journal SQLite DB into a
+ * real Obsidian vault (a folder of markdown notes).
+ *
+ * Design:
+ *  - SQLite is the source of truth. This module only ever WRITES the vault.
+ *  - Every exported sync entry point is a no-op unless the user enabled it in
+ *    Settings, and every one swallows its own errors — a vault problem must
+ *    never break a journal save.
+ *  - The app only writes / deletes inside the resolved vault folder, and only
+ *    deletes files recorded in `.tradejournal-sync.json`.
+ */
+
+import { app, shell } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
-import type { DatabaseSync } from 'node:sqlite'
+import { spawn } from 'node:child_process'
+import { getDb, getSetting, setSetting, deleteSetting } from './db'
+import * as fmt from './obsidian-format'
+import type {
+  TradeRow,
+  MissedTradeRow,
+  DailyReviewRow,
+  StrategyRow,
+  AccountRow,
+  ConfluenceRow,
+} from './obsidian-format'
 
-// Mirrors trades and missed trades out to a folder in the user's Obsidian
-// vault as one markdown note per entry (with embedded screenshots):
-//   <vault>/TradeJournal/<Account>/<Strategy>/<date> - <pair>.md      (trades)
-//   <vault>/TradeJournal/Missed Trades/<Strategy>/<date> - <pair>.md (missed trades)
-//
-// The journal's SQLite db is the source of truth; this is a one-way export
-// that runs after every trade/missed-trade/image mutation (see ipc.ts).
-// `trade_vault_sync` / `missed_trade_vault_sync` remember where each entry's
-// note/images currently live on disk so a rename (date/pair/strategy/account
-// change) cleans up the old location instead of leaving orphaned files behind.
+const ENABLED_KEY = 'obsidian_enabled'
+const PATH_KEY = 'obsidian_vault_path'
+const LAST_SYNC_KEY = 'obsidian_last_sync'
+const MANIFEST_FILE = '.tradejournal-sync.json'
 
-const VAULT_KEY = 'obsidian_vault_path'
-const ROOT_FOLDER = 'TradeJournal'
+// ---------------------------------------------------------------------------
+// config
+// ---------------------------------------------------------------------------
 
-interface TradeRow {
-  id: number
-  name: string | null
-  date: string
-  pair: string | null
-  session: string | null
-  direction: string | null
-  risk_per_trade: number | null
-  pnl: number
-  r_multiple: number | null
-  followed_plan: number
-  break_even: number
-  entry_win: number
-  strategy_id: number | null
-  account_id: number | null
-  positive_tags: string
-  negative_tags: string
-  notes: string | null
+export function defaultVaultPath(): string {
+  return path.join(app.getPath('documents'), 'TradeJournal Vault')
 }
 
-interface MissedTradeRow {
-  id: number
-  date: string
-  pair: string | null
-  direction: string | null
-  would_be_pnl: number | null
-  reason_missed: string | null
-  strategy_id: number | null
-  tags: string
-  notes: string | null
+export function resolveVaultPath(): string {
+  const custom = getSetting(PATH_KEY)
+  return custom && custom.trim() ? custom : defaultVaultPath()
 }
 
-interface VaultRecord {
-  note_path: string
-  images_dir: string
+export function isEnabled(): boolean {
+  return getSetting(ENABLED_KEY) === '1'
 }
 
-interface NoteTarget {
-  dir: string
-  notePath: string
-  imagesDir: string
-  imagesDirName: string
+export interface ObsidianConfig {
+  enabled: boolean
+  vaultPath: string // custom override, '' when using the default
+  resolvedPath: string
+  defaultPath: string
+  exists: boolean
+  lastSync: string | null
+  noteCount: number
 }
 
-export function getVaultPath(db: DatabaseSync): string | null {
-  const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(VAULT_KEY) as { value: string } | undefined
-  return row?.value ?? null
-}
-
-export function setVaultPath(db: DatabaseSync, vaultPath: string | null) {
-  if (vaultPath) {
-    db.prepare(
-      'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
-    ).run(VAULT_KEY, vaultPath)
-  } else {
-    db.prepare('DELETE FROM settings WHERE key = ?').run(VAULT_KEY)
-  }
-}
-
-function sanitize(name: string): string {
-  const cleaned = name.replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim()
-  return cleaned || 'Untitled'
-}
-
-function yamlString(v: string): string {
-  return JSON.stringify(v)
-}
-
-function yamlList(values: string[]): string {
-  if (!values.length) return '[]'
-  return `[${values.map((v) => yamlString(v)).join(', ')}]`
-}
-
-function buildNoteTarget(vaultRoot: string, segments: string[], noteBase: string): NoteTarget {
-  const dir = path.join(vaultRoot, ROOT_FOLDER, ...segments.map(sanitize))
-  const notePath = path.join(dir, `${noteBase}.md`)
-  const imagesDirName = `${noteBase}_images`
-  const imagesDir = path.join(dir, imagesDirName)
-  return { dir, notePath, imagesDir, imagesDirName }
-}
-
-function removeVaultArtifacts(prev?: VaultRecord) {
-  if (!prev) return
+export function getConfig(): ObsidianConfig {
+  const resolvedPath = resolveVaultPath()
+  let noteCount = 0
   try {
-    if (fs.existsSync(prev.note_path)) fs.rmSync(prev.note_path, { force: true })
+    noteCount = Object.values(loadManifest(resolvedPath)).reduce(
+      (n, section) => n + (Array.isArray(section) ? section.length : Object.keys(section).length),
+      0
+    )
   } catch {
     /* ignore */
   }
+  return {
+    enabled: isEnabled(),
+    vaultPath: getSetting(PATH_KEY) ?? '',
+    resolvedPath,
+    defaultPath: defaultVaultPath(),
+    exists: fs.existsSync(resolvedPath),
+    lastSync: getSetting(LAST_SYNC_KEY),
+    noteCount,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// manifest  (id -> relative note path; the only files we are allowed to delete)
+// ---------------------------------------------------------------------------
+
+interface Manifest {
+  trades: Record<string, string>
+  missed: Record<string, string>
+  reviews: Record<string, string>
+  strategies: Record<string, string>
+  accounts: Record<string, string>
+  confluences: Record<string, string>
+  attachments: string[]
+}
+
+const emptyManifest = (): Manifest => ({
+  trades: {},
+  missed: {},
+  reviews: {},
+  strategies: {},
+  accounts: {},
+  confluences: {},
+  attachments: [],
+})
+
+function loadManifest(vault: string): Manifest {
   try {
-    if (fs.existsSync(prev.images_dir)) fs.rmSync(prev.images_dir, { recursive: true, force: true })
+    const raw = fs.readFileSync(path.join(vault, MANIFEST_FILE), 'utf-8')
+    return { ...emptyManifest(), ...(JSON.parse(raw) as Partial<Manifest>) }
+  } catch {
+    return emptyManifest()
+  }
+}
+
+function saveManifest(vault: string, m: Manifest): void {
+  writeFileAtomic(path.join(vault, MANIFEST_FILE), JSON.stringify(m, null, 2))
+}
+
+// ---------------------------------------------------------------------------
+// safe filesystem primitives (all scoped to the vault root)
+// ---------------------------------------------------------------------------
+
+function insideVault(vault: string, target: string): boolean {
+  const rel = path.relative(vault, target)
+  return !!rel && !rel.startsWith('..') && !path.isAbsolute(rel)
+}
+
+function writeFileAtomic(absPath: string, content: string): void {
+  fs.mkdirSync(path.dirname(absPath), { recursive: true })
+  const tmp = `${absPath}.tmp-${process.pid}`
+  fs.writeFileSync(tmp, content, 'utf-8')
+  fs.renameSync(tmp, absPath)
+}
+
+function writeNote(vault: string, relPath: string, content: string): void {
+  const abs = path.resolve(vault, relPath)
+  if (!insideVault(vault, abs)) throw new Error(`refusing to write outside vault: ${relPath}`)
+  writeFileAtomic(abs, content)
+}
+
+function deleteManaged(vault: string, relPath: string | undefined): void {
+  if (!relPath) return
+  const abs = path.resolve(vault, relPath)
+  if (!insideVault(vault, abs)) return
+  try {
+    fs.rmSync(abs, { force: true })
   } catch {
     /* ignore */
   }
 }
 
-/** Creates target.dir, wipes+rewrites target.imagesDir from imageSrcPaths, returns the copied file names. */
-function prepareImages(target: NoteTarget, imageSrcPaths: string[]): string[] {
-  fs.mkdirSync(target.dir, { recursive: true })
-  if (fs.existsSync(target.imagesDir)) fs.rmSync(target.imagesDir, { recursive: true, force: true })
-  const imageFileNames: string[] = []
-  if (imageSrcPaths.length) {
-    fs.mkdirSync(target.imagesDir, { recursive: true })
-    imageSrcPaths.forEach((src, i) => {
-      if (!fs.existsSync(src)) return
-      const ext = path.extname(src) || '.png'
-      const fileName = `img-${i + 1}${ext}`
-      fs.copyFileSync(src, path.join(target.imagesDir, fileName))
-      imageFileNames.push(fileName)
-    })
+// ---------------------------------------------------------------------------
+// vault scaffolding + Obsidian app integration
+// ---------------------------------------------------------------------------
+
+export function ensureVault(): string {
+  const vault = resolveVaultPath()
+  fs.mkdirSync(vault, { recursive: true })
+  for (const dir of fmt.VAULT_SUBDIRS) fs.mkdirSync(path.join(vault, dir), { recursive: true })
+
+  const dotObsidian = path.join(vault, '.obsidian')
+  fs.mkdirSync(dotObsidian, { recursive: true })
+  writeIfAbsent(path.join(dotObsidian, 'app.json'), JSON.stringify(fmt.OBSIDIAN_APP_JSON, null, 2))
+  writeIfAbsent(
+    path.join(dotObsidian, 'core-plugins.json'),
+    JSON.stringify(fmt.OBSIDIAN_CORE_PLUGINS, null, 2)
+  )
+  writeIfAbsent(path.join(vault, 'README.md'), fmt.readmeContents())
+  return vault
+}
+
+function writeIfAbsent(absPath: string, content: string): void {
+  if (!fs.existsSync(absPath)) writeFileAtomic(absPath, content)
+}
+
+/** Add the vault to Obsidian's own registry so it shows up in the vault switcher. */
+export function registerWithObsidian(): void {
+  try {
+    const vault = resolveVaultPath()
+    const registryPath = path.join(app.getPath('appData'), 'obsidian', 'obsidian.json')
+    let registry: { vaults?: Record<string, { path: string; ts: number; open?: boolean }> } = {}
+    try {
+      registry = JSON.parse(fs.readFileSync(registryPath, 'utf-8'))
+    } catch {
+      /* missing / empty / malformed — start fresh */
+    }
+    registry.vaults ??= {}
+    const already = Object.values(registry.vaults).some(
+      (v) => path.resolve(v.path) === path.resolve(vault)
+    )
+    if (!already) {
+      const id = randomHexId()
+      registry.vaults[id] = { path: vault, ts: Date.now() }
+      fs.mkdirSync(path.dirname(registryPath), { recursive: true })
+      writeFileAtomic(registryPath, JSON.stringify(registry, null, 2))
+    }
+  } catch (err) {
+    console.error('[obsidian] registerWithObsidian failed:', err)
   }
-  return imageFileNames
 }
 
-function tradeFrontmatter(trade: TradeRow, accountName: string, strategyName: string, confluenceNames: string[]): string {
-  const positiveTags = JSON.parse(trade.positive_tags || '[]') as string[]
-  const negativeTags = JSON.parse(trade.negative_tags || '[]') as string[]
-  const lines = [
-    '---',
-    `trade_id: ${trade.id}`,
-    `date: ${trade.date}`,
-    `pair: ${yamlString(trade.pair ?? '')}`,
-    `session: ${yamlString(trade.session ?? '')}`,
-    `direction: ${yamlString(trade.direction ?? '')}`,
-    `risk_per_trade: ${trade.risk_per_trade ?? 'null'}`,
-    `pnl: ${trade.pnl}`,
-    `r_multiple: ${trade.r_multiple ?? 'null'}`,
-    `followed_plan: ${!!trade.followed_plan}`,
-    `break_even: ${!!trade.break_even}`,
-    `entry_win: ${!!trade.entry_win}`,
-    `account: ${yamlString(accountName)}`,
-    `strategy: ${yamlString(strategyName)}`,
-    `confluences: ${yamlList(confluenceNames)}`,
-    `positive_tags: ${yamlList(positiveTags)}`,
-    `negative_tags: ${yamlList(negativeTags)}`,
-    'tags: [tradejournal]',
-    '---',
-    '',
+function randomHexId(): string {
+  let s = ''
+  for (let i = 0; i < 16; i++) s += Math.floor(Math.random() * 16).toString(16)
+  return s
+}
+
+/** Best-effort: open the vault in the Obsidian desktop app. */
+export async function openInObsidian(): Promise<void> {
+  const vault = resolveVaultPath()
+  ensureVault()
+  registerWithObsidian()
+  const uri = `obsidian://open?path=${encodeURIComponent(vault)}`
+  try {
+    await shell.openExternal(uri)
+    return
+  } catch {
+    /* no protocol handler — fall through to spawning the exe */
+  }
+  const exe = findObsidianExe()
+  if (exe) {
+    try {
+      spawn(exe, [`obsidian://open?path=${vault}`], { detached: true, stdio: 'ignore' }).unref()
+    } catch (err) {
+      console.error('[obsidian] spawn failed:', err)
+    }
+  }
+}
+
+function findObsidianExe(): string | null {
+  const candidates = [
+    path.join(app.getPath('appData'), '..', 'Local', 'Programs', 'Obsidian', 'Obsidian.exe'),
+    path.join(app.getPath('home'), 'AppData', 'Local', 'Programs', 'Obsidian', 'Obsidian.exe'),
   ]
-  return lines.join('\n')
+  return candidates.find((p) => fs.existsSync(p)) ?? null
 }
 
-function tradeBody(trade: TradeRow, imageFileNames: string[], imagesDirName: string): string {
-  const title = `${trade.pair || trade.name || 'Trade'} — ${trade.date}`
-  const meta = `**P&L:** ${trade.pnl}  **R:** ${trade.r_multiple ?? '—'}  **Session:** ${trade.session ?? '—'}  **Direction:** ${trade.direction ?? '—'}`
-  const notes = trade.notes?.trim() ? trade.notes.trim() : '_No notes._'
-  const images = imageFileNames.length
-    ? imageFileNames.map((f) => `![[${imagesDirName}/${f}]]`).join('\n')
-    : '_No screenshots._'
-  return `# ${title}\n\n${meta}\n\n## Notes\n\n${notes}\n\n## Screenshots\n\n${images}\n`
+/** Reveal the vault folder in the OS file manager. */
+export async function showVaultFolder(): Promise<void> {
+  await shell.openPath(ensureVault())
 }
 
-function missedTradeFrontmatter(mt: MissedTradeRow, strategyName: string, confluenceNames: string[]): string {
-  const tags = JSON.parse(mt.tags || '[]') as string[]
-  const lines = [
-    '---',
-    `missed_trade_id: ${mt.id}`,
-    `date: ${mt.date}`,
-    `pair: ${yamlString(mt.pair ?? '')}`,
-    `direction: ${yamlString(mt.direction ?? '')}`,
-    `would_be_pnl: ${mt.would_be_pnl ?? 'null'}`,
-    `reason_missed: ${yamlString(mt.reason_missed ?? '')}`,
-    `strategy: ${yamlString(strategyName)}`,
-    `confluences: ${yamlList(confluenceNames)}`,
-    `tags: ${yamlList([...tags, 'tradejournal', 'missed-trade'])}`,
-    '---',
-    '',
-  ]
-  return lines.join('\n')
+// ---------------------------------------------------------------------------
+// DB readers  (mirror the shapes ipc.ts returns to the renderer)
+// ---------------------------------------------------------------------------
+
+const parseJsonArray = (v: unknown): string[] => {
+  try {
+    const parsed = JSON.parse((v as string) || '[]')
+    return Array.isArray(parsed) ? parsed.map(String) : []
+  } catch {
+    return []
+  }
 }
 
-function missedTradeBody(mt: MissedTradeRow, imageFileNames: string[], imagesDirName: string): string {
-  const title = `Missed — ${mt.pair || 'Trade'} — ${mt.date}`
-  const meta = `**Would-be P&L:** ${mt.would_be_pnl ?? '—'}  **Direction:** ${mt.direction ?? '—'}  **Reason missed:** ${mt.reason_missed ?? '—'}`
-  const notes = mt.notes?.trim() ? mt.notes.trim() : '_No notes._'
-  const images = imageFileNames.length
-    ? imageFileNames.map((f) => `![[${imagesDirName}/${f}]]`).join('\n')
-    : '_No screenshots._'
-  return `# ${title}\n\n${meta}\n\n## Notes\n\n${notes}\n\n## Screenshots\n\n${images}\n`
-}
-
-function getPrevTradeSync(db: DatabaseSync, tradeId: number): VaultRecord | undefined {
-  return db.prepare('SELECT note_path, images_dir FROM trade_vault_sync WHERE trade_id = ?').get(tradeId) as
-    | VaultRecord
+function readTrade(id: number): TradeRow | null {
+  const row = getDb().prepare('SELECT * FROM trades WHERE id = ?').get(id) as
+    | Record<string, unknown>
     | undefined
+  if (!row) return null
+  return {
+    ...(row as unknown as TradeRow),
+    positive_tags: parseJsonArray(row.positive_tags),
+    negative_tags: parseJsonArray(row.negative_tags),
+  }
 }
 
-function getPrevMissedSync(db: DatabaseSync, missedTradeId: number): VaultRecord | undefined {
-  return db
-    .prepare('SELECT note_path, images_dir FROM missed_trade_vault_sync WHERE missed_trade_id = ?')
-    .get(missedTradeId) as VaultRecord | undefined
+function readMissed(id: number): MissedTradeRow | null {
+  const row = getDb().prepare('SELECT * FROM missed_trades WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined
+  if (!row) return null
+  return { ...(row as unknown as MissedTradeRow), tags: parseJsonArray(row.tags) }
 }
 
-export function syncTradeToVault(db: DatabaseSync, tradeId: number) {
-  const vaultRoot = getVaultPath(db)
-  if (!vaultRoot) return
+function nameById(table: 'strategies' | 'accounts', id: unknown): string | null {
+  if (typeof id !== 'number') return null
+  const row = getDb().prepare(`SELECT name FROM ${table} WHERE id = ?`).get(id) as
+    | { name: string }
+    | undefined
+  return row?.name ?? null
+}
 
-  const trade = db.prepare('SELECT * FROM trades WHERE id = ?').get(tradeId) as TradeRow | undefined
-  const prev = getPrevTradeSync(db, tradeId)
+function confluenceNamesFor(entityType: 'trade' | 'missed_trade', entityId: number): string[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT c.name FROM entity_confluences ec
+       JOIN confluences c ON c.id = ec.confluence_id
+       WHERE ec.entity_type = ? AND ec.entity_id = ?
+       ORDER BY c.name ASC`
+    )
+    .all(entityType, entityId) as { name: string }[]
+  return rows.map((r) => r.name)
+}
 
-  if (!trade) {
-    removeVaultArtifacts(prev)
-    db.prepare('DELETE FROM trade_vault_sync WHERE trade_id = ?').run(tradeId)
-    return
+// ---------------------------------------------------------------------------
+// attachments
+// ---------------------------------------------------------------------------
+
+function copyAttachments(
+  vault: string,
+  manifest: Manifest,
+  entityType: 'trade' | 'missed_trade',
+  entityId: number
+): string[] {
+  const rows = getDb()
+    .prepare(
+      'SELECT path FROM entity_images WHERE entity_type = ? AND entity_id = ? ORDER BY id ASC'
+    )
+    .all(entityType, entityId) as { path: string }[]
+  const attachDir = path.join(vault, 'Attachments')
+  const basenames: string[] = []
+  for (const r of rows) {
+    if (!r.path || !fs.existsSync(r.path)) continue
+    const base = path.basename(r.path)
+    const dest = path.join(attachDir, base)
+    try {
+      if (!fs.existsSync(dest)) {
+        fs.mkdirSync(attachDir, { recursive: true })
+        fs.copyFileSync(r.path, dest)
+      }
+      if (!manifest.attachments.includes(base)) manifest.attachments.push(base)
+      basenames.push(base)
+    } catch (err) {
+      console.error('[obsidian] attachment copy failed:', err)
+    }
+  }
+  return basenames
+}
+
+// ---------------------------------------------------------------------------
+// per-entity sync   (internal, operate on a loaded manifest)
+// ---------------------------------------------------------------------------
+
+function syncTradeInto(vault: string, m: Manifest, id: number): void {
+  const t = readTrade(id)
+  if (!t) return removeFromManifest(vault, m, 'trades', id)
+  const ctx: fmt.TradeContext = {
+    strategyName: nameById('strategies', (t as unknown as Record<string, unknown>).strategy_id),
+    accountName: nameById('accounts', (t as unknown as Record<string, unknown>).account_id),
+    confluenceNames: confluenceNamesFor('trade', id),
+    hasDailyReview: !!getDb().prepare('SELECT 1 FROM daily_reviews WHERE date = ?').get(t.date),
+    screenshots: copyAttachments(vault, m, 'trade', id),
+  }
+  const relPath = fmt.tradeNotePath(t)
+  replaceNote(vault, m, 'trades', id, relPath, fmt.tradeNote(t, ctx))
+}
+
+function syncMissedInto(vault: string, m: Manifest, id: number): void {
+  const t = readMissed(id)
+  if (!t) return removeFromManifest(vault, m, 'missed', id)
+  const ctx: fmt.MissedTradeContext = {
+    strategyName: nameById('strategies', (t as unknown as Record<string, unknown>).strategy_id),
+    confluenceNames: confluenceNamesFor('missed_trade', id),
+    screenshots: copyAttachments(vault, m, 'missed_trade', id),
+  }
+  const relPath = fmt.missedNotePath(t)
+  replaceNote(vault, m, 'missed', id, relPath, fmt.missedTradeNote(t, ctx))
+}
+
+function syncReviewInto(vault: string, m: Manifest, date: string): void {
+  const db = getDb()
+  const row = db.prepare('SELECT * FROM daily_reviews WHERE date = ?').get(date) as
+    | DailyReviewRow
+    | undefined
+
+  const tradeRows = db
+    .prepare('SELECT id FROM trades WHERE date = ? ORDER BY id ASC')
+    .all(date) as { id: number }[]
+  const missedRows = db
+    .prepare('SELECT id FROM missed_trades WHERE date = ? ORDER BY id ASC')
+    .all(date) as { id: number }[]
+
+  // Nothing on this day any more — drop the note.
+  if (!row && !tradeRows.length && !missedRows.length) {
+    return removeFromManifest(vault, m, 'reviews', date)
   }
 
-  const account = trade.account_id
-    ? (db.prepare('SELECT name FROM accounts WHERE id = ?').get(trade.account_id) as { name: string } | undefined)
-    : undefined
-  const strategy = trade.strategy_id
-    ? (db.prepare('SELECT name FROM strategies WHERE id = ?').get(trade.strategy_id) as { name: string } | undefined)
-    : undefined
-  const confluenceNames = (
-    db
-      .prepare(
-        `SELECT c.name as name FROM entity_confluences ec JOIN confluences c ON c.id = ec.confluence_id
-         WHERE ec.entity_type = 'trade' AND ec.entity_id = ?`
-      )
-      .all(tradeId) as { name: string }[]
-  ).map((r) => r.name)
-  const images = db
-    .prepare('SELECT path FROM entity_images WHERE entity_type = ? AND entity_id = ? ORDER BY id ASC')
-    .all('trade', tradeId) as { path: string }[]
-
-  const accountName = account?.name ?? 'No Account'
-  const strategyName = strategy?.name ?? 'No Strategy'
-  const noteBase = sanitize(`${trade.date} - ${trade.pair || trade.name || `trade-${trade.id}`}`)
-  const target = buildNoteTarget(vaultRoot, [accountName, strategyName], noteBase)
-
-  if (prev && (prev.note_path !== target.notePath || prev.images_dir !== target.imagesDir)) {
-    removeVaultArtifacts(prev)
+  const ctx: fmt.DailyReviewContext = {
+    tradeNotes: tradeRows.map((r) => {
+      const t = readTrade(r.id)
+      return t ? fmt.tradeNoteBasename(t) : ''
+    }).filter(Boolean),
+    missedNotes: missedRows.map((r) => {
+      const t = readMissed(r.id)
+      return t ? fmt.missedNoteBasename(t) : ''
+    }).filter(Boolean),
   }
-
-  const imageFileNames = prepareImages(target, images.map((i) => i.path))
-  const content = tradeFrontmatter(trade, accountName, strategyName, confluenceNames) + tradeBody(trade, imageFileNames, target.imagesDirName)
-  fs.writeFileSync(target.notePath, content, 'utf-8')
-
-  db.prepare(
-    `INSERT INTO trade_vault_sync (trade_id, note_path, images_dir) VALUES (?, ?, ?)
-     ON CONFLICT(trade_id) DO UPDATE SET note_path = excluded.note_path, images_dir = excluded.images_dir`
-  ).run(tradeId, target.notePath, target.imagesDir)
+  const review: DailyReviewRow = row ?? { date, notes: null, emotion: null, lessons_learned: null }
+  replaceNote(vault, m, 'reviews', date, fmt.dailyReviewPath(date), fmt.dailyReviewNote(review, ctx))
 }
 
-export function deleteTradeFromVault(db: DatabaseSync, tradeId: number) {
-  const prev = getPrevTradeSync(db, tradeId)
-  removeVaultArtifacts(prev)
-  db.prepare('DELETE FROM trade_vault_sync WHERE trade_id = ?').run(tradeId)
+function syncStrategyInto(vault: string, m: Manifest, id: number): void {
+  const row = getDb().prepare('SELECT * FROM strategies WHERE id = ?').get(id) as
+    | StrategyRow
+    | undefined
+  if (!row) return removeFromManifest(vault, m, 'strategies', id)
+  replaceNote(vault, m, 'strategies', id, fmt.strategyNotePath(row), fmt.strategyNote(row))
 }
 
-export function syncMissedTradeToVault(db: DatabaseSync, missedTradeId: number) {
-  const vaultRoot = getVaultPath(db)
-  if (!vaultRoot) return
+function syncAccountInto(vault: string, m: Manifest, id: number): void {
+  const row = getDb().prepare('SELECT * FROM accounts WHERE id = ?').get(id) as AccountRow | undefined
+  if (!row) return removeFromManifest(vault, m, 'accounts', id)
+  replaceNote(vault, m, 'accounts', id, fmt.accountNotePath(row), fmt.accountNote(row))
+}
 
-  const mt = db.prepare('SELECT * FROM missed_trades WHERE id = ?').get(missedTradeId) as MissedTradeRow | undefined
-  const prev = getPrevMissedSync(db, missedTradeId)
+function syncConfluenceInto(vault: string, m: Manifest, id: number): void {
+  const row = getDb().prepare('SELECT * FROM confluences WHERE id = ?').get(id) as
+    | ConfluenceRow
+    | undefined
+  if (!row) return removeFromManifest(vault, m, 'confluences', id)
+  replaceNote(vault, m, 'confluences', id, fmt.confluenceNotePath(row), fmt.confluenceNote(row))
+}
 
-  if (!mt) {
-    removeVaultArtifacts(prev)
-    db.prepare('DELETE FROM missed_trade_vault_sync WHERE missed_trade_id = ?').run(missedTradeId)
-    return
+type ManifestMapKey = 'trades' | 'missed' | 'reviews' | 'strategies' | 'accounts' | 'confluences'
+
+function replaceNote(
+  vault: string,
+  m: Manifest,
+  key: ManifestMapKey,
+  id: number | string,
+  relPath: string,
+  content: string
+): void {
+  const prev = m[key][String(id)]
+  if (prev && prev !== relPath) deleteManaged(vault, prev)
+  writeNote(vault, relPath, content)
+  m[key][String(id)] = relPath
+}
+
+function removeFromManifest(
+  vault: string,
+  m: Manifest,
+  key: ManifestMapKey,
+  id: number | string
+): void {
+  deleteManaged(vault, m[key][String(id)])
+  delete m[key][String(id)]
+}
+
+// ---------------------------------------------------------------------------
+// public entry points  (guarded + error-swallowing + serialized)
+// ---------------------------------------------------------------------------
+
+let queue: Promise<unknown> = Promise.resolve()
+
+/** Run `fn` after any in-flight vault work; never rejects. */
+function enqueue<T>(label: string, fn: (vault: string, m: Manifest) => T): Promise<T | undefined> {
+  const task = queue.then(() => {
+    if (!isEnabled()) return undefined
+    try {
+      const vault = ensureVault()
+      const m = loadManifest(vault)
+      const result = fn(vault, m)
+      saveManifest(vault, m)
+      setSetting(LAST_SYNC_KEY, new Date().toISOString())
+      return result
+    } catch (err) {
+      console.error(`[obsidian] ${label} failed:`, err)
+      return undefined
+    }
+  })
+  queue = task.catch(() => undefined)
+  return task
+}
+
+export const syncTrade = (id: number) =>
+  enqueue(`syncTrade(${id})`, (v, m) => {
+    const t = readTrade(id)
+    syncTradeInto(v, m, id)
+    if (t) syncReviewInto(v, m, t.date)
+  })
+
+export const removeTrade = (id: number, date?: string) =>
+  enqueue(`removeTrade(${id})`, (v, m) => {
+    removeFromManifest(v, m, 'trades', id)
+    if (date) syncReviewInto(v, m, date)
+  })
+
+export const syncMissedTrade = (id: number) =>
+  enqueue(`syncMissedTrade(${id})`, (v, m) => {
+    const t = readMissed(id)
+    syncMissedInto(v, m, id)
+    if (t) syncReviewInto(v, m, t.date)
+  })
+
+export const removeMissedTrade = (id: number, date?: string) =>
+  enqueue(`removeMissedTrade(${id})`, (v, m) => {
+    removeFromManifest(v, m, 'missed', id)
+    if (date) syncReviewInto(v, m, date)
+  })
+
+export const syncDailyReview = (date: string) =>
+  enqueue(`syncDailyReview(${date})`, (v, m) => syncReviewInto(v, m, date))
+
+export const syncStrategy = (id: number) =>
+  enqueue(`syncStrategy(${id})`, (v, m) => syncStrategyInto(v, m, id))
+export const removeStrategy = (id: number) =>
+  enqueue(`removeStrategy(${id})`, (v, m) => removeFromManifest(v, m, 'strategies', id))
+
+export const syncAccount = (id: number) =>
+  enqueue(`syncAccount(${id})`, (v, m) => syncAccountInto(v, m, id))
+export const removeAccount = (id: number) =>
+  enqueue(`removeAccount(${id})`, (v, m) => removeFromManifest(v, m, 'accounts', id))
+
+export const syncConfluence = (id: number) =>
+  enqueue(`syncConfluence(${id})`, (v, m) => syncConfluenceInto(v, m, id))
+export const removeConfluence = (id: number) =>
+  enqueue(`removeConfluence(${id})`, (v, m) => removeFromManifest(v, m, 'confluences', id))
+
+/** Re-sync the trade/missed note that owns an image after images change. */
+export const syncEntityImages = (entityType: 'trade' | 'missed_trade', entityId: number) =>
+  entityType === 'trade' ? syncTrade(entityId) : syncMissedTrade(entityId)
+
+// ---------------------------------------------------------------------------
+// full rebuild
+// ---------------------------------------------------------------------------
+
+export interface RebuildResult {
+  ok: boolean
+  count: number
+  error?: string
+}
+
+export function rebuildAll(): Promise<RebuildResult> {
+  const task = queue.then((): RebuildResult => {
+    try {
+      const vault = ensureVault()
+      registerWithObsidian()
+
+      // wipe everything we previously managed
+      const old = loadManifest(vault)
+      for (const key of ['trades', 'missed', 'reviews', 'strategies', 'accounts', 'confluences'] as const) {
+        for (const rel of Object.values(old[key])) deleteManaged(vault, rel)
+      }
+
+      const m = emptyManifest()
+      const db = getDb()
+      for (const { id } of db.prepare('SELECT id FROM strategies').all() as { id: number }[])
+        syncStrategyInto(vault, m, id)
+      for (const { id } of db.prepare('SELECT id FROM accounts').all() as { id: number }[])
+        syncAccountInto(vault, m, id)
+      for (const { id } of db.prepare('SELECT id FROM confluences').all() as { id: number }[])
+        syncConfluenceInto(vault, m, id)
+      for (const { id } of db.prepare('SELECT id FROM trades').all() as { id: number }[])
+        syncTradeInto(vault, m, id)
+      for (const { id } of db.prepare('SELECT id FROM missed_trades').all() as { id: number }[])
+        syncMissedInto(vault, m, id)
+
+      const dates = new Set<string>()
+      for (const r of db.prepare('SELECT date FROM daily_reviews').all() as { date: string }[])
+        dates.add(r.date)
+      for (const r of db.prepare('SELECT DISTINCT date FROM trades').all() as { date: string }[])
+        dates.add(r.date)
+      for (const r of db.prepare('SELECT DISTINCT date FROM missed_trades').all() as { date: string }[])
+        dates.add(r.date)
+      for (const date of dates) syncReviewInto(vault, m, date)
+
+      saveManifest(vault, m)
+      setSetting(LAST_SYNC_KEY, new Date().toISOString())
+
+      const count = (['trades', 'missed', 'reviews', 'strategies', 'accounts', 'confluences'] as const)
+        .reduce((n, k) => n + Object.keys(m[k]).length, 0)
+      return { ok: true, count }
+    } catch (err) {
+      console.error('[obsidian] rebuildAll failed:', err)
+      return { ok: false, count: 0, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+  queue = task.catch(() => undefined)
+  return task
+}
+
+// ---------------------------------------------------------------------------
+// enable / disable / path management
+// ---------------------------------------------------------------------------
+
+export async function setEnabled(enabled: boolean): Promise<ObsidianConfig> {
+  setSetting(ENABLED_KEY, enabled ? '1' : '0')
+  if (enabled) {
+    ensureVault()
+    registerWithObsidian()
+    await rebuildAll()
   }
+  return getConfig()
+}
 
-  const strategy = mt.strategy_id
-    ? (db.prepare('SELECT name FROM strategies WHERE id = ?').get(mt.strategy_id) as { name: string } | undefined)
-    : undefined
-  const confluenceNames = (
-    db
-      .prepare(
-        `SELECT c.name as name FROM entity_confluences ec JOIN confluences c ON c.id = ec.confluence_id
-         WHERE ec.entity_type = 'missed_trade' AND ec.entity_id = ?`
-      )
-      .all(missedTradeId) as { name: string }[]
-  ).map((r) => r.name)
-  const images = db
-    .prepare('SELECT path FROM entity_images WHERE entity_type = ? AND entity_id = ? ORDER BY id ASC')
-    .all('missed_trade', missedTradeId) as { path: string }[]
-
-  const strategyName = strategy?.name ?? 'No Strategy'
-  const noteBase = sanitize(`${mt.date} - ${mt.pair || `missed-${mt.id}`}`)
-  const target = buildNoteTarget(vaultRoot, ['Missed Trades', strategyName], noteBase)
-
-  if (prev && (prev.note_path !== target.notePath || prev.images_dir !== target.imagesDir)) {
-    removeVaultArtifacts(prev)
+export async function setVaultPath(newPath: string | null): Promise<ObsidianConfig> {
+  if (newPath && newPath.trim()) setSetting(PATH_KEY, newPath.trim())
+  else deleteSetting(PATH_KEY)
+  if (isEnabled()) {
+    ensureVault()
+    registerWithObsidian()
+    await rebuildAll()
   }
-
-  const imageFileNames = prepareImages(target, images.map((i) => i.path))
-  const content = missedTradeFrontmatter(mt, strategyName, confluenceNames) + missedTradeBody(mt, imageFileNames, target.imagesDirName)
-  fs.writeFileSync(target.notePath, content, 'utf-8')
-
-  db.prepare(
-    `INSERT INTO missed_trade_vault_sync (missed_trade_id, note_path, images_dir) VALUES (?, ?, ?)
-     ON CONFLICT(missed_trade_id) DO UPDATE SET note_path = excluded.note_path, images_dir = excluded.images_dir`
-  ).run(missedTradeId, target.notePath, target.imagesDir)
-}
-
-export function deleteMissedTradeFromVault(db: DatabaseSync, missedTradeId: number) {
-  const prev = getPrevMissedSync(db, missedTradeId)
-  removeVaultArtifacts(prev)
-  db.prepare('DELETE FROM missed_trade_vault_sync WHERE missed_trade_id = ?').run(missedTradeId)
-}
-
-export function resyncAll(db: DatabaseSync) {
-  const tradeIds = (db.prepare('SELECT id FROM trades').all() as { id: number }[]).map((r) => r.id)
-  for (const id of tradeIds) syncTradeToVault(db, id)
-  const missedIds = (db.prepare('SELECT id FROM missed_trades').all() as { id: number }[]).map((r) => r.id)
-  for (const id of missedIds) syncMissedTradeToVault(db, id)
+  return getConfig()
 }

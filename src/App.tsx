@@ -10,6 +10,7 @@ import { MissedTradesPage } from './pages/MissedTradesPage'
 import { WhatsNewPage } from './pages/WhatsNewPage'
 import { TradeFormModal } from './components/TradeFormModal'
 import { AccountsModal } from './components/AccountsModal'
+import { SettingsModal } from './components/SettingsModal'
 import { AmbientRoom } from './components/AmbientRoom'
 import { SpatialStage } from './components/SpatialStage'
 import { NavRail } from './components/NavRail'
@@ -42,6 +43,7 @@ function App() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [showNewTrade, setShowNewTrade] = useState(false)
   const [showAccounts, setShowAccounts] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const [reviewJumpDate, setReviewJumpDate] = useState<string | null>(null)
   const [seenVersion, setSeenVersion] = useState<string | null>(getLastSeenVersion)
   const [themeMode, toggleTheme] = useThemeMode()
@@ -231,6 +233,7 @@ function App() {
           section={utilitySection}
           onSectionChange={setUtilitySection}
           onManageAccounts={() => setShowAccounts(true)}
+          onOpenSettings={() => setShowSettings(true)}
           accounts={accounts}
           refreshKey={refreshKey}
         />
@@ -256,6 +259,8 @@ function App() {
           onChanged={loadLookups}
         />
       )}
+
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>
   )
 }

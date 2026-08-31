@@ -156,7 +156,30 @@
             }),
           },
           csv: { openForImport: async () => null, import: async () => 0, export: async () => null },
-          obsidian: { getVaultPath: async () => null, chooseVaultPath: async () => null },
+          obsidian: (() => {
+            let config = {
+              enabled: false, vaultPath: '', resolvedPath: '', defaultPath: 'C:\\Users\\demo\\Documents\\TradeJournal Vault',
+              exists: false, lastSync: null, noteCount: 0,
+            }
+            return {
+              getConfig: async () => config,
+              setEnabled: async (enabled) => {
+                config = { ...config, enabled, resolvedPath: enabled ? (config.vaultPath || config.defaultPath) : '', exists: enabled }
+                return config
+              },
+              chooseVault: async () => {
+                config = { ...config, enabled: true, vaultPath: 'C:\\Users\\demo\\Documents\\Demo Vault', resolvedPath: 'C:\\Users\\demo\\Documents\\Demo Vault', exists: true }
+                return config
+              },
+              useDefaultVault: async () => {
+                config = { ...config, enabled: true, vaultPath: '', resolvedPath: config.defaultPath, exists: true }
+                return config
+              },
+              rebuild: async () => { config = { ...config, lastSync: new Date().toISOString(), noteCount: 6 }; return { ok: true, count: 6 } },
+              openInObsidian: async () => {},
+              showFolder: async () => {},
+            }
+          })(),
         }
       })()
     </script>

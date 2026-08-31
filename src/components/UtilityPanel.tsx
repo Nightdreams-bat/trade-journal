@@ -5,7 +5,7 @@ import { usePrefersReducedMotion } from '../anim'
 import { PANEL, PANEL_OUT } from '../anim/tokens'
 import { MiniCalendar } from './MiniCalendar'
 import { ChallengeRing } from './ChallengeRing'
-import { CalendarDays, Settings, User, FolderSync } from './icons'
+import { CalendarDays, Settings, User } from './icons'
 import { greeting } from '../format'
 import type { Account, AnalyticsSummary } from '../types'
 
@@ -15,6 +15,7 @@ interface UtilityPanelProps {
   section: 'calendar' | 'profile'
   onSectionChange: (section: 'calendar' | 'profile') => void
   onManageAccounts: () => void
+  onOpenSettings: () => void
   accounts: Account[]
   refreshKey: number
 }
@@ -32,25 +33,12 @@ export function UtilityPanel({
   section,
   onSectionChange,
   onManageAccounts,
+  onOpenSettings,
   accounts,
   refreshKey,
 }: UtilityPanelProps) {
   const reduced = usePrefersReducedMotion()
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
-  const [vaultPath, setVaultPath] = useState<string | null>(null)
-  const [vaultSyncing, setVaultSyncing] = useState(false)
-
-  useEffect(() => {
-    window.api.obsidian.getVaultPath().then(setVaultPath)
-  }, [])
-
-  const chooseVault = () => {
-    setVaultSyncing(true)
-    window.api.obsidian
-      .chooseVaultPath()
-      .then(setVaultPath)
-      .finally(() => setVaultSyncing(false))
-  }
 
   useEffect(() => {
     let cancelled = false
@@ -214,35 +202,14 @@ export function UtilityPanel({
               <Settings size={14} strokeWidth={1.75} /> Manage accounts
             </button>
 
-            <section style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 4, borderTop: '1px solid var(--border-soft)' }}>
-              <span className="mono-label">Obsidian sync</span>
-              {vaultPath ? (
-                <div
-                  title={vaultPath}
-                  style={{
-                    fontSize: 11.5,
-                    color: 'var(--text-muted)',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                  }}
-                >
-                  {vaultPath}
-                </div>
-              ) : (
-                <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Not connected — pick your vault folder</div>
-              )}
-              <button
-                type="button"
-                className="btn"
-                onClick={chooseVault}
-                disabled={vaultSyncing}
-                style={{ justifyContent: 'center', fontSize: 11.5, padding: '5px 8px' }}
-              >
-                <FolderSync size={13} strokeWidth={1.75} />
-                {vaultSyncing ? 'Syncing…' : vaultPath ? 'Change vault folder' : 'Choose vault folder'}
-              </button>
-            </section>
+            <button
+              type="button"
+              className="btn"
+              onClick={onOpenSettings}
+              style={{ justifyContent: 'center' }}
+            >
+              <Settings size={14} strokeWidth={1.75} /> Settings &amp; Obsidian sync
+            </button>
           </>
         ) : (
           <>

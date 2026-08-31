@@ -44,4 +44,7 @@ export {
   ZoomIn,
   ZoomOut,
   RotateCcw,
+  ExternalLink,
+  FolderOpen,
+  RefreshCw,
 } from 'lucide-react'

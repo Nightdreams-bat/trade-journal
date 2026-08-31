@@ -148,19 +148,7 @@ export function getDb(): DatabaseSync {
 
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,
-      value TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS trade_vault_sync (
-      trade_id INTEGER PRIMARY KEY REFERENCES trades(id) ON DELETE CASCADE,
-      note_path TEXT NOT NULL,
-      images_dir TEXT NOT NULL
-    );
-
-    CREATE TABLE IF NOT EXISTS missed_trade_vault_sync (
-      missed_trade_id INTEGER PRIMARY KEY REFERENCES missed_trades(id) ON DELETE CASCADE,
-      note_path TEXT NOT NULL,
-      images_dir TEXT NOT NULL
+      value TEXT NOT NULL
     );
 
     DROP TABLE IF EXISTS milestones;
@@ -178,4 +166,27 @@ export function getDb(): DatabaseSync {
   }
 
   return db
+}
+
+// ---------------------------------------------------------------------------
+// generic key/value settings
+// ---------------------------------------------------------------------------
+
+export function getSetting(key: string): string | null {
+  const row = getDb().prepare('SELECT value FROM settings WHERE key = ?').get(key) as
+    | { value: string }
+    | undefined
+  return row ? row.value : null
+}
+
+export function setSetting(key: string, value: string): void {
+  getDb()
+    .prepare(
+      'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value'
+    )
+    .run(key, value)
+}
+
+export function deleteSetting(key: string): void {
+  getDb().prepare('DELETE FROM settings WHERE key = ?').run(key)
 }

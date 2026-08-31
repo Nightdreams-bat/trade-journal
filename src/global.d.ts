@@ -1,5 +1,15 @@
 export {}
 
+export interface ObsidianConfig {
+  enabled: boolean
+  vaultPath: string
+  resolvedPath: string
+  defaultPath: string
+  exists: boolean
+  lastSync: string | null
+  noteCount: number
+}
+
 declare global {
   interface Window {
     api: {
@@ -38,6 +48,7 @@ declare global {
       images: {
         add: (entityType: 'trade' | 'missed_trade', entityId: number) => Promise<boolean>
         get: (entityType: 'trade' | 'missed_trade', entityId: number) => Promise<{ id: number; dataUrl: string }[]>
+        remove: (imageId: number) => Promise<boolean>
         getAllForTrades: () => Promise<
           {
             id: number
@@ -50,7 +61,6 @@ declare global {
             name: string | null
           }[]
         >
-        remove: (imageId: number) => Promise<boolean>
       }
       reviews: {
         getAll: () => Promise<any[]>
@@ -66,9 +76,14 @@ declare global {
         import: (args: any) => Promise<number>
         export: () => Promise<string | null>
       }
-      obsidian: {
-        getVaultPath: () => Promise<string | null>
-        chooseVaultPath: () => Promise<string | null>
+      obsidian?: {
+        getConfig: () => Promise<ObsidianConfig>
+        setEnabled: (enabled: boolean) => Promise<ObsidianConfig>
+        chooseVault: () => Promise<ObsidianConfig>
+        useDefaultVault: () => Promise<ObsidianConfig>
+        rebuild: () => Promise<{ ok: boolean; count: number; error?: string }>
+        openInObsidian: () => Promise<void>
+        showFolder: () => Promise<void>
       }
     }
   }
