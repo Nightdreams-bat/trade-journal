@@ -221,10 +221,15 @@ a:hover {
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(2px) brightness(1.08) saturate(1.4);
+  -webkit-backdrop-filter: blur(2px) brightness(1.08) saturate(1.4);
   filter: url(#liquid-glass-bend);
   pointer-events: none;
+}
+
+/* showcase surfaces (nav, big panels): stronger lens warp */
+.liquid-glass--hero::before {
+  filter: url(#liquid-glass-bend-strong);
 }
 
 /* keep real content above the bend layer */
@@ -340,7 +345,7 @@ body.has-cursor-follower [contenteditable='true'] {
 .ambient-blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(60px);
+  filter: blur(44px);
   will-change: transform;
   animation: ambient-drift 52s ease-in-out infinite alternate;
 }

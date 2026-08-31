@@ -6,7 +6,7 @@ interface AmbientBackgroundProps {
   anchor?: Anchor
 }
 
-const AURORA_COLORS = ['#5bc2d8', '#3fe4e4', '#2a6f8a', '#3a4a8a']
+const AURORA_COLORS = ['#5bc2d8', '#3fe4e4', '#7b6bd8', '#2f7fae']
 
 function hexToRgba(hex: string, a: number): string {
   const n = parseInt(hex.slice(1), 16)
@@ -16,7 +16,7 @@ function hexToRgba(hex: string, a: number): string {
   return `rgba(${r}, ${g}, ${b}, ${a})`
 }
 
-function blobBg(hex: string, alpha = 0.18): string {
+function blobBg(hex: string, alpha = 0.36): string {
   return `radial-gradient(circle at 50% 50%, ${hexToRgba(hex, alpha)}, transparent 70%)`
 }
 
@@ -66,7 +66,7 @@ export function AmbientBackground({ anchor = { x: 240, y: 120 } }: AmbientBackgr
           height: '30vw',
           left: anchor.x,
           top: anchor.y,
-          background: blobBg(AURORA_COLORS[1], 0.2),
+          background: blobBg(AURORA_COLORS[1], 0.42),
           animation: anim,
         }}
       />

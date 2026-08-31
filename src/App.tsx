@@ -73,7 +73,7 @@ function App() {
         <GlassRail
           role="tablist"
           variant="flush"
-          className="liquid-glass"
+          className="liquid-glass liquid-glass--hero"
           style={{ gap: 2, position: 'sticky', top: 0, zIndex: 20, padding: '0 8px' }}
         >
           {TABS.map((t, i) => (
