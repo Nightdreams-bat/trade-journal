@@ -1,12 +1,14 @@
 import { COLORS } from '../colors'
 
 export const TOOLTIP_STYLE = {
-  background: COLORS.card,
-  border: '1px solid ' + COLORS.border,
-  borderRadius: 3,
+  background: 'rgba(20, 28, 46, 0.9)',
+  border: '1px solid #2a3a58',
+  borderRadius: 16,
   fontSize: 12,
   color: COLORS.text,
-  boxShadow: '0 8px 24px -12px rgba(0,0,0,0.6)',
+  boxShadow: '0 12px 32px -12px rgba(3,6,14,0.6)',
+  backdropFilter: 'blur(12px)',
+  WebkitBackdropFilter: 'blur(12px)',
 }
 
 export const TOOLTIP_LABEL_STYLE = { color: COLORS.textMuted }
@@ -19,4 +21,4 @@ export const CHART_ANIM = {
   animationEasing: 'ease-out' as const,
 }
 
-export const CHART_CURSOR = { fill: 'rgba(91,194,216,0.06)' }
+export const CHART_CURSOR = { fill: 'rgba(95, 208, 230, 0.08)' }
