@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Modal } from './Modal'
+import { ZoomableImage } from './ZoomableImage'
 import { Plus, X } from './icons'
 
 export function ImageGallery({ entityType, entityId }: { entityType: 'trade' | 'missed_trade'; entityId: number }) {
@@ -87,7 +88,7 @@ export function ImageGallery({ entityType, entityId }: { entityType: 'trade' | '
 
       {lightbox && (
         <Modal title="Image" onClose={() => setLightbox(null)} wide>
-          <img src={lightbox} alt="attachment full size" style={{ maxWidth: '100%', borderRadius: 'var(--radius-card)' }} />
+          <ZoomableImage src={lightbox} alt="attachment full size" />
         </Modal>
       )}
     </div>

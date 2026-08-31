@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Modal } from './Modal'
 import { EquityCurveChart } from './EquityCurveChart'
-import { DayOfWeekChart } from './DayOfWeekChart'
+import { DayOfWeekPanel } from './DayOfWeekPanel'
 import { formatRatio } from '../format'
 import { Edit } from './icons'
 import type { StrategyDetail } from '../types'
@@ -112,7 +112,7 @@ export function StrategyDetailModal({
           )}
         </div>
 
-        <DayOfWeekChart data={detail.dayOfWeek} />
+        <DayOfWeekPanel data={detail.dayOfWeek} />
 
         <div className="card" style={{ overflowX: 'auto', maxHeight: 260, overflowY: 'auto' }}>
           <div style={{ padding: 'var(--sp-2) var(--sp-3)', color: 'var(--text-muted)', fontSize: 12, borderBottom: '1px solid var(--border-soft)' }}>

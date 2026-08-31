@@ -38,6 +38,18 @@ declare global {
       images: {
         add: (entityType: 'trade' | 'missed_trade', entityId: number) => Promise<boolean>
         get: (entityType: 'trade' | 'missed_trade', entityId: number) => Promise<{ id: number; dataUrl: string }[]>
+        getAllForTrades: () => Promise<
+          {
+            id: number
+            dataUrl: string
+            tradeId: number
+            date: string
+            pair: string | null
+            pnl: number
+            direction: string | null
+            name: string | null
+          }[]
+        >
         remove: (imageId: number) => Promise<boolean>
       }
       reviews: {
@@ -53,6 +65,10 @@ declare global {
         openForImport: () => Promise<{ filePath: string; headers: string[]; sampleRows: string[][]; totalRows: number } | null>
         import: (args: any) => Promise<number>
         export: () => Promise<string | null>
+      }
+      obsidian: {
+        getVaultPath: () => Promise<string | null>
+        chooseVaultPath: () => Promise<string | null>
       }
     }
   }

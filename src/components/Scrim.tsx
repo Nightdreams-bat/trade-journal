@@ -21,7 +21,7 @@ export function Scrim({ show, onClick }: ScrimProps) {
             position: 'fixed',
             inset: 0,
             zIndex: 2,
-            background: 'rgba(60,50,38,0.28)',
+            background: 'rgba(var(--shadow-rgb),0.28)',
           }}
         />
       )}

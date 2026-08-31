@@ -5,8 +5,8 @@ import { RingStat } from '../components/RingStat'
 import { Timeline } from '../components/Timeline'
 import { TradeFormModal } from '../components/TradeFormModal'
 import { CountUpValue, Reveal, Stagger } from '../anim'
-import { COLORS } from '../colors'
-import { TOOLTIP_STYLE, TOOLTIP_LABEL_STYLE, TOOLTIP_ITEM_STYLE, CHART_ANIM } from '../charts/chartTheme'
+import { useColors } from '../themeMode'
+import { useChartTheme, CHART_ANIM } from '../charts/chartTheme'
 import { formatRatio } from '../format'
 import { ArrowRight, Sparkles } from '../components/icons'
 import type { Account, AnalyticsSummary, Confluence, Strategy, Trade } from '../types'
@@ -37,6 +37,8 @@ export function HomePage({
   onNavigate,
   onNewTrade,
 }: HomePageProps) {
+  const colors = useColors()
+  const { TOOLTIP_STYLE, TOOLTIP_LABEL_STYLE, TOOLTIP_ITEM_STYLE } = useChartTheme()
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
   const [trades, setTrades] = useState<Trade[] | null>(null)
   const [openTrade, setOpenTrade] = useState<Trade | null>(null)
@@ -68,7 +70,7 @@ export function HomePage({
   const empty = !loading && trades!.length === 0 && summary!.overall.totalTrades === 0
 
   const skel = (h = 16, w = '70%') => (
-    <div style={{ height: h, borderRadius: 10, background: 'rgba(60,50,38,0.06)', width: w }} />
+    <div style={{ height: h, borderRadius: 10, background: 'rgba(var(--ink-rgb),0.06)', width: w }} />
   )
 
   const curve = useMemo(
@@ -184,7 +186,7 @@ export function HomePage({
                 fontWeight: 'var(--weight-title)',
                 color: pnlColor,
                 lineHeight: 1.1,
-                textShadow: pnl >= 0 ? '0 2px 22px rgba(31,190,120,0.38)' : '0 2px 22px rgba(226,61,69,0.34)',
+                textShadow: pnl >= 0 ? '0 2px 22px rgba(var(--green-rgb),0.38)' : '0 2px 22px rgba(226,61,69,0.34)',
               }}
             >
               <CountUpValue value={money(pnl)} />
@@ -213,13 +215,13 @@ export function HomePage({
                 <AreaChart data={curve} margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
                   <defs>
                     <linearGradient id="homeEquityFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={COLORS.greenBright} stopOpacity={0.42} />
-                      <stop offset="55%" stopColor={COLORS.green} stopOpacity={0.16} />
-                      <stop offset="100%" stopColor={COLORS.accent2} stopOpacity={0} />
+                      <stop offset="0%" stopColor={colors.greenBright} stopOpacity={0.42} />
+                      <stop offset="55%" stopColor={colors.green} stopOpacity={0.16} />
+                      <stop offset="100%" stopColor={colors.accent2} stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="homeEquityStroke" x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor={COLORS.green} />
-                      <stop offset="100%" stopColor={COLORS.greenBright} />
+                      <stop offset="0%" stopColor={colors.green} />
+                      <stop offset="100%" stopColor={colors.greenBright} />
                     </linearGradient>
                   </defs>
                   <YAxis hide domain={['dataMin', 'dataMax']} />
@@ -235,7 +237,7 @@ export function HomePage({
                     stroke="url(#homeEquityStroke)"
                     strokeWidth={2.75}
                     fill="url(#homeEquityFill)"
-                    style={{ filter: 'drop-shadow(0 6px 14px rgba(31,190,120,0.3))' }}
+                    style={{ filter: 'drop-shadow(0 6px 14px rgba(var(--green-rgb),0.3))' }}
                     {...CHART_ANIM}
                   />
                 </AreaChart>
@@ -277,7 +279,7 @@ export function HomePage({
           <div className="rings-cluster">
             <RingStat percent={summary!.kpis.winRate} caption="win rate" size={96} />
             {discipline != null ? (
-              <RingStat percent={discipline} color="var(--accent-2)" caption="discipline" size={96} />
+              <RingStat percent={discipline} caption="discipline" size={96} />
             ) : (
               <div style={{ fontSize: 12, color: 'var(--text-dim)', alignSelf: 'center', width: 96, textAlign: 'center' }}>
                 No discipline data yet

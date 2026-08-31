@@ -51,7 +51,7 @@ export function MonthlyPnlPanel({ accountId, strategyId, refreshKey }: { account
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {rows.map((r) => (
-            <div key={r.month} style={{ display: 'grid', gridTemplateColumns: '46px 1fr 90px 60px', gap: 10, alignItems: 'center' }}>
+            <div key={r.month} style={{ display: 'grid', gridTemplateColumns: '46px 1fr 90px 60px 78px', gap: 10, alignItems: 'center' }}>
               <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.label}</div>
               <div style={{ background: 'var(--bg-elevated)', borderRadius: 'var(--radius-control)', height: 10, overflow: 'hidden', position: 'relative' }}>
                 {r.pnl !== 0 && (() => {
@@ -79,6 +79,13 @@ export function MonthlyPnlPanel({ accountId, strategyId, refreshKey }: { account
                 {r.pnl >= 0 ? '+' : ''}${r.pnl.toFixed(0)}
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-dim)', textAlign: 'right' }}>{r.tradeCount} trades</div>
+              <div style={{ textAlign: 'right' }}>
+                {r.tradeCount > 0 ? (
+                  <span className={`tag-pill ${r.winRate >= 50 ? 'positive' : 'negative'}`}>{r.winRate}% WR</span>
+                ) : (
+                  <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>—</span>
+                )}
+              </div>
             </div>
           ))}
         </div>

@@ -29,7 +29,7 @@ export function MiniCalendar({ calendar }: { calendar: AnalyticsSummary['calenda
         const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
         const entry = calendar[key]
         const bg = !entry
-          ? 'rgba(60,50,38,0.06)'
+          ? 'rgba(var(--ink-rgb),0.06)'
           : entry.pnl >= 0
             ? 'var(--green-soft)'
             : 'var(--red-soft)'

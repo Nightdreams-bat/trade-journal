@@ -1,12 +1,15 @@
 import { motion } from 'motion/react'
 import { usePrefersReducedMotion } from '../anim'
 import { HOVER } from '../anim/tokens'
-import { CalendarDays, User } from './icons'
+import { CalendarDays, User, Sun, Moon } from './icons'
+import type { ThemeMode } from '../themeMode'
 
 interface HeroHeaderProps {
   greeting: string
   accountLabel: string
   showWhatsNewDot: boolean
+  themeMode: ThemeMode
+  onToggleTheme: () => void
   onNewTrade: () => void
   onOpenCalendar: () => void
   onOpenProfile: () => void
@@ -16,6 +19,8 @@ export function HeroHeader({
   greeting,
   accountLabel,
   showWhatsNewDot,
+  themeMode,
+  onToggleTheme,
   onNewTrade,
   onOpenCalendar,
   onOpenProfile,
@@ -68,6 +73,15 @@ export function HeroHeader({
         <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 1 }}>{accountLabel}</div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        {iconBtn(
+          themeMode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode',
+          onToggleTheme,
+          themeMode === 'dark' ? (
+            <Sun size={17} strokeWidth={1.75} absoluteStrokeWidth />
+          ) : (
+            <Moon size={17} strokeWidth={1.75} absoluteStrokeWidth />
+          ),
+        )}
         {iconBtn('Calendar', onOpenCalendar, <CalendarDays size={17} strokeWidth={1.75} absoluteStrokeWidth />)}
         {iconBtn('Profile & accounts', onOpenProfile, <User size={17} strokeWidth={1.75} absoluteStrokeWidth />, showWhatsNewDot)}
         <motion.button type="button" className="btn btn-primary" onClick={onNewTrade} {...hover}>

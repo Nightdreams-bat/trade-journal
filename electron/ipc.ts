@@ -14,6 +14,15 @@ import {
   type FundedChallengeParams,
 } from './analytics'
 import { readCsvFile, importTrades, tradesToCsv, type ColumnMapping } from './csv'
+import {
+  getVaultPath,
+  setVaultPath,
+  syncTradeToVault,
+  deleteTradeFromVault,
+  syncMissedTradeToVault,
+  deleteMissedTradeFromVault,
+  resyncAll,
+} from './obsidian'
 
 type EntityType = 'trade' | 'missed_trade'
 
@@ -230,6 +239,7 @@ export function registerIpcHandlers() {
       })
     const id = info.lastInsertRowid as number
     setEntityConfluences(db, 'trade', id, payload.confluence_ids)
+    syncTradeToVault(db, id)
     const row = db.prepare('SELECT * FROM trades WHERE id = ?').get(id) as Record<string, unknown>
     return { ...rowToTrade(row), confluence_ids: getConfluenceIds(db, 'trade', id) }
   })
@@ -261,6 +271,7 @@ export function registerIpcHandlers() {
       notes: (payload.notes as string) ?? null,
     })
     setEntityConfluences(db, 'trade', id, payload.confluence_ids)
+    syncTradeToVault(db, id)
     const row = db.prepare('SELECT * FROM trades WHERE id = ?').get(id) as Record<string, unknown>
     return { ...rowToTrade(row), confluence_ids: getConfluenceIds(db, 'trade', id) }
   })
@@ -269,6 +280,7 @@ export function registerIpcHandlers() {
     deleteEntityImages(db, 'trade', id)
     deleteEntityConfluences(db, 'trade', id)
     db.prepare('DELETE FROM trades WHERE id = ?').run(id)
+    deleteTradeFromVault(db, id)
     return true
   })
 
@@ -311,6 +323,7 @@ export function registerIpcHandlers() {
       })
     const id = info.lastInsertRowid as number
     setEntityConfluences(db, 'missed_trade', id, payload.confluence_ids)
+    syncMissedTradeToVault(db, id)
     const row = db.prepare('SELECT * FROM missed_trades WHERE id = ?').get(id) as Record<string, unknown>
     return { ...rowToMissedTrade(row), confluence_ids: getConfluenceIds(db, 'missed_trade', id) }
   })
@@ -330,6 +343,7 @@ export function registerIpcHandlers() {
       notes: (payload.notes as string) ?? null,
     })
     setEntityConfluences(db, 'missed_trade', id, payload.confluence_ids)
+    syncMissedTradeToVault(db, id)
     const row = db.prepare('SELECT * FROM missed_trades WHERE id = ?').get(id) as Record<string, unknown>
     return { ...rowToMissedTrade(row), confluence_ids: getConfluenceIds(db, 'missed_trade', id) }
   })
@@ -337,6 +351,7 @@ export function registerIpcHandlers() {
     deleteEntityImages(db, 'missed_trade', id)
     deleteEntityConfluences(db, 'missed_trade', id)
     db.prepare('DELETE FROM missed_trades WHERE id = ?').run(id)
+    deleteMissedTradeFromVault(db, id)
     return true
   })
 
@@ -357,6 +372,8 @@ export function registerIpcHandlers() {
       fs.copyFileSync(src, dest)
       db.prepare('INSERT INTO entity_images (entity_type, entity_id, path) VALUES (?, ?, ?)').run(entityType, entityId, dest)
     }
+    if (entityType === 'trade') syncTradeToVault(db, entityId)
+    else if (entityType === 'missed_trade') syncMissedTradeToVault(db, entityId)
     return true
   })
 
@@ -373,8 +390,48 @@ export function registerIpcHandlers() {
       })
   })
 
+  ipcMain.handle('images:getAllForTrades', () => {
+    const rows = db
+      .prepare(
+        `SELECT ei.id as id, ei.path as path, t.id as trade_id, t.date as date, t.pair as pair,
+                t.pnl as pnl, t.direction as direction, t.name as name
+         FROM entity_images ei
+         JOIN trades t ON t.id = ei.entity_id
+         WHERE ei.entity_type = 'trade'
+         ORDER BY t.date DESC, ei.id DESC`,
+      )
+      .all() as {
+      id: number
+      path: string
+      trade_id: number
+      date: string
+      pair: string | null
+      pnl: number
+      direction: string | null
+      name: string | null
+    }[]
+    return rows
+      .filter((r) => fs.existsSync(r.path))
+      .map((r) => {
+        const buf = fs.readFileSync(r.path)
+        const ext = path.extname(r.path).slice(1) || 'png'
+        return {
+          id: r.id,
+          dataUrl: `data:image/${ext};base64,${buf.toString('base64')}`,
+          tradeId: r.trade_id,
+          date: r.date,
+          pair: r.pair,
+          pnl: r.pnl,
+          direction: r.direction,
+          name: r.name,
+        }
+      })
+  })
+
   ipcMain.handle('images:remove', (_e, imageId: number) => {
-    const row = db.prepare('SELECT path FROM entity_images WHERE id = ?').get(imageId) as { path: string } | undefined
+    const row = db.prepare('SELECT path, entity_type, entity_id FROM entity_images WHERE id = ?').get(imageId) as
+      | { path: string; entity_type: EntityType; entity_id: number }
+      | undefined
     if (row?.path && fs.existsSync(row.path)) {
       try {
         fs.unlinkSync(row.path)
@@ -383,7 +440,26 @@ export function registerIpcHandlers() {
       }
     }
     db.prepare('DELETE FROM entity_images WHERE id = ?').run(imageId)
+    if (row?.entity_type === 'trade') syncTradeToVault(db, row.entity_id)
+    else if (row?.entity_type === 'missed_trade') syncMissedTradeToVault(db, row.entity_id)
     return true
+  })
+
+  // ---------- obsidian sync ----------
+  ipcMain.handle('obsidian:getVaultPath', () => {
+    return getVaultPath(db)
+  })
+  ipcMain.handle('obsidian:chooseVaultPath', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const result = await dialog.showOpenDialog(win!, {
+      title: 'Choose your Obsidian vault folder',
+      properties: ['openDirectory', 'createDirectory'],
+    })
+    if (result.canceled || !result.filePaths.length) return getVaultPath(db)
+    const vaultPath = result.filePaths[0]
+    setVaultPath(db, vaultPath)
+    resyncAll(db)
+    return vaultPath
   })
 
   // ---------- daily reviews ----------

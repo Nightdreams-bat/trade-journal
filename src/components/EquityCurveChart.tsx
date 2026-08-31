@@ -1,6 +1,6 @@
 import { Area, AreaChart, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from 'recharts'
-import { COLORS } from '../colors'
-import { TOOLTIP_STYLE, TOOLTIP_LABEL_STYLE, TOOLTIP_ITEM_STYLE, CHART_ANIM } from '../charts/chartTheme'
+import { useColors } from '../themeMode'
+import { useChartTheme, CHART_ANIM } from '../charts/chartTheme'
 import type { AnalyticsSummary } from '../types'
 
 export function EquityCurveChart({
@@ -12,6 +12,8 @@ export function EquityCurveChart({
   drawdown: AnalyticsSummary['drawdown']
   compact?: boolean
 }) {
+  const colors = useColors()
+  const { TOOLTIP_STYLE, TOOLTIP_LABEL_STYLE, TOOLTIP_ITEM_STYLE } = useChartTheme()
   const merged = equityCurve.map((e, i) => ({
     date: e.date,
     equity: e.cumulativePnl,
@@ -37,20 +39,20 @@ export function EquityCurveChart({
           <AreaChart data={merged}>
             <defs>
               <linearGradient id="equityFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={COLORS.green} stopOpacity={0.4} />
-                <stop offset="100%" stopColor={COLORS.green} stopOpacity={0} />
+                <stop offset="0%" stopColor={colors.green} stopOpacity={0.4} />
+                <stop offset="100%" stopColor={colors.green} stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke={COLORS.border} strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="date" tick={{ fill: COLORS.textMuted, fontSize: 10 }} axisLine={{ stroke: COLORS.border }} tickLine={false} minTickGap={30} />
-            <YAxis tick={{ fill: COLORS.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
+            <CartesianGrid stroke={colors.border} strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="date" tick={{ fill: colors.textMuted, fontSize: 10 }} axisLine={{ stroke: colors.border }} tickLine={false} minTickGap={30} />
+            <YAxis tick={{ fill: colors.textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
             <Tooltip
               contentStyle={TOOLTIP_STYLE}
               labelStyle={TOOLTIP_LABEL_STYLE}
               itemStyle={TOOLTIP_ITEM_STYLE}
               formatter={(v) => [`$${v}`, 'Cumulative P&L']}
             />
-            <Area type="monotone" dataKey="equity" stroke={COLORS.green} strokeWidth={2} fill="url(#equityFill)" {...CHART_ANIM} />
+            <Area type="monotone" dataKey="equity" stroke={colors.green} strokeWidth={2} fill="url(#equityFill)" {...CHART_ANIM} />
           </AreaChart>
         </ResponsiveContainer>
       )}

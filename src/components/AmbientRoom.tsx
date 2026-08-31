@@ -1,8 +1,10 @@
 import { usePrefersReducedMotion } from '../anim'
 
-// Warm "aurora glass" interior — a bright cream room with slow-moving pools of
-// blush, warm gold and periwinkle, an iridescent wash rotating far behind, and
-// a fine grain. The frosted slabs float on top of it.
+// "Aurora glass" interior — slow-moving colored pools, an iridescent wash
+// rotating far behind, and a fine grain. Pool/room colors come from
+// theme.css (--pool-1..4, .ambient-room, .ambient-aurora) so light mode
+// stays a bright cream room and dark mode reads as a black room with a
+// green glow. The frosted slabs float on top of it either way.
 export function AmbientRoom() {
   const reduced = usePrefersReducedMotion()
   const anim = reduced ? 'none' : undefined
@@ -18,7 +20,7 @@ export function AmbientRoom() {
           height: '64vw',
           left: '-20vw',
           top: '-12vh',
-          background: 'radial-gradient(circle at 50% 50%, rgba(255, 249, 238, 0.95), transparent 70%)',
+          background: 'radial-gradient(circle at 50% 50%, var(--pool-1), transparent 70%)',
           animation: anim,
         }}
       />
@@ -29,7 +31,7 @@ export function AmbientRoom() {
           height: '58vw',
           right: '-16vw',
           top: '-10vh',
-          background: 'radial-gradient(circle at 50% 50%, rgba(248, 214, 197, 0.8), transparent 70%)',
+          background: 'radial-gradient(circle at 50% 50%, var(--pool-2), transparent 70%)',
           animation: anim,
         }}
       />
@@ -40,7 +42,7 @@ export function AmbientRoom() {
           height: '70vw',
           right: '-24vw',
           bottom: '-30vw',
-          background: 'radial-gradient(circle at 50% 50%, rgba(213, 224, 244, 0.75), transparent 70%)',
+          background: 'radial-gradient(circle at 50% 50%, var(--pool-3), transparent 70%)',
           animation: anim,
         }}
       />
@@ -51,7 +53,7 @@ export function AmbientRoom() {
           height: '46vw',
           left: '18vw',
           bottom: '-18vw',
-          background: 'radial-gradient(circle at 50% 50%, rgba(243, 227, 196, 0.7), transparent 70%)',
+          background: 'radial-gradient(circle at 50% 50%, var(--pool-4), transparent 70%)',
           animation: anim,
         }}
       />

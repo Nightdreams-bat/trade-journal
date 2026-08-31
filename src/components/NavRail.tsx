@@ -157,7 +157,7 @@ export function NavRail({
                       borderRadius: 'var(--radius)',
                       background: 'linear-gradient(135deg, var(--accent-bg), var(--accent-2-bg))',
                       border: '1px solid var(--accent-border)',
-                      boxShadow: '0 6px 16px -8px rgba(61, 110, 232, 0.4)',
+                      boxShadow: '0 6px 16px -8px rgba(var(--accent-rgb), 0.4)',
                       zIndex: -1,
                     }}
                   />
@@ -170,7 +170,7 @@ export function NavRail({
                       borderRadius: 'var(--radius)',
                       background: 'linear-gradient(135deg, var(--accent-bg), var(--accent-2-bg))',
                       border: '1px solid var(--accent-border)',
-                      boxShadow: '0 6px 16px -8px rgba(61, 110, 232, 0.4)',
+                      boxShadow: '0 6px 16px -8px rgba(var(--accent-rgb), 0.4)',
                       zIndex: -1,
                     }}
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}

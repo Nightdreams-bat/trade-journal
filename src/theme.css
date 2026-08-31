@@ -44,6 +44,19 @@
   --amber: #F5A623;
   --amber-soft: rgba(245, 166, 35, 0.18);
 
+  /* --- bare rgb triplets, for one-off rgba(var(--x-rgb), alpha) composition
+     in component rules that need a custom alpha the tokens above don't cover.
+     --ink-rgb / --accent-rgb / --green-rgb flip with the theme (they tint
+     toward whatever reads as "ink" on that surface); --shadow-rgb and
+     --accent-2-rgb stay fixed — shadows are always dark, violet is untouched
+     by the dark palette. --shadow-rgb differs from --ink-rgb precisely when
+     a light-theme tint would need to stay dark rather than flip to light. */
+  --ink-rgb: 60, 50, 38;
+  --shadow-rgb: 60, 50, 38;
+  --accent-rgb: 61, 110, 232;
+  --accent-2-rgb: 138, 92, 240;
+  --green-rgb: 31, 190, 120;
+
   /* --- colored glow — used for hover / active lift on cards, rings, buttons --- */
   --glow-green: 0 8px 24px -8px rgba(31, 190, 120, 0.42);
   --glow-red: 0 8px 24px -8px rgba(226, 61, 69, 0.42);
@@ -100,6 +113,10 @@
   --glass-fill: rgba(255, 253, 250, 0.55);
   --glass-fill-strong: rgba(252, 250, 246, 0.84);
   --glass-border: rgba(255, 255, 255, 0.65);
+  /* near-opaque slab fill for nav-rail / utility-panel — detached from the
+     scene, so it needs more coverage than the translucent card glass. */
+  --panel-fill: rgba(252, 250, 246, 0.9);
+  --panel-border: rgba(120, 105, 85, 0.16);
   --glass-blur: blur(28px) saturate(1.06);
   --glass-blur-deep: blur(40px) saturate(1.08);
   --glass-edge:
@@ -125,6 +142,12 @@
     0 14px 34px -14px rgba(61, 110, 232, 0.34),
     var(--shadow-card);
 
+  /* --- ambient room pools (see .ambient-pool / AmbientRoom.tsx) --- */
+  --pool-1: rgba(255, 249, 238, 0.95);
+  --pool-2: rgba(248, 214, 197, 0.8);
+  --pool-3: rgba(213, 224, 244, 0.75);
+  --pool-4: rgba(243, 227, 196, 0.7);
+
   /* --- type (visionOS system sans; no serif) --- */
   --font-display: -apple-system, BlinkMacSystemFont, 'Inter Variable', 'Inter', 'Segoe UI', Roboto, sans-serif;
   --font-body: -apple-system, BlinkMacSystemFont, 'Inter Variable', 'Inter', 'Segoe UI', Roboto, sans-serif;
@@ -141,6 +164,130 @@
   /* Fluid base: legible in a ~900px window, doesn't balloon at 4K.
      Clamp keeps content text >= 13px at every window size / DPI. */
   font-size: clamp(13px, 0.35vw + 11px, 15px);
+}
+
+/* ============================================================
+   DARK THEME — toggled via [data-theme="dark"] on <html>
+   (see src/themeMode.tsx). Genuinely black surfaces (#070807 /
+   #0D0F0D, not charcoal grey), off-white text, an emerald green
+   accent — modeled after a flat, high-contrast SaaS dashboard
+   reference rather than the light theme's frosted-glass look:
+   dark mode's --glass-* tokens trade translucency + heavy blur
+   for a near-opaque flat fill, since blurring a colored ambient
+   backdrop is what reads as "grey haze" instead of black. Radii,
+   spacing, motion and type stay shared with the light theme.
+   ============================================================ */
+:root[data-theme='dark'] {
+  /* --- surfaces — genuinely black, not charcoal: cards separate from bg
+     mostly by a hairline border, barely by fill, the way the reference
+     dashboard does it. No mid-grey anywhere in this block. --- */
+  --ink: #F8F8F8;
+  --bg: #070807;
+  --bg-elevated: #0B0D0B;
+  --card: #0D0F0D;
+  --card-hover: #141714;
+  --border: rgba(255, 255, 255, 0.07);
+  --border-soft: rgba(255, 255, 255, 0.04);
+
+  /* --- text (AA on #0D0F0D / #070807) --- */
+  --text-strong: #F8F8F8;
+  --text: rgba(248, 248, 248, 0.82);
+  --text-muted: rgba(248, 248, 248, 0.55);
+  --text-dim: rgba(248, 248, 248, 0.36);
+
+  /* --- accent — emerald green, violet companion kept for range --- */
+  --accent: #34D399;
+  --accent-deep: #15803D;
+  --accent-bright: #5EEBB0;
+  --accent-bg: rgba(52, 211, 153, 0.14);
+  --accent-border: rgba(52, 211, 153, 0.38);
+  --accent-2: #8A5CF0;
+  --accent-2-bright: #A97DF7;
+  --accent-2-bg: rgba(138, 92, 240, 0.16);
+  --accent-gradient: linear-gradient(135deg, #15803D 0%, #34D399 100%);
+
+  /* --- semantic (P&L) — reuse the accent green, red/amber unchanged --- */
+  --green: #15803D;
+  --green-bright: #34D399;
+  --green-soft: rgba(52, 211, 153, 0.18);
+  --red: #E23D45;
+  --red-bright: #F2545B;
+  --red-soft: rgba(226, 61, 69, 0.20);
+  --ember: #E23D45;
+  --amber: #E8A33D;
+  --amber-soft: rgba(232, 163, 61, 0.18);
+
+  --ink-rgb: 248, 248, 248;
+  --shadow-rgb: 0, 0, 0;
+  --accent-rgb: 52, 211, 153;
+  --accent-2-rgb: 138, 92, 240;
+  --green-rgb: 52, 211, 153;
+
+  /* --- colored glow --- */
+  --glow-green: 0 8px 24px -8px rgba(52, 211, 153, 0.38);
+  --glow-red: 0 8px 24px -8px rgba(226, 61, 69, 0.42);
+  --glow-violet: 0 10px 28px -10px rgba(138, 92, 240, 0.40);
+
+  /* --- elevation — true-black contact shadows on dark surfaces --- */
+  --glow-accent:
+    0 0 0 1px var(--accent-border),
+    0 12px 30px -10px rgba(52, 211, 153, 0.32);
+  --shadow-lift: 0 2px 8px -4px rgba(0, 0, 0, 0.5);
+  --shadow-card:
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 10px 24px -12px rgba(0, 0, 0, 0.55),
+    0 28px 56px -28px rgba(0, 0, 0, 0.5);
+  --shadow-window:
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    0 24px 56px -18px rgba(0, 0, 0, 0.6),
+    0 60px 130px -44px rgba(0, 0, 0, 0.65);
+
+  /* --- liquid glass — flat and near-opaque, NOT frosted. A heavy blur over
+     a colored ambient backdrop is exactly what reads as "grey haze" instead
+     of black, so dark mode trades the light theme's translucent glass for a
+     mostly-solid fill with only a light blur left for the edge/scrim cases
+     (modal, select menu) where some backdrop separation still helps. */
+  --glass-fill: rgba(13, 15, 13, 0.94);
+  --glass-fill-strong: rgba(16, 19, 16, 0.98);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: blur(10px) saturate(1);
+  --glass-blur-deep: blur(14px) saturate(1);
+  --panel-fill: rgba(9, 10, 9, 0.96);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --glass-edge:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.02),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+    inset -1px -1px 2px rgba(0, 0, 0, 0.3);
+  --glass-face:
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 0 1px rgba(255, 255, 255, 0.04);
+  --glass-specular: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.01) 16%,
+    rgba(255, 255, 255, 0) 40%
+  );
+
+  /* --- gaze / hover highlight --- */
+  --gaze-glow:
+    0 0 0 1px var(--accent-border),
+    0 14px 34px -14px rgba(52, 211, 153, 0.28),
+    var(--shadow-card);
+
+  /* A restrained green glow near the top of a black room — not four vivid
+     blooming pools. Kept low-alpha and screen-blended so it never washes
+     the cards out; most of the frame should read as flat black. */
+  --pool-1: rgba(52, 211, 153, 0.14);
+  --pool-2: rgba(21, 128, 61, 0.20);
+  --pool-3: rgba(52, 211, 153, 0.08);
+  --pool-4: rgba(21, 128, 61, 0.14);
+
+  color-scheme: dark;
+}
+
+:root[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: rgba(248, 248, 248, 0.16);
 }
 
 * {
@@ -451,6 +598,36 @@ a:hover {
   to { transform: rotate(360deg); }
 }
 
+/* Dark room: a black field instead of a cream one, an aurora recolored into
+   green (with a hint of the violet accent-2 for the "iridescent" feel), and
+   pools that screen-blend so overlapping glow adds light instead of
+   flattening into grey — the neon-on-black read from the reference palette. */
+:root[data-theme='dark'] .ambient-room {
+  background:
+    radial-gradient(1300px 1000px at 28% 4%, #0E100E 0%, rgba(10, 12, 10, 0) 55%),
+    radial-gradient(1200px 950px at 88% 92%, #0C0F0C 0%, rgba(10, 12, 10, 0) 62%),
+    linear-gradient(165deg, #0A0B0A 0%, #07080A 46%, #050605 100%);
+}
+:root[data-theme='dark'] .ambient-aurora {
+  background: conic-gradient(
+    from 0deg,
+    rgba(52, 211, 153, 0.08) 0deg,
+    rgba(21, 128, 61, 0.07) 70deg,
+    rgba(52, 211, 153, 0.05) 150deg,
+    rgba(138, 92, 240, 0.04) 220deg,
+    rgba(21, 128, 61, 0.07) 300deg,
+    rgba(52, 211, 153, 0.08) 360deg
+  );
+}
+:root[data-theme='dark'] .ambient-pool {
+  mix-blend-mode: screen;
+}
+:root[data-theme='dark'] .ambient-root::after {
+  background:
+    radial-gradient(80% 55% at 50% -10%, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 60%),
+    radial-gradient(125% 125% at 50% 40%, rgba(0, 0, 0, 0) 40%, rgba(0, 0, 0, 0.65) 100%);
+}
+
 /* ---------- surfaces ---------- */
 /* .card itself is defined in the LIQUID GLASS block above. */
 
@@ -507,7 +684,7 @@ a:hover {
   align-items: center;
   gap: 6px;
   padding: 9px 16px;
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--glass-fill);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-control);
   color: var(--text);
@@ -519,7 +696,7 @@ a:hover {
     box-shadow var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 .btn:hover {
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--glass-fill-strong);
   border-color: var(--accent-border);
   color: var(--text-strong);
   transform: scale(1.02);
@@ -535,24 +712,24 @@ a:hover {
 }
 .btn.btn-primary {
   background-image: var(--accent-gradient);
-  background-color: #3D6EE8;
+  background-color: var(--accent);
   background-size: 180% 100%;
   background-position: 0% 50%;
   border-color: transparent;
   color: #fff;
   font-weight: 600;
-  box-shadow: 0 6px 18px -8px rgba(61, 110, 232, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 18px -8px rgba(var(--accent-rgb), 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transition: background-position var(--dur-medium) var(--ease-out),
     box-shadow var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 .btn.btn-primary:hover {
   background-image: var(--accent-gradient);
-  background-color: #3D6EE8;
+  background-color: var(--accent);
   background-position: 100% 50%;
   border-color: transparent;
   color: #fff;
   transform: scale(1.02);
-  box-shadow: 0 10px 28px -8px rgba(61, 110, 232, 0.6), 0 0 0 1px rgba(110, 92, 240, 0.4),
+  box-shadow: 0 10px 28px -8px rgba(var(--accent-rgb), 0.6), 0 0 0 1px rgba(var(--accent-2-rgb), 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 .btn.btn-primary:active { transform: scale(0.97); }
@@ -573,7 +750,7 @@ a:hover {
 /* ---------- form controls ---------- */
 
 .input, .select, textarea.input {
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--glass-fill);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-control);
   padding: 9px 12px;
@@ -608,9 +785,7 @@ label.field {
 .pnl-negative { color: var(--red); }
 
 .checkbox-cell {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  text-align: center;
 }
 
 .tag-pill {
@@ -641,18 +816,24 @@ label.field {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(60, 50, 38, 0.28);
+  background: rgba(var(--shadow-rgb), 0.28);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   display: flex;
-  align-items: center;
+  align-items: safe center;
   justify-content: center;
+  overflow-y: auto;
+  padding: 5vh 16px;
   z-index: 100;
 }
 /* Modal panel shares the glass tokens but uses the opaque-leaning fill
    (content must stay readable) and skips the ::before bend layer — it is
-   an `overflow-y: auto` scroll container, where an absolute bend layer
-   would only cover the first screenful. */
+   an absolute bend layer would only cover the first screenful. The
+   *overlay* above is the sole scroll owner (`align-items: safe center` +
+   `overflow-y: auto`): a panel taller than the viewport falls back to
+   top-aligned instead of being centered off-screen, and there is only one
+   scroll container so it always opens scrolled to its own top (title bar
+   visible), never landing pre-scrolled to a middle section. */
 .modal-panel {
   background: var(--glass-fill-strong);
   backdrop-filter: var(--glass-blur-deep);
@@ -661,8 +842,6 @@ label.field {
   border-radius: var(--radius-panel);
   width: 560px;
   max-width: 92vw;
-  max-height: 88vh;
-  overflow-y: auto;
   padding: var(--sp-6);
   box-shadow: var(--shadow-window), var(--glass-edge);
 }
@@ -690,7 +869,7 @@ table.data-table th {
   white-space: nowrap;
   position: sticky;
   top: 0;
-  background: #F5F1EA;
+  background: var(--bg-elevated);
 }
 table.data-table td {
   padding: 8px 10px;
@@ -701,7 +880,7 @@ table.data-table tbody tr {
   transition: background var(--dur-fast) var(--ease-out);
 }
 table.data-table tbody tr:hover {
-  background: rgba(60, 50, 38, 0.05);
+  background: rgba(var(--ink-rgb), 0.05);
   cursor: pointer;
 }
 
@@ -794,7 +973,7 @@ table.data-table tbody tr:hover {
 /* active nav pill / selected chips read as lit glass */
 [data-nav-pill],
 .nav-pill {
-  box-shadow: 0 6px 18px -8px rgba(61, 110, 232, 0.34);
+  box-shadow: 0 6px 18px -8px rgba(var(--accent-rgb), 0.34);
 }
 
 /* ============================================================
@@ -907,16 +1086,16 @@ table.data-table tbody tr:hover {
   border-radius: var(--radius-window);
   z-index: 3;
   /* Read as their own floating slabs, clearly detached from the hero edge:
-     near-opaque fill, a warm visible rim (the white --glass-border vanishes on
-     the off-white room), and a deep window-grade drop shadow. */
-  background: rgba(252, 250, 246, 0.9);
-  border: 1px solid rgba(120, 105, 85, 0.16);
+     near-opaque fill, a visible rim (the glass-border alone vanishes on the
+     room behind it), and a deep window-grade drop shadow. */
+  background: var(--panel-fill);
+  border: 1px solid var(--panel-border);
   box-shadow:
     var(--glass-face),
     var(--glass-edge),
-    0 2px 6px rgba(60, 50, 38, 0.10),
-    0 30px 60px -22px rgba(60, 50, 38, 0.30),
-    0 60px 120px -40px rgba(60, 50, 38, 0.28);
+    0 2px 6px rgba(var(--shadow-rgb), 0.10),
+    0 30px 60px -22px rgba(var(--shadow-rgb), 0.30),
+    0 60px 120px -40px rgba(var(--shadow-rgb), 0.28);
 }
 .nav-rail { left: 24px; width: 176px; }
 .utility-panel { right: 24px; width: 300px; overflow: hidden; }
@@ -951,9 +1130,9 @@ table.data-table tbody tr:hover {
   cursor: pointer;
 }
 
-/* §7 — glass rails go solid on the light scene (no backdrop-filter) */
+/* §7 — glass rails go solid on the scene (no backdrop-filter) */
 .glass-rail {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--glass-fill);
   border: 1px solid var(--glass-border);
 }
 
@@ -970,7 +1149,7 @@ table.data-table tbody tr:hover {
   gap: 8px;
   width: 100%;
   padding: 9px 12px;
-  background: rgba(255, 255, 255, 0.62);
+  background: var(--glass-fill);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-control);
   color: var(--text);
@@ -983,7 +1162,7 @@ table.data-table tbody tr:hover {
     border-color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
 }
 .tj-select-trigger:hover {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--glass-fill-strong);
   border-color: var(--accent-border);
 }
 .tj-select-trigger:focus-visible {
@@ -992,7 +1171,7 @@ table.data-table tbody tr:hover {
   box-shadow: 0 0 0 3px var(--accent-bg);
 }
 .tj-select-trigger[aria-expanded='true'] {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--glass-fill-strong);
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-bg);
 }
@@ -1050,7 +1229,7 @@ table.data-table tbody tr:hover {
   text-align: left;
   transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
-.tj-select-option.is-active { background: rgba(60, 50, 38, 0.06); color: var(--text-strong); }
+.tj-select-option.is-active { background: rgba(var(--ink-rgb), 0.06); color: var(--text-strong); }
 .tj-select-option.is-selected { color: var(--accent-deep); font-weight: var(--weight-medium); }
 .tj-select-option.is-selected.is-active,
 .tj-select-option.is-selected { background: var(--accent-bg); }
@@ -1112,6 +1291,7 @@ table.data-table tbody tr:hover {
 .stat-cell:nth-child(2n) { border-right: none; }
 .stat-cell:nth-child(n+3) { border-bottom: none; }
 .stat-cell:hover { background: rgba(255, 255, 255, 0.45); }
+:root[data-theme='dark'] .stat-cell:hover { background: rgba(var(--ink-rgb), 0.06); }
 .stat-cell .stat-label {
   font-family: var(--font-mono);
   font-size: 9.5px;
@@ -1162,7 +1342,7 @@ table.data-table tbody tr:hover {
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  background: linear-gradient(160deg, rgba(61, 110, 232, 0.10), rgba(138, 92, 240, 0.07) 45%, rgba(31, 190, 120, 0.06) 100%);
+  background: linear-gradient(160deg, rgba(var(--accent-rgb), 0.10), rgba(var(--accent-2-rgb), 0.07) 45%, rgba(var(--green-rgb), 0.06) 100%);
   pointer-events: none;
 }
 

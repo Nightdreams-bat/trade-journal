@@ -32,8 +32,8 @@ export function RingStat({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
       <div style={{ position: 'relative', width: size, height: size }}>
-        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(60,50,38,0.12)" strokeWidth={stroke} />
+        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', overflow: 'visible' }}>
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(var(--ink-rgb),0.12)" strokeWidth={stroke} />
           <circle
             cx={size / 2}
             cy={size / 2}
@@ -45,7 +45,7 @@ export function RingStat({
             strokeDasharray={c}
             strokeDashoffset={offset}
             style={{
-              filter: `drop-shadow(0 0 8px ${color === 'var(--accent)' ? 'rgba(61,110,232,0.45)' : color})`,
+              filter: `drop-shadow(0 0 8px ${color === 'var(--accent)' ? 'var(--accent-border)' : color})`,
               ...(reduced
                 ? null
                 : { transition: 'stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1)', strokeDashoffset: offset }),

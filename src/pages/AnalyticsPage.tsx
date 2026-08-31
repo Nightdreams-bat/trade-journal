@@ -4,7 +4,7 @@ import { KpiCard } from '../components/KpiCard'
 import { PerformanceRadar } from '../components/PerformanceRadar'
 import { EquityCurveChart } from '../components/EquityCurveChart'
 import { DailyBarChart } from '../components/DailyBarChart'
-import { DayOfWeekChart } from '../components/DayOfWeekChart'
+import { DayOfWeekPanel } from '../components/DayOfWeekPanel'
 import { CalendarHeatmap } from '../components/CalendarHeatmap'
 import { MonthlyStatsPanel } from '../components/MonthlyStatsPanel'
 import { MonthlyPnlPanel } from '../components/MonthlyPnlPanel'
@@ -115,7 +115,7 @@ export function AnalyticsPage({
       <Reveal index={1}>
         <div ref={(el) => { sectionRefs.current.daily = el }} style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap' }}>
           <DailyBarChart data={summary.dailyBars} />
-          <DayOfWeekChart data={summary.dayOfWeek} />
+          <DayOfWeekPanel data={summary.dayOfWeek} />
         </div>
       </Reveal>
 

@@ -20,6 +20,7 @@ import { EdgeHandle } from './components/EdgeHandle'
 import { Scrim } from './components/Scrim'
 import { LATEST_VERSION } from './changelog'
 import { getLastSeenVersion } from './whatsNewSeen'
+import { useThemeMode } from './themeMode'
 import { TABS, type TabKey } from './tabs'
 import { greeting } from './format'
 import type { Account, Confluence, Strategy } from './types'
@@ -43,6 +44,7 @@ function App() {
   const [showAccounts, setShowAccounts] = useState(false)
   const [reviewJumpDate, setReviewJumpDate] = useState<string | null>(null)
   const [seenVersion, setSeenVersion] = useState<string | null>(getLastSeenVersion)
+  const [themeMode, toggleTheme] = useThemeMode()
 
   const [navOpen, setNavOpen] = useState(false)
   const [utilityOpen, setUtilityOpen] = useState(false)
@@ -139,6 +141,8 @@ function App() {
             greeting={greeting()}
             accountLabel={accountLabel}
             showWhatsNewDot={seenVersion !== LATEST_VERSION}
+            themeMode={themeMode}
+            onToggleTheme={toggleTheme}
             onNewTrade={() => setShowNewTrade(true)}
             onOpenCalendar={() => openUtility('calendar')}
             onOpenProfile={() => openUtility('profile')}

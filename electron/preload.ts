@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('api', {
   images: {
     add: (entityType: 'trade' | 'missed_trade', entityId: number) => invoke('images:add', entityType, entityId),
     get: (entityType: 'trade' | 'missed_trade', entityId: number) => invoke('images:get', entityType, entityId),
+    getAllForTrades: () => invoke('images:getAllForTrades'),
     remove: (imageId: number) => invoke('images:remove', imageId),
   },
   reviews: {
@@ -53,5 +54,9 @@ contextBridge.exposeInMainWorld('api', {
     openForImport: () => invoke('csv:openForImport'),
     import: (args: unknown) => invoke('csv:import', args),
     export: () => invoke('csv:export'),
+  },
+  obsidian: {
+    getVaultPath: () => invoke('obsidian:getVaultPath'),
+    chooseVaultPath: () => invoke('obsidian:chooseVaultPath'),
   },
 })

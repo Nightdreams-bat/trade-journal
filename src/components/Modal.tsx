@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { motion } from 'motion/react'
 import { modalOverlay, modalPanel, usePrefersReducedMotion } from '../anim'
 
@@ -49,7 +50,13 @@ export function Modal({
   const state = closing ? 'exit' : 'show'
   const transition = reduced ? { duration: 0 } : undefined
 
-  return (
+  // Portalled to <body> so the fixed-position overlay always covers the real
+  // viewport. A page-local `.center-panel` ancestor carries an animated
+  // `transform` for its side-panel slide effect, and a `transform` on any
+  // ancestor becomes the containing block for `position: fixed` descendants
+  // — without the portal, a modal opened from inside a page gets boxed into
+  // `.center-panel`'s bounds instead of overlaying the whole window.
+  return createPortal(
     <motion.div
       className="modal-overlay"
       onMouseDown={(e) => e.target === e.currentTarget && close()}
@@ -73,6 +80,7 @@ export function Modal({
         </div>
         {children}
       </motion.div>
-    </motion.div>
+    </motion.div>,
+    document.body,
   )
 }

@@ -84,7 +84,7 @@
             'Tuesday is consistently your weakest day — consider trading smaller size.',
             'Largest drawdown this period was ' + maxDrawdown.toLocaleString() + '.',
           ],
-          overall: { winRate: 57, profitFactor: 1.88, avgWin: 420, avgLoss: -240, totalTrades: 312 },
+          overall: { winRate: 57, profitFactor: 1.88, avgWin: 420, avgLoss: 240, totalTrades: 312 },
         }
 
         const accounts = [
@@ -140,7 +140,7 @@
           confluences: { getAll: list(confluences), create: ok, update: ok, delete: ok },
           trades: { getAll: list(trades), create: ok, update: ok, delete: ok },
           missedTrades: { getAll: list([]), create: ok, update: ok, delete: ok },
-          images: { add: ok, get: list([]), remove: ok },
+          images: { add: ok, get: list([]), remove: ok, getAllForTrades: list([]) },
           reviews: { getAll: list([]), upsert: ok },
           analytics: {
             getSummary: async () => summary,
@@ -151,11 +151,12 @@
               }),
             ),
             simulateFundedChallenge: async () => ({
-              sampleSize: 5000, passRate: 0.62, dailyLossBreachRate: 0.14,
-              maxDrawdownBreachRate: 0.24, medianDaysToTarget: 18, expectedValue: 4200,
+              sampleSize: 5000, passRate: 62, dailyLossBreachRate: 14,
+              maxDrawdownBreachRate: 24, ranOutOfDaysRate: 8, medianDaysToPass: 18,
             }),
           },
           csv: { openForImport: async () => null, import: async () => 0, export: async () => null },
+          obsidian: { getVaultPath: async () => null, chooseVaultPath: async () => null },
         }
       })()
     </script>

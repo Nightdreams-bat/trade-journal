@@ -40,7 +40,7 @@ export function EdgeHandle({ side, hidden, onOpen, label = 'Open panel' }: EdgeH
         borderLeft: isLeft ? 'none' : undefined,
         borderRight: isLeft ? undefined : 'none',
         borderRadius: isLeft ? '0 12px 12px 0' : '12px 0 0 12px',
-        background: 'rgba(255,253,250,0.55)',
+        background: 'var(--glass-fill)',
         color: 'var(--text-dim)',
         boxShadow: 'var(--shadow-lift)',
         cursor: 'pointer',

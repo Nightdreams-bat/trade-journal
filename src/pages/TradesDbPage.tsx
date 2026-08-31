@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { FilterBar } from '../components/FilterBar'
 import { TradeFormModal } from '../components/TradeFormModal'
 import { CsvImportModal } from '../components/CsvImportModal'
-import { Upload, Download, Plus } from '../components/icons'
+import { TradeImageGallery } from '../components/TradeImageGallery'
+import { Upload, Download, Plus, Table2, LayoutGrid } from '../components/icons'
 import type { Account, Confluence, Strategy, Trade } from '../types'
 
 type SortKey = 'date' | 'pnl' | 'pair'
+type ViewMode = 'table' | 'gallery'
 
 export function TradesDbPage({
   accounts,
@@ -31,6 +33,7 @@ export function TradesDbPage({
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [editingTrade, setEditingTrade] = useState<Trade | null | undefined>(undefined)
   const [showImport, setShowImport] = useState(false)
+  const [view, setView] = useState<ViewMode>('table')
 
   const strategyName = (id: number | null) => strategies.find((s) => s.id === id)?.name ?? '—'
   const accountName = (id: number | null) => accounts.find((a) => a.id === id)?.name ?? '—'
@@ -92,12 +95,33 @@ export function TradesDbPage({
           />
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 2, background: 'var(--bg-elevated)', borderRadius: 'var(--radius-control)', padding: 2 }}>
+            <button
+              className="btn"
+              title="Table view"
+              onClick={() => setView('table')}
+              style={{ padding: '6px 10px', background: view === 'table' ? 'var(--card)' : 'transparent', border: 'none' }}
+            >
+              <Table2 size={16} />
+            </button>
+            <button
+              className="btn"
+              title="Gallery view"
+              onClick={() => setView('gallery')}
+              style={{ padding: '6px 10px', background: view === 'gallery' ? 'var(--card)' : 'transparent', border: 'none' }}
+            >
+              <LayoutGrid size={16} />
+            </button>
+          </div>
           <button className="btn" onClick={() => setShowImport(true)}><Upload size={16} style={{ marginRight: 4 }} />Import CSV</button>
           <button className="btn" onClick={exportCsv}><Download size={16} style={{ marginRight: 4 }} />Export CSV</button>
           <button className="btn btn-primary" onClick={() => setEditingTrade(null)}><Plus size={16} style={{ marginRight: 4 }} />New Trade</button>
         </div>
       </div>
 
+      {view === 'gallery' ? (
+        <TradeImageGallery trades={trades} onOpenTrade={setEditingTrade} />
+      ) : (
       <div className="card" style={{ overflowX: 'auto', maxHeight: 640, overflowY: 'auto' }}>
         {loading ? (
           <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading trades…</div>
@@ -144,6 +168,7 @@ export function TradesDbPage({
           </table>
         )}
       </div>
+      )}
 
       {editingTrade !== undefined && (
         <TradeFormModal

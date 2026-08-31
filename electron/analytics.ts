@@ -104,11 +104,19 @@ function dayOfWeekBreakdownOf(trades: TradeRow[]) {
   return WEEKDAYS.map((day, i) => {
     const b = buckets[i]
     const pnl = b.reduce((s, t) => s + t.pnl, 0)
+    const wins = b.filter((t) => t.pnl > 0)
+    const losses = b.filter((t) => t.pnl < 0)
+    const avgWin = wins.length ? wins.reduce((s, t) => s + t.pnl, 0) / wins.length : 0
+    const avgLoss = losses.length ? Math.abs(losses.reduce((s, t) => s + t.pnl, 0) / losses.length) : 0
+    const best = b.length ? Math.max(...b.map((t) => t.pnl)) : 0
     return {
       day,
       trades: b.length,
       pnl: Math.round(pnl * 100) / 100,
       winRate: Math.round(winRateOf(b) * 1000) / 10,
+      avgWin: round2(avgWin),
+      avgLoss: round2(avgLoss),
+      best: round2(best),
     }
   })
 }
@@ -281,18 +289,20 @@ export function getMonthlyBreakdown(filters: MonthlyBreakdownFilters) {
     date: string
     pnl: number
   }[]
-  const buckets = Array.from({ length: 12 }, () => ({ pnl: 0, count: 0 }))
+  const buckets = Array.from({ length: 12 }, () => ({ pnl: 0, count: 0, wins: 0 }))
   for (const r of rows) {
     const m = Number(r.date.slice(5, 7)) - 1
     if (m < 0 || m > 11) continue
     buckets[m].pnl += r.pnl
     buckets[m].count += 1
+    if (r.pnl > 0) buckets[m].wins += 1
   }
   return buckets.map((b, i) => ({
     month: `${filters.year}-${String(i + 1).padStart(2, '0')}`,
     label: MONTH_LABELS[i],
     pnl: round2(b.pnl),
     tradeCount: b.count,
+    winRate: b.count ? round1((b.wins / b.count) * 100) : 0,
   }))
 }
 

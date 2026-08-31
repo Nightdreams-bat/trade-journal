@@ -5,7 +5,7 @@ import { usePrefersReducedMotion } from '../anim'
 import { PANEL, PANEL_OUT } from '../anim/tokens'
 import { MiniCalendar } from './MiniCalendar'
 import { ChallengeRing } from './ChallengeRing'
-import { CalendarDays, Settings, User } from './icons'
+import { CalendarDays, Settings, User, FolderSync } from './icons'
 import { greeting } from '../format'
 import type { Account, AnalyticsSummary } from '../types'
 
@@ -37,6 +37,20 @@ export function UtilityPanel({
 }: UtilityPanelProps) {
   const reduced = usePrefersReducedMotion()
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
+  const [vaultPath, setVaultPath] = useState<string | null>(null)
+  const [vaultSyncing, setVaultSyncing] = useState(false)
+
+  useEffect(() => {
+    window.api.obsidian.getVaultPath().then(setVaultPath)
+  }, [])
+
+  const chooseVault = () => {
+    setVaultSyncing(true)
+    window.api.obsidian
+      .chooseVaultPath()
+      .then(setVaultPath)
+      .finally(() => setVaultSyncing(false))
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -120,7 +134,7 @@ export function UtilityPanel({
             gap: 4,
             padding: 4,
             borderRadius: 'var(--radius-control)',
-            background: 'rgba(60,50,38,0.05)',
+            background: 'rgba(var(--ink-rgb),0.05)',
           }}
         >
           {tab('calendar', 'Calendar', <CalendarDays size={13} strokeWidth={1.75} />)}
@@ -199,6 +213,36 @@ export function UtilityPanel({
             >
               <Settings size={14} strokeWidth={1.75} /> Manage accounts
             </button>
+
+            <section style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 4, borderTop: '1px solid var(--border-soft)' }}>
+              <span className="mono-label">Obsidian sync</span>
+              {vaultPath ? (
+                <div
+                  title={vaultPath}
+                  style={{
+                    fontSize: 11.5,
+                    color: 'var(--text-muted)',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {vaultPath}
+                </div>
+              ) : (
+                <div style={{ fontSize: 12, color: 'var(--text-dim)' }}>Not connected — pick your vault folder</div>
+              )}
+              <button
+                type="button"
+                className="btn"
+                onClick={chooseVault}
+                disabled={vaultSyncing}
+                style={{ justifyContent: 'center', fontSize: 11.5, padding: '5px 8px' }}
+              >
+                <FolderSync size={13} strokeWidth={1.75} />
+                {vaultSyncing ? 'Syncing…' : vaultPath ? 'Change vault folder' : 'Choose vault folder'}
+              </button>
+            </section>
           </>
         ) : (
           <>
@@ -207,7 +251,7 @@ export function UtilityPanel({
               {summary ? (
                 <MiniCalendar calendar={summary.calendar} />
               ) : (
-                <div style={{ height: 120, borderRadius: 8, background: 'rgba(60,50,38,0.06)' }} />
+                <div style={{ height: 120, borderRadius: 8, background: 'rgba(var(--ink-rgb),0.06)' }} />
               )}
             </section>
 

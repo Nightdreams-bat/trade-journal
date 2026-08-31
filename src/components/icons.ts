@@ -29,6 +29,8 @@ export {
   CalendarDays,
   Target,
   Flame,
+  Sun,
+  Moon,
   ArrowRight,
   Download,
   Upload,
@@ -38,4 +40,8 @@ export {
   Pencil as Edit,
   ChevronRight,
   ChevronDown,
+  FolderSync,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
 } from 'lucide-react'

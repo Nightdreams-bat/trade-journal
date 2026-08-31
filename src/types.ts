@@ -91,7 +91,7 @@ export interface StrategyDetail {
   }
   equityCurve: { date: string; cumulativePnl: number }[]
   drawdown: { series: { date: string; drawdown: number }[]; maxDrawdown: number }
-  dayOfWeek: { day: string; trades: number; pnl: number; winRate: number }[]
+  dayOfWeek: { day: string; trades: number; pnl: number; winRate: number; avgWin: number; avgLoss: number; best: number }[]
   trades: { id: number; date: string; name: string; pair: string | null; pnl: number; followed_plan: boolean }[]
 }
 
@@ -101,7 +101,7 @@ export interface AnalyticsSummary {
   equityCurve: { date: string; cumulativePnl: number }[]
   drawdown: { series: { date: string; drawdown: number }[]; maxDrawdown: number }
   dailyBars: { day: string; pnl: number }[]
-  dayOfWeek: { day: string; trades: number; pnl: number; winRate: number }[]
+  dayOfWeek: { day: string; trades: number; pnl: number; winRate: number; avgWin: number; avgLoss: number; best: number }[]
   calendar: Record<string, { pnl: number; count: number }>
   monthlyStats: {
     winRate: number
@@ -121,6 +121,7 @@ export interface MonthlyBreakdownEntry {
   label: string
   pnl: number
   tradeCount: number
+  winRate: number
 }
 
 export interface FundedChallengeParams {

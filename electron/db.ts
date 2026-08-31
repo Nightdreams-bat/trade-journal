@@ -146,6 +146,23 @@ export function getDb(): DatabaseSync {
     );
     CREATE INDEX IF NOT EXISTS idx_entity_confluences_owner ON entity_confluences(entity_type, entity_id);
 
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS trade_vault_sync (
+      trade_id INTEGER PRIMARY KEY REFERENCES trades(id) ON DELETE CASCADE,
+      note_path TEXT NOT NULL,
+      images_dir TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS missed_trade_vault_sync (
+      missed_trade_id INTEGER PRIMARY KEY REFERENCES missed_trades(id) ON DELETE CASCADE,
+      note_path TEXT NOT NULL,
+      images_dir TEXT NOT NULL
+    );
+
     DROP TABLE IF EXISTS milestones;
   `)
 
