@@ -34,6 +34,32 @@ export type DemoId = 'whats-new-tab' | 'equity-curve' | 'tag-pills' | 'calendar-
 
 export const RELEASES: Release[] = [
   {
+    version: '0.3.0',
+    date: '2026-08-31',
+    title: 'Liquid-glass UI pass',
+    summary: 'A frosted "liquid glass" treatment across the navigation, a smooth trailing cursor, and type that stays legible at any window size.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'Smooth cursor follower',
+        detail:
+          'A solid dot tracks the pointer tightly while a ring lags behind and grows over anything clickable. Runs entirely on the compositor and turns itself off for coarse pointers or when you\'ve asked for reduced motion.',
+      },
+      {
+        kind: 'improved',
+        text: 'Liquid-glass navigation and section rails',
+        detail:
+          'The top tab bar and the Analytics section rail now share one frosted-glass treatment — a blurred, faintly refracting surface — defined in a single place so every rail looks identical.',
+      },
+      {
+        kind: 'improved',
+        text: 'Font legibility at any size',
+        detail:
+          'Body text now scales fluidly with the window instead of sitting at a fixed size, never dropping below 13px. Muted text was darkened one step so it still meets contrast guidelines on the translucent panels.',
+      },
+    ],
+  },
+  {
     version: '0.2.0',
     date: '2026-08-31',
     title: 'Feature & Updates tab',

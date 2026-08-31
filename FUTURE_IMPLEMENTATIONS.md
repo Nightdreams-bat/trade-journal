@@ -12,7 +12,13 @@ into this app (Vite + React 19 + TypeScript + Electron + better-sqlite3).
 
 ---
 
-## PART 0 — UI / polish pass (TOP priority, do first)
+## PART 0 — UI / polish pass  ✅ DONE (shipped 0.3.0, 2026-08-31)
+
+Implemented on `feature/whats-new-tab` (commit "PART 0 UI pass …"): `.liquid-glass`
++ shared `<GlassRail>` (0.1 / 0.3), `CursorFollower.tsx` adapted per 0.2, fluid
+`clamp()` base font + `--text-muted` contrast bump (0.4). `.liquid-glass` is used only
+on the nav rail (modal panels kept their existing `backdrop-filter` glass — applying
+`overflow:hidden` liquid-glass there would break panel scrolling).
 
 Requested 2026-08-31. All of this lands on a dedicated branch and is committed early —
 another Claude session concurrently reworks `polish/animations` and rebases/resets it,
