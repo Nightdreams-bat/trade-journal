@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { usePrefersReducedMotion } from './anim'
+import { HomePage } from './pages/HomePage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { PlaybooksPage } from './pages/PlaybooksPage'
 import { ReviewPage } from './pages/ReviewPage'
@@ -11,24 +12,26 @@ import { TradeFormModal } from './components/TradeFormModal'
 import { AccountsModal } from './components/AccountsModal'
 import { AmbientBackground } from './components/AmbientBackground'
 import { CursorFollower } from './components/CursorFollower'
-import { GlassRail } from './components/GlassRail'
+import { TopNav } from './components/TopNav'
+import { Ornament } from './components/Ornament'
 import { LATEST_VERSION } from './changelog'
 import { getLastSeenVersion } from './whatsNewSeen'
 import type { Account, Confluence, Strategy } from './types'
 
 const TABS = [
+  { key: 'home', label: 'Home' },
   { key: 'analytics', label: 'Analytics' },
   { key: 'playbooks', label: 'Playbooks' },
   { key: 'review', label: 'Review' },
   { key: 'trades', label: 'Trades' },
-  { key: 'missed', label: 'Missed Trades' },
+  { key: 'missed', label: 'Missed' },
   { key: 'whatsnew', label: "What's New" },
 ] as const
 
 type TabKey = (typeof TABS)[number]['key']
 
 function App() {
-  const [tab, setTab] = useState<TabKey>('analytics')
+  const [tab, setTab] = useState<TabKey>('home')
   const [accounts, setAccounts] = useState<Account[]>([])
   const [strategies, setStrategies] = useState<Strategy[]>([])
   const [confluences, setConfluences] = useState<Confluence[]>([])
@@ -49,117 +52,57 @@ function App() {
   const bumpRefresh = () => setRefreshKey((k) => k + 1)
   const reducedMotion = usePrefersReducedMotion()
 
+  const goTab = (k: string) => {
+    setTab(k as TabKey)
+    if (k === 'whatsnew') setSeenVersion(LATEST_VERSION)
+  }
+
+  const openDailyReview = () => {
+    setReviewJumpDate(new Date().toISOString().slice(0, 10))
+    setTab('review')
+  }
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <AmbientBackground />
+      <AmbientBackground anchor={{ x: 200 + TABS.findIndex((t) => t.key === tab) * 90, y: 120 }} />
       <CursorFollower />
-      <header style={{ padding: '22px 32px 0', position: 'relative', zIndex: 20 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 20 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <span className="mono-label">// Trading Journal &middot; Analytics</span>
-            <h1 style={{ fontSize: 34, margin: 0, fontWeight: 340, lineHeight: 1 }}>
-              Trade <span className="accent-word">Journal</span>
-            </h1>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={() => setShowAccounts(true)}>Accounts</button>
-            <button className="btn" onClick={() => { setReviewJumpDate(new Date().toISOString().slice(0, 10)); setTab('review') }}>
-              + Daily Review
-            </button>
-            <button className="btn btn-primary" onClick={() => setShowNewTrade(true)}>+ Trade Entry</button>
-          </div>
-        </div>
 
-        <GlassRail
-          role="tablist"
-          variant="flush"
-          className="liquid-glass liquid-glass--hero"
-          style={{ gap: 2, position: 'sticky', top: 0, zIndex: 20, padding: '0 8px' }}
-        >
-          {TABS.map((t, i) => (
-            <button
-              key={t.key}
-              role="tab"
-              aria-selected={tab === t.key}
-              onClick={() => {
-                setTab(t.key)
-                if (t.key === 'whatsnew') setSeenVersion(LATEST_VERSION)
-              }}
-              className="btn"
-              style={{
-                position: 'relative',
-                border: 'none',
-                borderRadius: 0,
-                borderBottom: '1px solid transparent',
-                background: 'transparent',
-                color: tab === t.key ? 'var(--text-strong)' : 'var(--text-muted)',
-                fontWeight: 500,
-                letterSpacing: '0.02em',
-                padding: '10px 14px',
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: 9,
-                  letterSpacing: '0.1em',
-                  color: tab === t.key ? 'var(--accent)' : 'var(--text-dim)',
-                  marginRight: 7,
-                }}
-              >
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              {t.label}
-              {t.key === 'whatsnew' && seenVersion !== LATEST_VERSION && (
-                <span
-                  aria-label="new updates"
-                  style={{
-                    position: 'absolute',
-                    top: 7,
-                    right: 3,
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: 'var(--accent)',
-                    boxShadow: '0 0 0 2px var(--accent-bg)',
-                  }}
-                />
-              )}
-              {tab === t.key &&
-                (reducedMotion ? (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      right: 0,
-                      bottom: -1,
-                      height: 1,
-                      background: 'var(--accent)',
-                    }}
-                  />
-                ) : (
-                  <motion.span
-                    layoutId="tab-underline"
-                    style={{
-                      position: 'absolute',
-                      left: 0,
-                      right: 0,
-                      bottom: -1,
-                      height: 1,
-                      background: 'var(--accent)',
-                    }}
-                    transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
-                  />
-                ))}
-            </button>
-          ))}
-        </GlassRail>
-      </header>
+      <TopNav
+        tabs={TABS}
+        active={tab}
+        onSelect={goTab}
+        showWhatsNewDot={seenVersion !== LATEST_VERSION}
+        onAccounts={() => setShowAccounts(true)}
+        onDailyReview={openDailyReview}
+        onTradeEntry={() => setShowNewTrade(true)}
+      />
 
-      <main style={{ padding: 24, flex: 1, position: 'relative', zIndex: 1 }}>
+      <main
+        style={{
+          padding: 'calc(var(--sp-8) + 24px) var(--sp-5) calc(var(--sp-8) + 40px)',
+          flex: 1,
+          position: 'relative',
+          zIndex: 1,
+          maxWidth: 1180,
+          margin: '0 auto',
+          width: '100%',
+        }}
+      >
         {(() => {
           const pages = (
             <>
+              {tab === 'home' && (
+                <HomePage
+                  accounts={accounts}
+                  strategies={strategies}
+                  confluences={confluences}
+                  onConfluencesChanged={loadLookups}
+                  refreshKey={refreshKey}
+                  bumpRefresh={bumpRefresh}
+                  onNavigate={goTab}
+                  onNewTrade={() => setShowNewTrade(true)}
+                />
+              )}
               {tab === 'analytics' && (
                 <AnalyticsPage
                   accounts={accounts}
@@ -200,7 +143,7 @@ function App() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={tab}
-                initial={{ opacity: 0, y: 14, filter: 'blur(6px)' }}
+                initial={{ opacity: 0, y: 10, filter: 'blur(8px)' }}
                 animate={{
                   opacity: 1,
                   y: 0,
@@ -209,7 +152,7 @@ function App() {
                 }}
                 exit={{
                   opacity: 0,
-                  y: -10,
+                  y: -8,
                   filter: 'blur(4px)',
                   transition: { duration: 0.16, ease: 'easeIn' },
                 }}
@@ -221,6 +164,14 @@ function App() {
           )
         })()}
       </main>
+
+      <Ornament
+        active={tab}
+        onHome={() => setTab('home')}
+        onSearch={() => setTab('trades')}
+        onAdd={() => setShowNewTrade(true)}
+        onProfile={() => setShowAccounts(true)}
+      />
 
       {showNewTrade && (
         <TradeFormModal
