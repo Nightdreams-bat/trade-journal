@@ -89,6 +89,13 @@ html, body, #root {
   margin: 0;
 }
 
+/* Always reserve the scrollbar gutter so switching to a shorter tab
+   doesn't change the viewport width and re-lay-out the fixed backdrop. */
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
 body {
   background:
     radial-gradient(1200px 600px at 78% -10%, rgba(91, 194, 216, 0.06), transparent 60%),
@@ -324,15 +331,20 @@ a:hover {
   margin: -22px 0 0 -22px;
   border-color: var(--accent);
 }
-/* Hide the OS cursor only while the follower is live; keep the caret
-   in text fields and a pointer where the user needs the hint. */
-body.has-cursor-follower {
-  cursor: none;
+/* Hide the OS cursor everywhere while the follower is live — the
+   !important + universal selector is needed to beat `button`/`.btn`/`a`
+   which set their own `cursor: pointer`. Text fields keep the I-beam so
+   you can still see the caret position. */
+body.has-cursor-follower,
+body.has-cursor-follower *,
+body.has-cursor-follower *::before,
+body.has-cursor-follower *::after {
+  cursor: none !important;
 }
 body.has-cursor-follower input,
 body.has-cursor-follower textarea,
 body.has-cursor-follower [contenteditable='true'] {
-  cursor: text;
+  cursor: text !important;
 }
 
 /* ---------- ambient background (CSS-only, compositor-driven) ---------- */
