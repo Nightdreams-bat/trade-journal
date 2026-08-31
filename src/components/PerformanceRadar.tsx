@@ -17,7 +17,7 @@ export function PerformanceRadar({ data }: { data: { metric: string; value: numb
             itemStyle={TOOLTIP_ITEM_STYLE}
             formatter={(v) => [v, 'Score']}
           />
-          <Radar dataKey="value" stroke={COLORS.accent} fill={COLORS.accent} fillOpacity={0.28} {...CHART_ANIM} />
+          <Radar dataKey="value" stroke={COLORS.accent} fill={COLORS.accent} fillOpacity={0.33} {...CHART_ANIM} />
         </RadarChart>
       </ResponsiveContainer>
     </div>

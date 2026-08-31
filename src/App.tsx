@@ -10,8 +10,7 @@ import { MissedTradesPage } from './pages/MissedTradesPage'
 import { WhatsNewPage } from './pages/WhatsNewPage'
 import { TradeFormModal } from './components/TradeFormModal'
 import { AccountsModal } from './components/AccountsModal'
-import { AmbientBackground } from './components/AmbientBackground'
-import { CursorFollower } from './components/CursorFollower'
+import { AmbientRoom } from './components/AmbientRoom'
 import { TopNav } from './components/TopNav'
 import { Ornament } from './components/Ornament'
 import { LATEST_VERSION } from './changelog'
@@ -64,8 +63,7 @@ function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
-      <AmbientBackground anchor={{ x: 200 + TABS.findIndex((t) => t.key === tab) * 90, y: 120 }} />
-      <CursorFollower />
+      <AmbientRoom />
 
       <TopNav
         tabs={TABS}

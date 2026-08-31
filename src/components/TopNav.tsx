@@ -128,7 +128,7 @@ export function TopNav({
                         borderRadius: 'var(--radius-pill)',
                         background: 'var(--accent-bg)',
                         border: '1px solid var(--accent-border)',
-                        boxShadow: '0 0 24px -4px rgba(93,214,44,0.5)',
+                        boxShadow: '0 6px 18px -8px rgba(76,111,165,0.28)',
                         zIndex: -1,
                       }}
                     />
@@ -141,7 +141,7 @@ export function TopNav({
                         borderRadius: 'var(--radius-pill)',
                         background: 'var(--accent-bg)',
                         border: '1px solid var(--accent-border)',
-                        boxShadow: '0 0 24px -4px rgba(93,214,44,0.5)',
+                        boxShadow: '0 6px 18px -8px rgba(76,111,165,0.28)',
                         zIndex: -1,
                       }}
                       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}

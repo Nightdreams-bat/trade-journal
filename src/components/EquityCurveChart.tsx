@@ -37,7 +37,7 @@ export function EquityCurveChart({
           <AreaChart data={merged}>
             <defs>
               <linearGradient id="equityFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={COLORS.green} stopOpacity={0.35} />
+                <stop offset="0%" stopColor={COLORS.green} stopOpacity={0.4} />
                 <stop offset="100%" stopColor={COLORS.green} stopOpacity={0} />
               </linearGradient>
             </defs>
