@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { app } from 'electron'
 import { getDb } from './db'
+import * as obsidian from './obsidian'
 import {
   getSummary,
   getStrategyPerformance,
@@ -117,16 +118,19 @@ export function registerIpcHandlers() {
     const info = db
       .prepare('INSERT INTO accounts (name, broker, starting_balance, currency) VALUES (?, ?, ?, ?)')
       .run(payload.name, payload.broker ?? '', payload.starting_balance, payload.currency)
+    void obsidian.syncAccount(info.lastInsertRowid as number)
     return db.prepare('SELECT * FROM accounts WHERE id = ?').get(info.lastInsertRowid)
   })
   ipcMain.handle('accounts:update', (_e, id: number, payload: Record<string, unknown>) => {
     db.prepare('UPDATE accounts SET name = ?, broker = ?, starting_balance = ?, currency = ? WHERE id = ?').run(
       payload.name, payload.broker ?? '', payload.starting_balance, payload.currency, id
     )
+    void obsidian.syncAccount(id)
     return db.prepare('SELECT * FROM accounts WHERE id = ?').get(id)
   })
   ipcMain.handle('accounts:delete', (_e, id: number) => {
     db.prepare('DELETE FROM accounts WHERE id = ?').run(id)
+    void obsidian.removeAccount(id)
     return true
   })
 
@@ -136,14 +140,17 @@ export function registerIpcHandlers() {
   })
   ipcMain.handle('strategies:create', (_e, payload: { name: string; description?: string }) => {
     const info = db.prepare('INSERT INTO strategies (name, description) VALUES (?, ?)').run(payload.name, payload.description ?? '')
+    void obsidian.syncStrategy(info.lastInsertRowid as number)
     return db.prepare('SELECT * FROM strategies WHERE id = ?').get(info.lastInsertRowid)
   })
   ipcMain.handle('strategies:update', (_e, id: number, payload: { name: string; description?: string }) => {
     db.prepare('UPDATE strategies SET name = ?, description = ? WHERE id = ?').run(payload.name, payload.description ?? '', id)
+    void obsidian.syncStrategy(id)
     return db.prepare('SELECT * FROM strategies WHERE id = ?').get(id)
   })
   ipcMain.handle('strategies:delete', (_e, id: number) => {
     db.prepare('DELETE FROM strategies WHERE id = ?').run(id)
+    void obsidian.removeStrategy(id)
     return true
   })
   ipcMain.handle('strategies:getPerformance', () => {
@@ -163,16 +170,19 @@ export function registerIpcHandlers() {
     const existing = db.prepare('SELECT * FROM confluences WHERE name = ?').get(name)
     if (existing) return existing
     const info = db.prepare('INSERT INTO confluences (name) VALUES (?)').run(name)
+    void obsidian.syncConfluence(info.lastInsertRowid as number)
     return db.prepare('SELECT * FROM confluences WHERE id = ?').get(info.lastInsertRowid)
   })
   ipcMain.handle('confluences:update', (_e, id: number, payload: { name: string }) => {
     const name = (payload.name ?? '').trim()
     if (!name) return db.prepare('SELECT * FROM confluences WHERE id = ?').get(id)
     db.prepare('UPDATE confluences SET name = ? WHERE id = ?').run(name, id)
+    void obsidian.syncConfluence(id)
     return db.prepare('SELECT * FROM confluences WHERE id = ?').get(id)
   })
   ipcMain.handle('confluences:delete', (_e, id: number) => {
     db.prepare('DELETE FROM confluences WHERE id = ?').run(id)
+    void obsidian.removeConfluence(id)
     return true
   })
 
@@ -230,6 +240,7 @@ export function registerIpcHandlers() {
       })
     const id = info.lastInsertRowid as number
     setEntityConfluences(db, 'trade', id, payload.confluence_ids)
+    void obsidian.syncTrade(id)
     const row = db.prepare('SELECT * FROM trades WHERE id = ?').get(id) as Record<string, unknown>
     return { ...rowToTrade(row), confluence_ids: getConfluenceIds(db, 'trade', id) }
   })
@@ -261,14 +272,17 @@ export function registerIpcHandlers() {
       notes: (payload.notes as string) ?? null,
     })
     setEntityConfluences(db, 'trade', id, payload.confluence_ids)
+    void obsidian.syncTrade(id)
     const row = db.prepare('SELECT * FROM trades WHERE id = ?').get(id) as Record<string, unknown>
     return { ...rowToTrade(row), confluence_ids: getConfluenceIds(db, 'trade', id) }
   })
 
   ipcMain.handle('trades:delete', (_e, id: number) => {
+    const existing = db.prepare('SELECT date FROM trades WHERE id = ?').get(id) as { date: string } | undefined
     deleteEntityImages(db, 'trade', id)
     deleteEntityConfluences(db, 'trade', id)
     db.prepare('DELETE FROM trades WHERE id = ?').run(id)
+    void obsidian.removeTrade(id, existing?.date)
     return true
   })
 
@@ -311,6 +325,7 @@ export function registerIpcHandlers() {
       })
     const id = info.lastInsertRowid as number
     setEntityConfluences(db, 'missed_trade', id, payload.confluence_ids)
+    void obsidian.syncMissedTrade(id)
     const row = db.prepare('SELECT * FROM missed_trades WHERE id = ?').get(id) as Record<string, unknown>
     return { ...rowToMissedTrade(row), confluence_ids: getConfluenceIds(db, 'missed_trade', id) }
   })
@@ -330,13 +345,16 @@ export function registerIpcHandlers() {
       notes: (payload.notes as string) ?? null,
     })
     setEntityConfluences(db, 'missed_trade', id, payload.confluence_ids)
+    void obsidian.syncMissedTrade(id)
     const row = db.prepare('SELECT * FROM missed_trades WHERE id = ?').get(id) as Record<string, unknown>
     return { ...rowToMissedTrade(row), confluence_ids: getConfluenceIds(db, 'missed_trade', id) }
   })
   ipcMain.handle('missedTrades:delete', (_e, id: number) => {
+    const existing = db.prepare('SELECT date FROM missed_trades WHERE id = ?').get(id) as { date: string } | undefined
     deleteEntityImages(db, 'missed_trade', id)
     deleteEntityConfluences(db, 'missed_trade', id)
     db.prepare('DELETE FROM missed_trades WHERE id = ?').run(id)
+    void obsidian.removeMissedTrade(id, existing?.date)
     return true
   })
 
@@ -357,6 +375,7 @@ export function registerIpcHandlers() {
       fs.copyFileSync(src, dest)
       db.prepare('INSERT INTO entity_images (entity_type, entity_id, path) VALUES (?, ?, ?)').run(entityType, entityId, dest)
     }
+    void obsidian.syncEntityImages(entityType, entityId)
     return true
   })
 
@@ -374,7 +393,9 @@ export function registerIpcHandlers() {
   })
 
   ipcMain.handle('images:remove', (_e, imageId: number) => {
-    const row = db.prepare('SELECT path FROM entity_images WHERE id = ?').get(imageId) as { path: string } | undefined
+    const row = db.prepare('SELECT path, entity_type, entity_id FROM entity_images WHERE id = ?').get(imageId) as
+      | { path: string; entity_type: EntityType; entity_id: number }
+      | undefined
     if (row?.path && fs.existsSync(row.path)) {
       try {
         fs.unlinkSync(row.path)
@@ -383,6 +404,7 @@ export function registerIpcHandlers() {
       }
     }
     db.prepare('DELETE FROM entity_images WHERE id = ?').run(imageId)
+    if (row) void obsidian.syncEntityImages(row.entity_type, row.entity_id)
     return true
   })
 
@@ -395,6 +417,7 @@ export function registerIpcHandlers() {
       `INSERT INTO daily_reviews (date, notes, emotion, lessons_learned) VALUES (@date, @notes, @emotion, @lessons_learned)
        ON CONFLICT(date) DO UPDATE SET notes=@notes, emotion=@emotion, lessons_learned=@lessons_learned`
     ).run(payload)
+    void obsidian.syncDailyReview(payload.date)
     return db.prepare('SELECT * FROM daily_reviews WHERE date = ?').get(payload.date)
   })
 
@@ -427,7 +450,9 @@ export function registerIpcHandlers() {
     'csv:import',
     (_e, args: { filePath: string; mapping: ColumnMapping; accountId: number | null }) => {
       const { rows } = readCsvFile(args.filePath)
-      return importTrades(rows, args.mapping, args.accountId)
+      const count = importTrades(rows, args.mapping, args.accountId)
+      void obsidian.rebuildAll()
+      return count
     }
   )
 
@@ -442,4 +467,28 @@ export function registerIpcHandlers() {
     fs.writeFileSync(result.filePath, tradesToCsv(), 'utf-8')
     return result.filePath
   })
+
+  // ---------- obsidian vault sync ----------
+  ipcMain.handle('obsidian:getConfig', () => obsidian.getConfig())
+
+  ipcMain.handle('obsidian:setEnabled', (_e, enabled: boolean) => obsidian.setEnabled(!!enabled))
+
+  ipcMain.handle('obsidian:chooseVault', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const result = await dialog.showOpenDialog(win!, {
+      title: 'Choose or create the Obsidian vault folder',
+      properties: ['openDirectory', 'createDirectory'],
+      defaultPath: obsidian.resolveVaultPath(),
+    })
+    if (result.canceled || !result.filePaths.length) return obsidian.getConfig()
+    return obsidian.setVaultPath(result.filePaths[0])
+  })
+
+  ipcMain.handle('obsidian:useDefaultVault', () => obsidian.setVaultPath(null))
+
+  ipcMain.handle('obsidian:rebuild', () => obsidian.rebuildAll())
+
+  ipcMain.handle('obsidian:openInObsidian', () => obsidian.openInObsidian())
+
+  ipcMain.handle('obsidian:showFolder', () => obsidian.showVaultFolder())
 }

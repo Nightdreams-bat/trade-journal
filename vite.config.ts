@@ -23,7 +23,7 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
             rollupOptions: {
-              external: ['electron', 'node:sqlite', 'node:fs', 'node:path', 'node:url'],
+              external: ['electron', 'node:sqlite', 'node:fs', 'node:path', 'node:url', 'node:child_process'],
               output: { format: 'cjs', entryFileNames: '[name].cjs' },
             },
             minify: false,

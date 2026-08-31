@@ -15,6 +15,7 @@ interface UtilityPanelProps {
   section: 'calendar' | 'profile'
   onSectionChange: (section: 'calendar' | 'profile') => void
   onManageAccounts: () => void
+  onOpenSettings: () => void
   accounts: Account[]
   refreshKey: number
 }
@@ -32,6 +33,7 @@ export function UtilityPanel({
   section,
   onSectionChange,
   onManageAccounts,
+  onOpenSettings,
   accounts,
   refreshKey,
 }: UtilityPanelProps) {
@@ -198,6 +200,14 @@ export function UtilityPanel({
               style={{ justifyContent: 'center' }}
             >
               <Settings size={14} strokeWidth={1.75} /> Manage accounts
+            </button>
+            <button
+              type="button"
+              className="btn"
+              onClick={onOpenSettings}
+              style={{ justifyContent: 'center' }}
+            >
+              <Settings size={14} strokeWidth={1.75} /> Settings &amp; Obsidian sync
             </button>
           </>
         ) : (

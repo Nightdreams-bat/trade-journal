@@ -1,5 +1,15 @@
 export {}
 
+export interface ObsidianConfig {
+  enabled: boolean
+  vaultPath: string
+  resolvedPath: string
+  defaultPath: string
+  exists: boolean
+  lastSync: string | null
+  noteCount: number
+}
+
 declare global {
   interface Window {
     api: {
@@ -53,6 +63,15 @@ declare global {
         openForImport: () => Promise<{ filePath: string; headers: string[]; sampleRows: string[][]; totalRows: number } | null>
         import: (args: any) => Promise<number>
         export: () => Promise<string | null>
+      }
+      obsidian?: {
+        getConfig: () => Promise<ObsidianConfig>
+        setEnabled: (enabled: boolean) => Promise<ObsidianConfig>
+        chooseVault: () => Promise<ObsidianConfig>
+        useDefaultVault: () => Promise<ObsidianConfig>
+        rebuild: () => Promise<{ ok: boolean; count: number; error?: string }>
+        openInObsidian: () => Promise<void>
+        showFolder: () => Promise<void>
       }
     }
   }

@@ -54,4 +54,13 @@ contextBridge.exposeInMainWorld('api', {
     import: (args: unknown) => invoke('csv:import', args),
     export: () => invoke('csv:export'),
   },
+  obsidian: {
+    getConfig: () => invoke('obsidian:getConfig'),
+    setEnabled: (enabled: boolean) => invoke('obsidian:setEnabled', enabled),
+    chooseVault: () => invoke('obsidian:chooseVault'),
+    useDefaultVault: () => invoke('obsidian:useDefaultVault'),
+    rebuild: () => invoke('obsidian:rebuild'),
+    openInObsidian: () => invoke('obsidian:openInObsidian'),
+    showFolder: () => invoke('obsidian:showFolder'),
+  },
 })
