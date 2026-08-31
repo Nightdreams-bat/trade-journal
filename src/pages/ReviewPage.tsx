@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
+import { Select } from '../components/Select'
 import type { DailyReview } from '../types'
 
 const EMOTIONS = ['Calm', 'Confident', 'Anxious', 'Frustrated', 'Excited', 'Tired', 'FOMO']
@@ -53,9 +54,12 @@ export function ReviewPage({ jumpToDate }: { jumpToDate?: string | null }) {
             <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </label>
           <label className="field" style={{ flex: 1 }}>Emotion / State
-            <select className="select" value={emotion} onChange={(e) => setEmotion(e.target.value)}>
-              {EMOTIONS.map((e) => <option key={e} value={e}>{e}</option>)}
-            </select>
+            <Select
+              ariaLabel="Emotion / State"
+              value={emotion}
+              onChange={setEmotion}
+              options={EMOTIONS.map((e) => ({ value: e, label: e }))}
+            />
           </label>
         </div>
         <label className="field" style={{ marginBottom: 14 }}>Review Notes

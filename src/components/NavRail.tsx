@@ -155,8 +155,9 @@ export function NavRail({
                       position: 'absolute',
                       inset: 0,
                       borderRadius: 'var(--radius)',
-                      background: 'var(--accent-bg)',
+                      background: 'linear-gradient(135deg, var(--accent-bg), var(--accent-2-bg))',
                       border: '1px solid var(--accent-border)',
+                      boxShadow: '0 6px 16px -8px rgba(61, 110, 232, 0.4)',
                       zIndex: -1,
                     }}
                   />
@@ -167,8 +168,9 @@ export function NavRail({
                       position: 'absolute',
                       inset: 0,
                       borderRadius: 'var(--radius)',
-                      background: 'var(--accent-bg)',
+                      background: 'linear-gradient(135deg, var(--accent-bg), var(--accent-2-bg))',
                       border: '1px solid var(--accent-border)',
+                      boxShadow: '0 6px 16px -8px rgba(61, 110, 232, 0.4)',
                       zIndex: -1,
                     }}
                     transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}

@@ -28,9 +28,9 @@ type UtilitySection = 'calendar' | 'profile'
 
 const HERO_SHIFTS: Record<'none' | 'utility' | 'nav' | 'both', HeroShift> = {
   none: { x: 0, scale: 1 },
-  utility: { x: -100, scale: 0.972 },
-  nav: { x: 76, scale: 0.975 },
-  both: { x: -30, scale: 0.94 },
+  utility: { x: -64, scale: 0.99 },
+  nav: { x: 52, scale: 0.99 },
+  both: { x: -18, scale: 0.98 },
 }
 
 function App() {
@@ -109,7 +109,9 @@ function App() {
 
   const accountLabel = accounts[0] ? `${accounts[0].name} · ${accounts[0].currency}` : 'No account yet'
 
-  const scrimShow = (navOpen || utilityOpen) && (isNarrow || reducedMotion)
+  // Dim the rest of the scene whenever a side panel is open — the open panel
+  // stays lit (it sits above the scrim), everything behind it recedes.
+  const scrimShow = navOpen || utilityOpen
 
   return (
     <div className="app-root" style={{ minHeight: '100vh', position: 'relative' }}>
@@ -198,20 +200,18 @@ function App() {
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={tab}
-                    initial={{ opacity: 0, y: 10, filter: 'blur(8px)' }}
+                    initial={{ opacity: 0, y: 8 }}
                     animate={{
                       opacity: 1,
                       y: 0,
-                      filter: 'blur(0px)',
-                      transition: { duration: 0.34, ease: [0.16, 1, 0.3, 1] },
+                      transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
                     }}
                     exit={{
                       opacity: 0,
-                      y: -8,
-                      filter: 'blur(4px)',
-                      transition: { duration: 0.16, ease: 'easeIn' },
+                      y: -6,
+                      transition: { duration: 0.1, ease: 'easeIn' },
                     }}
-                    style={{ position: 'relative', zIndex: 1 }}
+                    style={{ position: 'relative', zIndex: 1, willChange: 'transform, opacity' }}
                   >
                     {pages}
                   </motion.div>
@@ -225,6 +225,8 @@ function App() {
           open={utilityOpen}
           onClose={closePanels}
           section={utilitySection}
+          onSectionChange={setUtilitySection}
+          onManageAccounts={() => setShowAccounts(true)}
           accounts={accounts}
           refreshKey={refreshKey}
         />

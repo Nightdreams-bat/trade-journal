@@ -1,7 +1,7 @@
 import { motion } from 'motion/react'
 import { usePrefersReducedMotion } from '../anim'
 import { HOVER } from '../anim/tokens'
-import { Bell, CalendarDays, User } from './icons'
+import { CalendarDays, User } from './icons'
 
 interface HeroHeaderProps {
   greeting: string
@@ -69,8 +69,7 @@ export function HeroHeader({
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
         {iconBtn('Calendar', onOpenCalendar, <CalendarDays size={17} strokeWidth={1.75} absoluteStrokeWidth />)}
-        {iconBtn('Notifications', onOpenProfile, <Bell size={17} strokeWidth={1.75} absoluteStrokeWidth />, showWhatsNewDot)}
-        {iconBtn('Profile & accounts', onOpenProfile, <User size={17} strokeWidth={1.75} absoluteStrokeWidth />)}
+        {iconBtn('Profile & accounts', onOpenProfile, <User size={17} strokeWidth={1.75} absoluteStrokeWidth />, showWhatsNewDot)}
         <motion.button type="button" className="btn btn-primary" onClick={onNewTrade} {...hover}>
           + Trade Entry
         </motion.button>

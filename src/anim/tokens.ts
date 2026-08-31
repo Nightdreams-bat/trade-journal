@@ -22,4 +22,3 @@ export const PANEL = { duration: 0.42, ease: EASE_SIG } as const // nav / utilit
 export const PANEL_OUT = { duration: 0.3, ease: EASE_OUT } as const // close
 export const HERO_SHIFT = { duration: 0.5, ease: EASE_SIG } as const // hero translate + scale
 export const HOVER = { duration: 0.18, ease: EASE_OUT } as const
-export const BLUR_PX = 4

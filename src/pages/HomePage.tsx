@@ -4,7 +4,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis } from 'recharts'
 import { RingStat } from '../components/RingStat'
 import { Timeline } from '../components/Timeline'
 import { TradeFormModal } from '../components/TradeFormModal'
-import { CountUpValue } from '../anim'
+import { CountUpValue, Reveal, Stagger } from '../anim'
 import { COLORS } from '../colors'
 import { TOOLTIP_STYLE, TOOLTIP_LABEL_STYLE, TOOLTIP_ITEM_STYLE, CHART_ANIM } from '../charts/chartTheme'
 import { formatRatio } from '../format'
@@ -67,8 +67,8 @@ export function HomePage({
   const loading = !summary || !trades
   const empty = !loading && trades!.length === 0 && summary!.overall.totalTrades === 0
 
-  const skel = (h = 16) => (
-    <div style={{ height: h, borderRadius: 8, background: 'rgba(60,50,38,0.06)', width: '70%' }} />
+  const skel = (h = 16, w = '70%') => (
+    <div style={{ height: h, borderRadius: 10, background: 'rgba(60,50,38,0.06)', width: w }} />
   )
 
   const curve = useMemo(
@@ -76,165 +76,238 @@ export function HomePage({
     [summary],
   )
 
+  const daysTraded = useMemo(
+    () => (summary ? Object.keys(summary.calendar ?? {}).length : 0),
+    [summary],
+  )
+
   const pnl = summary?.kpis.totalPnl ?? 0
   const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)'
 
-  return (
-    <div className="hero-content">
-      <div className="hero-grid">
-        {/* ---- Analytics: full-bleed equity curve + P&L overlay ---- */}
-        <section className="analytics card">
-          {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, padding: 'var(--sp-4)' }}>
-              {skel(28)}
-              {skel(160)}
-            </div>
-          ) : empty ? (
+  if (loading) {
+    return (
+      <div className="hero-content">
+        <div className="hero-grid">
+          <section className="analytics card" style={{ padding: 'var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {skel(28, '40%')}
+            {skel(180, '100%')}
+          </section>
+          <section className="home-stats card">
+            {[0, 1, 2, 3].map((i) => (
+              <div key={i} className="stat-cell">{skel(24, '55%')}</div>
+            ))}
+          </section>
+          <section className="home-rings card">{skel(90, '50%')}</section>
+        </div>
+      </div>
+    )
+  }
+
+  if (empty) {
+    return (
+      <div className="hero-content">
+        <div
+          style={{
+            minHeight: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            className="card"
+            style={{
+              maxWidth: 460,
+              padding: 'var(--sp-7) var(--sp-6)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              gap: 12,
+            }}
+          >
             <div
               style={{
-                flex: 1,
+                width: 56,
+                height: 56,
+                borderRadius: 'var(--radius-pill)',
+                background: 'var(--accent-bg)',
+                color: 'var(--accent)',
                 display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
+                alignItems: 'center',
                 justifyContent: 'center',
-                gap: 10,
-                padding: 'var(--sp-5)',
               }}
             >
-              <div style={{ fontSize: 18, fontWeight: 'var(--weight-title)', color: 'var(--text-strong)' }}>
-                No trades yet
-              </div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', maxWidth: 320 }}>
-                Log your first trade to start building an equity curve and see your stats here.
-              </div>
-              <button className="btn btn-primary" onClick={onNewTrade}>
-                Log your first trade
-              </button>
+              <Sparkles size={24} strokeWidth={1.75} />
             </div>
-          ) : (
-            <>
-              <div className="analytics-overlay">
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', letterSpacing: '0.01em' }}>Total P&amp;L</div>
-                <div style={{ fontSize: 32, fontWeight: 'var(--weight-title)', color: pnlColor, lineHeight: 1.1 }}>
-                  <CountUpValue value={money(pnl)} />
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-                  {summary!.kpis.returnsPct >= 0 ? '+' : ''}
-                  {summary!.kpis.returnsPct}% · PF {formatRatio(summary!.kpis.profitFactor)}
-                </div>
-              </div>
-
-              <div className="analytics-chart">
-                {curve.length < 2 ? (
-                  <div
-                    style={{
-                      height: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--text-dim)',
-                      fontSize: 12,
-                    }}
-                  >
-                    Not enough trades yet
-                  </div>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={curve} margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
-                      <defs>
-                        <linearGradient id="homeEquityFill" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={COLORS.green} stopOpacity={0.32} />
-                          <stop offset="100%" stopColor={COLORS.green} stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <YAxis hide domain={['dataMin', 'dataMax']} />
-                      <Tooltip
-                        contentStyle={TOOLTIP_STYLE}
-                        labelStyle={TOOLTIP_LABEL_STYLE}
-                        itemStyle={TOOLTIP_ITEM_STYLE}
-                        formatter={(v) => [`$${v}`, 'Cumulative P&L']}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="equity"
-                        stroke={COLORS.green}
-                        strokeWidth={2}
-                        fill="url(#homeEquityFill)"
-                        {...CHART_ANIM}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                )}
-              </div>
-
-              <div className="analytics-footer">
-                <span style={{ fontSize: 11.5, color: 'var(--text-dim)' }}>
-                  Max drawdown {money(summary!.drawdown.maxDrawdown)}
-                </span>
-                <button
-                  className="btn"
-                  style={{ padding: '4px 10px', fontSize: 11 }}
-                  onClick={() => onNavigate('analytics')}
-                >
-                  Analytics <ArrowRight size={12} strokeWidth={2} />
-                </button>
-              </div>
-            </>
-          )}
-        </section>
-
-        {/* ---- Supporting block: rings + one insight ---- */}
-        <section className="support card">
-          {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {skel(80)}
-              {skel(20)}
+            <div style={{ fontSize: 20, fontWeight: 'var(--weight-title)', color: 'var(--text-strong)' }}>
+              Your journal starts here
             </div>
-          ) : (
-            <>
-              <div className="support-rings">
-                <RingStat percent={summary!.kpis.winRate} caption="win rate" size={84} />
-                {discipline != null ? (
-                  <RingStat
-                    percent={discipline}
-                    color="var(--accent-bright)"
-                    caption="discipline"
-                    size={84}
+            <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              Log your first trade to build an equity curve, unlock analytics, and start
+              tracking your edge and discipline.
+            </div>
+            <button className="btn btn-primary" onClick={onNewTrade} style={{ marginTop: 4 }}>
+              Log your first trade
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const returnsUp = summary!.kpis.returnsPct >= 0
+  const stats: { label: string; value: string; color?: string; arrow?: string }[] = [
+    { label: 'Win rate', value: `${summary!.kpis.winRate}%` },
+    {
+      label: 'Returns',
+      value: `${Math.abs(summary!.kpis.returnsPct)}%`,
+      color: returnsUp ? 'var(--green)' : 'var(--red)',
+      arrow: returnsUp ? '▲' : '▼',
+    },
+    { label: 'Profit factor', value: formatRatio(summary!.kpis.profitFactor) },
+    { label: 'Max drawdown', value: money(summary!.drawdown.maxDrawdown) },
+  ]
+
+  return (
+    <div className="hero-content">
+      <Stagger className="hero-grid">
+        {/* ---- Analytics: full-bleed equity curve + P&L overlay ---- */}
+        <Reveal className="analytics card">
+          <div className="analytics-overlay">
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', letterSpacing: '0.01em' }}>
+              Total P&amp;L · {format(new Date(), 'MMMM')}
+            </div>
+            <div
+              style={{
+                fontSize: 34,
+                fontWeight: 'var(--weight-title)',
+                color: pnlColor,
+                lineHeight: 1.1,
+                textShadow: pnl >= 0 ? '0 2px 22px rgba(31,190,120,0.38)' : '0 2px 22px rgba(226,61,69,0.34)',
+              }}
+            >
+              <CountUpValue value={money(pnl)} />
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+              PF {formatRatio(summary!.kpis.profitFactor)} · {daysTraded} days traded
+            </div>
+          </div>
+
+          <div className="analytics-chart">
+            {curve.length < 2 ? (
+              <div
+                style={{
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--text-dim)',
+                  fontSize: 12,
+                }}
+              >
+                Not enough trades yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={curve} margin={{ top: 8, right: 0, bottom: 0, left: 0 }}>
+                  <defs>
+                    <linearGradient id="homeEquityFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={COLORS.greenBright} stopOpacity={0.42} />
+                      <stop offset="55%" stopColor={COLORS.green} stopOpacity={0.16} />
+                      <stop offset="100%" stopColor={COLORS.accent2} stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="homeEquityStroke" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor={COLORS.green} />
+                      <stop offset="100%" stopColor={COLORS.greenBright} />
+                    </linearGradient>
+                  </defs>
+                  <YAxis hide domain={['dataMin', 'dataMax']} />
+                  <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    labelStyle={TOOLTIP_LABEL_STYLE}
+                    itemStyle={TOOLTIP_ITEM_STYLE}
+                    formatter={(v) => [`$${v}`, 'Cumulative P&L']}
                   />
-                ) : (
-                  <div style={{ fontSize: 12, color: 'var(--text-dim)', alignSelf: 'center' }}>
-                    No discipline data
-                  </div>
-                )}
-              </div>
+                  <Area
+                    type="monotone"
+                    dataKey="equity"
+                    stroke="url(#homeEquityStroke)"
+                    strokeWidth={2.75}
+                    fill="url(#homeEquityFill)"
+                    style={{ filter: 'drop-shadow(0 6px 14px rgba(31,190,120,0.3))' }}
+                    {...CHART_ANIM}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
 
-              <div className="support-insight">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: 12 }}>
-                  <Sparkles size={13} strokeWidth={1.75} />
-                  <span>Insight</span>
-                </div>
-                <p style={{ fontSize: 12.5, lineHeight: 1.5, color: 'var(--text)', margin: '6px 0 0' }}>
-                  {summary!.insights[0] ?? 'Keep logging trades to unlock pattern insights.'}
-                </p>
-                <button
-                  className="btn"
-                  style={{ padding: '4px 10px', fontSize: 11, marginTop: 8, alignSelf: 'flex-start' }}
-                  onClick={() => onNavigate('analytics')}
-                >
-                  See all <ArrowRight size={12} strokeWidth={2} />
-                </button>
+          <div className="analytics-footer">
+            <span style={{ fontSize: 11.5, color: 'var(--text-dim)' }}>
+              {summary!.overall.totalTrades} trades all-time
+            </span>
+            <button
+              className="btn"
+              style={{ padding: '4px 10px', fontSize: 11 }}
+              onClick={() => onNavigate('analytics')}
+            >
+              Analytics <ArrowRight size={12} strokeWidth={2} />
+            </button>
+          </div>
+        </Reveal>
+
+        {/* ---- 2x2 KPI mini-grid ---- */}
+        <Reveal className="home-stats card">
+          {stats.map((s) => (
+            <div key={s.label} className="stat-cell">
+              <span className="stat-label">{s.label}</span>
+              <span className="stat-value">
+                {s.arrow && <span className="stat-arrow" style={{ color: s.color }}>{s.arrow}</span>}
+                <span style={s.color ? { color: s.color } : undefined}>
+                  <CountUpValue value={s.value} />
+                </span>
+              </span>
+            </div>
+          ))}
+        </Reveal>
+
+        {/* ---- Rings + insight ---- */}
+        <Reveal className="home-rings card">
+          <div className="rings-cluster">
+            <RingStat percent={summary!.kpis.winRate} caption="win rate" size={96} />
+            {discipline != null ? (
+              <RingStat percent={discipline} color="var(--accent-2)" caption="discipline" size={96} />
+            ) : (
+              <div style={{ fontSize: 12, color: 'var(--text-dim)', alignSelf: 'center', width: 96, textAlign: 'center' }}>
+                No discipline data yet
               </div>
-            </>
-          )}
-        </section>
+            )}
+          </div>
+
+          <div className="insight-body">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: 12 }}>
+              <Sparkles size={13} strokeWidth={1.75} />
+              <span>Insight</span>
+            </div>
+            <p style={{ fontSize: 13, lineHeight: 1.6, color: 'var(--text)', margin: '8px 0 0' }}>
+              {summary!.insights[0] ?? 'Keep logging trades to unlock pattern insights.'}
+            </p>
+            <button
+              className="btn"
+              style={{ padding: '4px 10px', fontSize: 11, marginTop: 10, alignSelf: 'flex-start' }}
+              onClick={() => onNavigate('analytics')}
+            >
+              See all insights <ArrowRight size={12} strokeWidth={2} />
+            </button>
+          </div>
+        </Reveal>
 
         {/* ---- Timeline: full width ---- */}
-        <Timeline
-          trades={recent}
-          onOpenTrade={setOpenTrade}
-          onViewAll={() => onNavigate('trades')}
-        />
-      </div>
+        <Reveal className="timeline">
+          <Timeline trades={recent} onOpenTrade={setOpenTrade} onViewAll={() => onNavigate('trades')} />
+        </Reveal>
+      </Stagger>
 
       {openTrade && (
         <TradeFormModal

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { Modal } from './Modal'
+import { Select } from './Select'
 import { TagInput } from './TagInput'
 import { ImageGallery } from './ImageGallery'
 import { ConfluenceSelector } from './ConfluenceSelector'
@@ -82,19 +83,24 @@ export function MissedTradeFormModal({
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
           <label className="field">Direction
-            <select className="select" value={direction} onChange={(e) => setDirection(e.target.value)}>
-              {DIRECTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
-            </select>
+            <Select
+              ariaLabel="Direction"
+              value={direction}
+              onChange={setDirection}
+              options={DIRECTIONS.map((d) => ({ value: d, label: d }))}
+            />
           </label>
           <label className="field">Would-be P&L ($)
             <input className="input" type="number" step="any" value={wouldBePnl} onChange={(e) => setWouldBePnl(e.target.value)} />
           </label>
         </div>
         <label className="field">Model / Strategy
-          <select className="select" value={strategyId} onChange={(e) => setStrategyId(e.target.value ? Number(e.target.value) : '')}>
-            <option value="">—</option>
-            {strategies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
+          <Select
+            ariaLabel="Model / Strategy"
+            value={strategyId === '' ? '' : String(strategyId)}
+            onChange={(v) => setStrategyId(v ? Number(v) : '')}
+            options={[{ value: '', label: '—' }, ...strategies.map((s) => ({ value: String(s.id), label: s.name }))]}
+          />
         </label>
         <label className="field">Reason Missed
           <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Hesitated, missed alert, at work..." />

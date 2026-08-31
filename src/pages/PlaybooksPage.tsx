@@ -92,23 +92,23 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Win Rate</span><span>{s.winRate}%</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Win Rate</span><span>{s.winRate ?? 0}%</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Profit Factor</span><span>{formatRatio(s.profitFactor)}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Profit Factor</span><span>{formatRatio(s.profitFactor ?? 0)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Expectancy / trade</span><span>${s.expectancy.toFixed(2)}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Expectancy / trade</span><span>${(s.expectancy ?? 0).toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Avg R Multiple</span><span>{s.avgRMultiple.toFixed(2)}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Avg R Multiple</span><span>{(s.avgRMultiple ?? 0).toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Plan Adherence</span><span>{s.planAdherence}%</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Plan Adherence</span><span>{s.planAdherence ?? 0}%</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Total P&L</span>
-                  <span className={s.totalPnl >= 0 ? 'pnl-positive' : 'pnl-negative'}>${s.totalPnl.toFixed(0)}</span>
+                  <span className={(s.totalPnl ?? 0) >= 0 ? 'pnl-positive' : 'pnl-negative'}>${(s.totalPnl ?? 0).toFixed(0)}</span>
                 </div>
               </div>
             </div>

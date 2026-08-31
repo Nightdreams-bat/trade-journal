@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Modal } from './Modal'
+import { Select } from './Select'
 import type { Account } from '../types'
 
 type FieldKey = 'date' | 'pnl' | 'pair' | 'session' | 'direction' | 'risk_per_trade' | 'notes'
@@ -86,25 +87,26 @@ export function CsvImportModal({
             {FIELDS.map((f) => (
               <label className="field" key={f.key}>
                 {f.label}{f.required ? ' *' : ''}
-                <select
-                  className="select"
-                  value={mapping[f.key] ?? ''}
-                  onChange={(e) =>
-                    setMapping((m) => ({ ...m, [f.key]: e.target.value === '' ? undefined : Number(e.target.value) }))
+                <Select
+                  ariaLabel={f.label}
+                  value={mapping[f.key] === undefined ? '' : String(mapping[f.key])}
+                  onChange={(v) =>
+                    setMapping((m) => ({ ...m, [f.key]: v === '' ? undefined : Number(v) }))
                   }
-                >
-                  <option value="">— skip —</option>
-                  {file.headers.map((h, i) => (
-                    <option key={i} value={i}>{h}</option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: '— skip —' },
+                    ...file.headers.map((h, i) => ({ value: String(i), label: h })),
+                  ]}
+                />
               </label>
             ))}
             <label className="field">Import into Account
-              <select className="select" value={accountId} onChange={(e) => setAccountId(e.target.value ? Number(e.target.value) : '')}>
-                <option value="">—</option>
-                {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select>
+              <Select
+                ariaLabel="Import into Account"
+                value={accountId === '' ? '' : String(accountId)}
+                onChange={(v) => setAccountId(v ? Number(v) : '')}
+                options={[{ value: '', label: '—' }, ...accounts.map((a) => ({ value: String(a.id), label: a.name }))]}
+              />
             </label>
           </div>
 

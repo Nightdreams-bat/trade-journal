@@ -45,7 +45,7 @@ export function RingStat({
             strokeDasharray={c}
             strokeDashoffset={offset}
             style={{
-              filter: `drop-shadow(0 0 6px ${color === 'var(--accent)' ? 'rgba(76,111,165,0.35)' : color})`,
+              filter: `drop-shadow(0 0 8px ${color === 'var(--accent)' ? 'rgba(61,110,232,0.45)' : color})`,
               ...(reduced
                 ? null
                 : { transition: 'stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1)', strokeDashoffset: offset }),
