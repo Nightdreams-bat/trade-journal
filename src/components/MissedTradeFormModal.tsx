@@ -71,8 +71,8 @@ export function MissedTradeFormModal({
 
   return (
     <Modal title={saved ? 'Edit Missed Trade' : 'Log Missed Trade'} onClose={onClose} wide>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
           <label className="field">Date
             <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </label>
@@ -80,7 +80,7 @@ export function MissedTradeFormModal({
             <input className="input" value={pair} onChange={(e) => setPair(e.target.value)} />
           </label>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }}>
           <label className="field">Direction
             <select className="select" value={direction} onChange={(e) => setDirection(e.target.value)}>
               {DIRECTIONS.map((d) => <option key={d} value={d}>{d}</option>)}

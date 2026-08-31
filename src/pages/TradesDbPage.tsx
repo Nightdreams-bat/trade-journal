@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { FilterBar } from '../components/FilterBar'
 import { TradeFormModal } from '../components/TradeFormModal'
 import { CsvImportModal } from '../components/CsvImportModal'
+import { Upload, Download, Plus } from '../components/icons'
 import type { Account, Confluence, Strategy, Trade } from '../types'
 
 type SortKey = 'date' | 'pnl' | 'pair'
@@ -91,9 +92,9 @@ export function TradesDbPage({
           />
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button className="btn" onClick={() => setShowImport(true)}>Import CSV</button>
-          <button className="btn" onClick={exportCsv}>Export CSV</button>
-          <button className="btn btn-primary" onClick={() => setEditingTrade(null)}>+ New Trade</button>
+          <button className="btn" onClick={() => setShowImport(true)}><Upload size={16} style={{ marginRight: 4 }} />Import CSV</button>
+          <button className="btn" onClick={exportCsv}><Download size={16} style={{ marginRight: 4 }} />Export CSV</button>
+          <button className="btn btn-primary" onClick={() => setEditingTrade(null)}><Plus size={16} style={{ marginRight: 4 }} />New Trade</button>
         </div>
       </div>
 

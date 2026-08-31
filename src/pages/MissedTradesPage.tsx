@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { MissedTradeFormModal } from '../components/MissedTradeFormModal'
+import { Plus } from '../components/icons'
 import type { Confluence, MissedTrade, Strategy } from '../types'
 
 type SortKey = 'date' | 'would_be_pnl' | 'pair'
@@ -89,7 +90,7 @@ export function MissedTradesPage({
             </span>
           </div>
         </div>
-        <button className="btn btn-primary" onClick={() => setEditing(null)}>+ Log Missed Trade</button>
+        <button className="btn btn-primary" onClick={() => setEditing(null)}><Plus size={16} style={{ marginRight: 4 }} />Log Missed Trade</button>
       </div>
 
       <div className="card" style={{ overflowX: 'auto', maxHeight: 640, overflowY: 'auto' }}>

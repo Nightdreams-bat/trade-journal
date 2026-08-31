@@ -4,7 +4,7 @@ import { TOOLTIP_STYLE, TOOLTIP_LABEL_STYLE, TOOLTIP_ITEM_STYLE, CHART_ANIM } fr
 
 export function PerformanceRadar({ data }: { data: { metric: string; value: number }[] }) {
   return (
-    <div className="card" style={{ padding: 16, flex: 1, minWidth: 320 }}>
+    <div className="card" style={{ padding: 'var(--sp-4)', flex: 1, minWidth: 320 }}>
       <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>Performance Profile</div>
       <ResponsiveContainer width="100%" height={280}>
         <RadarChart data={data} outerRadius="70%">

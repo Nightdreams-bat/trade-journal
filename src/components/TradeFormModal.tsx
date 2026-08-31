@@ -89,11 +89,11 @@ export function TradeFormModal({
     onClose()
   }
 
-  const grid: CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }
+  const grid: CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }
 
   return (
     <Modal title={savedTrade ? 'Edit Trade' : 'New Trade'} onClose={onClose} wide>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
         <div style={grid}>
           <label className="field">Name
             <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. EURUSD London breakout" />
@@ -128,7 +128,7 @@ export function TradeFormModal({
           </label>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 'var(--sp-3)' }}>
           <label className="field">Risk per Trade ($)
             <input className="input" type="number" step="any" value={riskPerTrade} onChange={(e) => setRiskPerTrade(e.target.value)} />
           </label>

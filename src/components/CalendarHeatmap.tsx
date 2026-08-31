@@ -12,11 +12,13 @@ export function CalendarHeatmap({
   onMonthChange,
   calendar,
   onOpenTrade,
+  compact,
 }: {
   month: string
   onMonthChange: (month: string) => void
   calendar: AnalyticsSummary['calendar']
   onOpenTrade: (trade: Trade) => void
+  compact?: boolean
 }) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [dayTrades, setDayTrades] = useState<Trade[]>([])
@@ -52,26 +54,31 @@ export function CalendarHeatmap({
   }
 
   return (
-    <div className="card" style={{ padding: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button className="btn" onClick={() => onMonthChange(format(addMonths(current, -1), 'yyyy-MM'))}>‹</button>
-          <div style={{ fontWeight: 600, minWidth: 130, textAlign: 'center' }}>{format(current, 'MMMM yyyy')}</div>
-          <button className="btn" onClick={() => onMonthChange(format(addMonths(current, 1), 'yyyy-MM'))}>›</button>
+    <div className="card" style={{ padding: 'var(--sp-4)' }}>
+      {!compact && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button className="btn" onClick={() => onMonthChange(format(addMonths(current, -1), 'yyyy-MM'))}>‹</button>
+            <div style={{ fontWeight: 600, minWidth: 130, textAlign: 'center' }}>{format(current, 'MMMM yyyy')}</div>
+            <button className="btn" onClick={() => onMonthChange(format(addMonths(current, 1), 'yyyy-MM'))}>›</button>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            P&L: <span className={totalPnl >= 0 ? 'pnl-positive' : 'pnl-negative'}>${totalPnl.toFixed(0)}</span>
+            {'  '}Trades: {totalTrades}
+          </div>
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          P&L: <span className={totalPnl >= 0 ? 'pnl-positive' : 'pnl-negative'}>${totalPnl.toFixed(0)}</span>
-          {'  '}Trades: {totalTrades}
-        </div>
-      </div>
+      )}
 
       {(() => {
         const grid = (
-        <Reveal key={month} style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr) 1.1fr', gap: 6 }}>
-        {WEEKDAY_LABELS.map((d) => (
+        <Reveal key={month} style={{ display: 'grid', gridTemplateColumns: compact ? 'repeat(7, 1fr)' : 'repeat(7, 1fr) 1.1fr', gap: 6 }}>
+        {!compact && WEEKDAY_LABELS.map((d) => (
           <div key={d} style={{ color: 'var(--text-dim)', fontSize: 11, textAlign: 'left', paddingLeft: 4 }}>{d}</div>
         ))}
-        <div style={{ color: 'var(--text-dim)', fontSize: 11 }}>Summary</div>
+        {compact && WEEKDAY_LABELS.map((d) => (
+          <div key={d} style={{ color: 'var(--text-dim)', fontSize: 9, textAlign: 'left', paddingLeft: 2 }}>{d}</div>
+        ))}
+        {!compact && <div style={{ color: 'var(--text-dim)', fontSize: 11 }}>Summary</div>}
 
         {weeks.map((week, wi) => {
           let weekPnl = 0
@@ -97,17 +104,17 @@ export function CalendarHeatmap({
                     className={hasData ? 'card--interactive' : undefined}
                     onClick={() => hasData && openDay(key)}
                     style={{
-                      minHeight: 58,
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '6px 8px',
+                      minHeight: compact ? 36 : 58,
+                      borderRadius: 'var(--radius-control)',
+                      padding: compact ? '4px 6px' : '6px 8px',
                       cursor: hasData ? 'pointer' : 'default',
                       background: hasData ? (entry!.pnl >= 0 ? 'var(--green-soft)' : 'var(--red-soft)') : 'transparent',
                       border: `1px solid ${hasData ? 'transparent' : 'var(--border-soft)'}`,
                       opacity: inMonth ? 1 : 0.35,
                     }}
                   >
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{format(d, 'd')}</div>
-                    {hasData && (
+                    <div style={{ fontSize: compact ? 9 : 11, color: 'var(--text-muted)' }}>{format(d, 'd')}</div>
+                    {hasData && !compact && (
                       <div style={{ marginTop: 6 }}>
                         <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>{entry!.count} trade{entry!.count > 1 ? 's' : ''}</div>
                         <div className={entry!.pnl >= 0 ? 'pnl-positive' : 'pnl-negative'} style={{ fontSize: 12, fontWeight: 600 }}>
@@ -118,27 +125,29 @@ export function CalendarHeatmap({
                   </div>
                 )
               })}
-              <div
-                key={`summary-${wi}`}
-                style={{
-                  minHeight: 58,
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '6px 8px',
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-soft)',
-                }}
-              >
-                {weekTrades > 0 ? (
-                  <>
-                    <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>{weekTrades} trades</div>
-                    <div className={weekPnl >= 0 ? 'pnl-positive' : 'pnl-negative'} style={{ fontSize: 12, fontWeight: 600 }}>
-                      {weekPnl >= 0 ? '+' : ''}{weekPnl.toFixed(0)}
-                    </div>
-                  </>
-                ) : (
-                  <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>—</div>
-                )}
-              </div>
+              {!compact && (
+                <div
+                  key={`summary-${wi}`}
+                  style={{
+                    minHeight: 58,
+                    borderRadius: 'var(--radius-control)',
+                    padding: '6px 8px',
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border-soft)',
+                  }}
+                >
+                  {weekTrades > 0 ? (
+                    <>
+                      <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>{weekTrades} trades</div>
+                      <div className={weekPnl >= 0 ? 'pnl-positive' : 'pnl-negative'} style={{ fontSize: 12, fontWeight: 600 }}>
+                        {weekPnl >= 0 ? '+' : ''}{weekPnl.toFixed(0)}
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 10, color: 'var(--text-dim)' }}>—</div>
+                  )}
+                </div>
+              )}
             </Fragment>
           )
         })}

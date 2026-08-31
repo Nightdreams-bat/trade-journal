@@ -70,11 +70,11 @@ export function AnalyticsPage({
   }
 
   if (!summary) {
-    return <div style={{ padding: 24, color: 'var(--text-muted)' }}>Loading analytics…</div>
+    return <div style={{ padding: 'var(--sp-5)', color: 'var(--text-muted)' }}>Loading analytics…</div>
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <GlassRail style={{ gap: 6 }}>
           {SECTIONS.map((s) => (
@@ -97,7 +97,7 @@ export function AnalyticsPage({
       </div>
 
       <div ref={(el) => { sectionRefs.current.overview = el }}>
-        <Stagger style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <Stagger style={{ display: 'flex', gap: 'var(--sp-3)', flexWrap: 'wrap' }}>
           <Reveal><KpiCard label="Win Rate" value={`${summary.kpis.winRate}%`} /></Reveal>
           <Reveal><KpiCard label="Total P&L" value={`$${summary.kpis.totalPnl.toLocaleString()}`} positive={summary.kpis.totalPnl >= 0} /></Reveal>
           <Reveal><KpiCard label="Returns" value={`${summary.kpis.returnsPct}%`} positive={summary.kpis.returnsPct >= 0} /></Reveal>
@@ -106,14 +106,14 @@ export function AnalyticsPage({
       </div>
 
       <Reveal index={0}>
-        <div ref={(el) => { sectionRefs.current.equity = el }} style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        <div ref={(el) => { sectionRefs.current.equity = el }} style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap' }}>
           <PerformanceRadar data={summary.radar} />
           <EquityCurveChart equityCurve={summary.equityCurve} drawdown={summary.drawdown} />
         </div>
       </Reveal>
 
       <Reveal index={1}>
-        <div ref={(el) => { sectionRefs.current.daily = el }} style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        <div ref={(el) => { sectionRefs.current.daily = el }} style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap' }}>
           <DailyBarChart data={summary.dailyBars} />
           <DayOfWeekChart data={summary.dayOfWeek} />
         </div>
@@ -126,7 +126,7 @@ export function AnalyticsPage({
       </Reveal>
 
       <Reveal index={3}>
-        <div ref={(el) => { sectionRefs.current.calendar = el }} style={{ display: 'flex', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        <div ref={(el) => { sectionRefs.current.calendar = el }} style={{ display: 'flex', gap: 'var(--sp-4)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 420 }}>
             <CalendarHeatmap month={month} onMonthChange={setMonth} calendar={summary.calendar} onOpenTrade={setOpenTrade} />
           </div>

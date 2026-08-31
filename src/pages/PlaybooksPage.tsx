@@ -3,6 +3,7 @@ import type { StrategyPerformance } from '../types'
 import { formatRatio } from '../format'
 import { StrategyDetailModal } from '../components/StrategyDetailModal'
 import { Stagger, Reveal } from '../anim'
+import { X } from '../components/icons'
 
 export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey: number; onStrategiesChanged: () => void }) {
   const [perf, setPerf] = useState<StrategyPerformance[]>([])
@@ -44,11 +45,11 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
     load()
   }
 
-  if (loading) return <div style={{ padding: 24, color: 'var(--text-muted)' }}>Loading playbooks…</div>
+  if (loading) return <div style={{ padding: 'var(--sp-5)', color: 'var(--text-muted)' }}>Loading playbooks…</div>
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div className="card" style={{ padding: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+      <div className="card" style={{ padding: 'var(--sp-4)' }}>
         <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 10 }}>Add a Playbook / Strategy</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <input className="input" placeholder="Name (e.g. London Breakout)" value={newName} onChange={(e) => setNewName(e.target.value)} style={{ flex: 1 }} />
@@ -66,11 +67,11 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
             <div
               className="card card--interactive"
               onClick={() => setOpenStrategyId(s.id)}
-              style={{ padding: 16, cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+              style={{ padding: 'var(--sp-4)', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{s.name}</div>
-                <button className="btn btn-danger" style={{ padding: '3px 8px', fontSize: 11 }} onClick={(e) => removeStrategy(e, s.id)}>✕</button>
+                <button className="btn btn-danger" style={{ padding: '3px 6px', fontSize: 11 }} onClick={(e) => removeStrategy(e, s.id)}><X size={14} /></button>
               </div>
               <div style={{ color: 'var(--text-dim)', fontSize: 11, marginBottom: 8 }}>{s.tradeCount} trades</div>
               {s.description && (

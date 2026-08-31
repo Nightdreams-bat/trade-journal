@@ -82,7 +82,7 @@ export function CsvImportModal({
           <p style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 10 }}>
             {file.filePath} — {file.totalRows} rows found. Map each field to a CSV column.
           </p>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-2)', marginBottom: 12 }}>
             {FIELDS.map((f) => (
               <label className="field" key={f.key}>
                 {f.label}{f.required ? ' *' : ''}

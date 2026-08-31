@@ -23,7 +23,7 @@ export interface Release {
   version: string
   /** ISO date, YYYY-MM-DD. */
   date: string
-  /** Fraunces headline for the release. */
+  /** Headline for the release. */
   title: string
   /** One-sentence summary shown under the title. */
   summary: string
@@ -33,6 +33,39 @@ export interface Release {
 export type DemoId = 'whats-new-tab' | 'equity-curve' | 'tag-pills' | 'calendar-heatmap' | 'kpi-countup'
 
 export const RELEASES: Release[] = [
+  {
+    version: '0.4.0',
+    date: '2026-08-31',
+    title: 'visionOS redesign',
+    summary: 'Rebuilt the interface in an Apple visionOS glass style with floating panels, deep-round corners, and a new Home dashboard.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'Rebuilt the whole interface in an Apple visionOS glass style',
+        detail: 'Bright frosted panels, deep-round corners, floating nav—a complete visual system overhaul.',
+      },
+      {
+        kind: 'new',
+        text: 'New Home tab: bento-grid dashboard',
+        detail: 'Win rate, P&L, equity curve, calendar, prop-firm status, and recent trades at a glance—deep analytics moved to its own tab.',
+      },
+      {
+        kind: 'new',
+        text: 'Floating glass top nav + bottom quick-action ornament',
+        detail: 'Home / Search / Add trade / Profile shortcuts always within reach.',
+      },
+      {
+        kind: 'improved',
+        text: 'Switched to heavier system-sans typeface with tabular numerals',
+        detail: 'Dropped the Fraunces serif for a cleaner, more legible look at any size.',
+      },
+      {
+        kind: 'improved',
+        text: 'Lighter, deeper-blur glass with bright specular edge',
+        detail: 'Softer ambient shadows and refined glass depth for a premium feel.',
+      },
+    ],
+  },
   {
     version: '0.3.0',
     date: '2026-08-31',

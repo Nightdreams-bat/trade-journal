@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
+import { X } from './icons'
 import { DUR, EASE_OUT, usePrefersReducedMotion } from '../anim'
 
 export function TagInput({
@@ -38,10 +39,10 @@ export function TagInput({
             >
               {t}
               <span
-                style={{ cursor: 'pointer', opacity: 0.7 }}
+                style={{ cursor: 'pointer', opacity: 0.7, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
                 onClick={() => onChange(tags.filter((x) => x !== t))}
               >
-                ✕
+                <X size={12} />
               </span>
             </motion.span>
           ))}

@@ -40,12 +40,12 @@ export function PropFirmToolsPanel({ overall }: { overall: AnalyticsSummary['ove
   const kellyPct = payoffRatio > 0 ? Math.max(0, Math.min(1, winRateFrac - (1 - winRateFrac) / payoffRatio)) * 100 : 0
 
   return (
-    <div className="card" style={{ padding: 16 }}>
+    <div className="card" style={{ padding: 'var(--sp-4)' }}>
       <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 12 }}>
         Prop Firm Tools — estimates computed locally from your own trade history (bootstrap Monte Carlo over your logged R-multiples). Treat as a rough guide, not a guarantee.
       </div>
 
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-3)', marginBottom: 16 }}>
         <label className="field" style={{ minWidth: 130 }}>Profit Target %
           <input className="input" type="number" step="any" value={profitTargetPct} onChange={(e) => setProfitTargetPct(e.target.value)} />
         </label>

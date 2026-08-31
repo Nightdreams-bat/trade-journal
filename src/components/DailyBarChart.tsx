@@ -4,7 +4,7 @@ import { TOOLTIP_STYLE, TOOLTIP_LABEL_STYLE, TOOLTIP_ITEM_STYLE, CHART_ANIM, CHA
 
 export function DailyBarChart({ data }: { data: { day: string; pnl: number }[] }) {
   return (
-    <div className="card" style={{ padding: 16, flex: 1, minWidth: 320 }}>
+    <div className="card" style={{ padding: 'var(--sp-4)', flex: 1, minWidth: 320 }}>
       <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>Daily Performance</div>
       <ResponsiveContainer width="100%" height={220}>
         <BarChart data={data}>
@@ -17,7 +17,7 @@ export function DailyBarChart({ data }: { data: { day: string; pnl: number }[] }
             cursor={CHART_CURSOR}
             formatter={(v) => [`$${v}`, 'P&L']}
           />
-          <Bar dataKey="pnl" radius={[4, 4, 4, 4]} {...CHART_ANIM}>
+          <Bar dataKey="pnl" radius={[8, 8, 0, 0]} {...CHART_ANIM}>
             {data.map((d, i) => (
               <Cell key={i} fill={d.pnl >= 0 ? COLORS.green : COLORS.red} />
             ))}

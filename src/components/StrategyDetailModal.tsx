@@ -3,6 +3,7 @@ import { Modal } from './Modal'
 import { EquityCurveChart } from './EquityCurveChart'
 import { DayOfWeekChart } from './DayOfWeekChart'
 import { formatRatio } from '../format'
+import { Edit } from './icons'
 import type { StrategyDetail } from '../types'
 
 function StatRow({ label, value, color }: { label: string; value: string; color?: string }) {
@@ -63,14 +64,14 @@ export function StrategyDetailModal({
 
   return (
     <Modal title={detail.name} onClose={onClose} wide>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div className="card" style={{ padding: 14 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+        <div className="card" style={{ padding: 'var(--sp-3)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Rules / Description</div>
-            {!editingDesc && <button className="btn" style={{ padding: '3px 8px', fontSize: 11 }} onClick={() => setEditingDesc(true)}>Edit</button>}
+            {!editingDesc && <button className="btn" style={{ padding: '3px 6px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 4 }} onClick={() => setEditingDesc(true)}><Edit size={14} />Edit</button>}
           </div>
           {editingDesc ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)' }}>
               <textarea className="input" rows={5} value={descDraft} onChange={(e) => setDescDraft(e.target.value)} placeholder="Entry criteria, confirmation, risk rules, invalidation…" />
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                 <button className="btn" onClick={() => { setEditingDesc(false); setDescDraft(detail.description) }}>Cancel</button>
@@ -84,8 +85,8 @@ export function StrategyDetailModal({
           )}
         </div>
 
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-          <div className="card" style={{ padding: 16, width: 240, flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap' }}>
+          <div className="card" style={{ padding: 'var(--sp-4)', width: 240, flexShrink: 0 }}>
             <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>Performance</div>
             <StatRow label="Trades" value={String(detail.stats.tradeCount)} />
             <StatRow label="Win Rate" value={`${detail.stats.winRate}%`} />
@@ -105,7 +106,7 @@ export function StrategyDetailModal({
           {detail.equityCurve.length >= 2 ? (
             <EquityCurveChart equityCurve={detail.equityCurve} drawdown={detail.drawdown} />
           ) : (
-            <div className="card" style={{ padding: 16, flex: 2, minWidth: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}>
+            <div className="card" style={{ padding: 'var(--sp-4)', flex: 2, minWidth: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}>
               Not enough trades yet for an equity curve
             </div>
           )}
@@ -114,11 +115,11 @@ export function StrategyDetailModal({
         <DayOfWeekChart data={detail.dayOfWeek} />
 
         <div className="card" style={{ overflowX: 'auto', maxHeight: 260, overflowY: 'auto' }}>
-          <div style={{ padding: '10px 12px', color: 'var(--text-muted)', fontSize: 12, borderBottom: '1px solid var(--border-soft)' }}>
+          <div style={{ padding: 'var(--sp-2) var(--sp-3)', color: 'var(--text-muted)', fontSize: 12, borderBottom: '1px solid var(--border-soft)' }}>
             Trades using this playbook ({detail.trades.length}{detail.trades.length === 50 ? '+' : ''})
           </div>
           {detail.trades.length === 0 ? (
-            <div style={{ padding: 16, color: 'var(--text-muted)' }}>No trades tagged with this playbook yet.</div>
+            <div style={{ padding: 'var(--sp-4)', color: 'var(--text-muted)' }}>No trades tagged with this playbook yet.</div>
           ) : (
             <table className="data-table">
               <thead>

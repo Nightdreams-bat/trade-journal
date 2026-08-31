@@ -6,9 +6,11 @@ import type { AnalyticsSummary } from '../types'
 export function EquityCurveChart({
   equityCurve,
   drawdown,
+  compact,
 }: {
   equityCurve: AnalyticsSummary['equityCurve']
   drawdown: AnalyticsSummary['drawdown']
+  compact?: boolean
 }) {
   const merged = equityCurve.map((e, i) => ({
     date: e.date,
@@ -16,18 +18,22 @@ export function EquityCurveChart({
     drawdown: drawdown.series[i]?.drawdown ?? 0,
   }))
 
+  const chartHeight = compact ? 150 : 220
+
   return (
-    <div className="card" style={{ padding: 16, flex: 2, minWidth: 420 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-        <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Equity Curve (all-time)</div>
-        <div style={{ color: 'var(--text-dim)', fontSize: 11 }}>Max drawdown: ${drawdown.maxDrawdown}</div>
-      </div>
+    <div className="card" style={{ padding: 'var(--sp-4)', flex: 2, minWidth: 420 }}>
+      {!compact && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+          <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>Equity Curve (all-time)</div>
+          <div style={{ color: 'var(--text-dim)', fontSize: 11 }}>Max drawdown: ${drawdown.maxDrawdown}</div>
+        </div>
+      )}
       {merged.length < 2 ? (
-        <div style={{ height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}>
+        <div style={{ height: chartHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}>
           Not enough trades yet
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={chartHeight}>
           <AreaChart data={merged}>
             <defs>
               <linearGradient id="equityFill" x1="0" y1="0" x2="0" y2="1">

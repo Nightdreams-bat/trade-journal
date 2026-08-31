@@ -33,5 +33,8 @@ export {
   Download,
   Upload,
   X,
+  Check,
+  Pencil,
+  Pencil as Edit,
   ChevronRight,
 } from 'lucide-react'

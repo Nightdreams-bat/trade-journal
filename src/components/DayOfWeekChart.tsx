@@ -5,7 +5,7 @@ import type { AnalyticsSummary } from '../types'
 
 export function DayOfWeekChart({ data }: { data: AnalyticsSummary['dayOfWeek'] }) {
   return (
-    <div className="card" style={{ padding: 16, flex: 1, minWidth: 320 }}>
+    <div className="card" style={{ padding: 'var(--sp-4)', flex: 1, minWidth: 320 }}>
       <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>
         Performance by Day of Week (all-time)
       </div>
@@ -24,7 +24,7 @@ export function DayOfWeekChart({ data }: { data: AnalyticsSummary['dayOfWeek'] }
               return p ? `${label} — ${p.trades} trades, ${p.winRate}% win rate` : label
             }}
           />
-          <Bar dataKey="pnl" radius={[4, 4, 4, 4]} {...CHART_ANIM}>
+          <Bar dataKey="pnl" radius={[8, 8, 0, 0]} {...CHART_ANIM}>
             {data.map((d, i) => (
               <Cell key={i} fill={d.pnl >= 0 ? COLORS.green : COLORS.red} opacity={d.trades === 0 ? 0.25 : 1} />
             ))}

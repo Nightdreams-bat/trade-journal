@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Modal } from './Modal'
+import { X } from './icons'
 import type { Account } from '../types'
 
 export function AccountsModal({
@@ -40,12 +41,12 @@ export function AccountsModal({
     <Modal title="Manage Accounts" onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
         {accounts.map((a) => (
-          <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', border: '1px solid var(--border-soft)', borderRadius: 6 }}>
+          <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', border: '1px solid var(--border-soft)', borderRadius: 'var(--radius-control)' }}>
             <div>
               <div style={{ fontWeight: 600 }}>{a.name}</div>
               <div style={{ fontSize: 11, color: 'var(--text-dim)' }}>{a.broker || 'No broker set'} · {a.currency} {a.starting_balance.toLocaleString()}</div>
             </div>
-            <button className="btn btn-danger" style={{ padding: '3px 8px', fontSize: 11 }} onClick={() => remove(a.id)}>✕</button>
+            <button className="btn btn-danger" style={{ padding: '3px 6px', fontSize: 11 }} onClick={() => remove(a.id)}><X size={14} /></button>
           </div>
         ))}
       </div>

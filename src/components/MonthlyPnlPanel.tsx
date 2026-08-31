@@ -33,9 +33,9 @@ export function MonthlyPnlPanel({ accountId, strategyId, refreshKey }: { account
   const maxAbs = Math.max(1, ...rows.map((r) => Math.abs(r.pnl)))
 
   return (
-    <div className="card" style={{ padding: 16 }}>
+    <div className="card" style={{ padding: 'var(--sp-4)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-3)' }}>
           <button className="btn" onClick={() => setYear((y) => y - 1)}>‹</button>
           <div style={{ fontWeight: 600, minWidth: 60, textAlign: 'center' }}>{year}</div>
           <button className="btn" onClick={() => setYear((y) => y + 1)}>›</button>
@@ -53,7 +53,7 @@ export function MonthlyPnlPanel({ accountId, strategyId, refreshKey }: { account
           {rows.map((r) => (
             <div key={r.month} style={{ display: 'grid', gridTemplateColumns: '46px 1fr 90px 60px', gap: 10, alignItems: 'center' }}>
               <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.label}</div>
-              <div style={{ background: 'var(--bg-elevated)', borderRadius: 'var(--radius-sm)', height: 10, overflow: 'hidden', position: 'relative' }}>
+              <div style={{ background: 'var(--bg-elevated)', borderRadius: 'var(--radius-control)', height: 10, overflow: 'hidden', position: 'relative' }}>
                 {r.pnl !== 0 && (() => {
                   const animateFromCenter = !prefersReducedMotion && !mounted
                   const finalLeft = r.pnl >= 0 ? '50%' : `${50 - (Math.abs(r.pnl) / maxAbs) * 50}%`
