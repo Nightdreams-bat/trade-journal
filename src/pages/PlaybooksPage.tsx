@@ -2,6 +2,8 @@ import { useEffect, useState, type MouseEvent } from 'react'
 import type { StrategyPerformance } from '../types'
 import { formatRatio } from '../format'
 import { StrategyDetailModal } from '../components/StrategyDetailModal'
+import { Stagger, Reveal } from '../anim'
+import { X } from '../components/icons'
 
 export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey: number; onStrategiesChanged: () => void }) {
   const [perf, setPerf] = useState<StrategyPerformance[]>([])
@@ -43,11 +45,11 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
     load()
   }
 
-  if (loading) return <div style={{ padding: 24, color: 'var(--text-muted)' }}>Loading playbooks…</div>
+  if (loading) return <div style={{ padding: 'var(--sp-5)', color: 'var(--text-muted)' }}>Loading playbooks…</div>
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div className="card" style={{ padding: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+      <div className="card" style={{ padding: 'var(--sp-4)' }}>
         <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 10 }}>Add a Playbook / Strategy</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <input className="input" placeholder="Name (e.g. London Breakout)" value={newName} onChange={(e) => setNewName(e.target.value)} style={{ flex: 1 }} />
@@ -59,17 +61,17 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
       {perf.length === 0 ? (
         <div style={{ color: 'var(--text-muted)', padding: 12 }}>No playbooks yet. Add one above, then tag trades with it from the Trade Entry form.</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
+        <Stagger style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 14 }}>
           {perf.map((s) => (
+            <Reveal key={s.id}>
             <div
-              key={s.id}
-              className="card"
+              className="card card--interactive"
               onClick={() => setOpenStrategyId(s.id)}
-              style={{ padding: 16, cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
+              style={{ padding: 'var(--sp-4)', cursor: 'pointer', display: 'flex', flexDirection: 'column' }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{s.name}</div>
-                <button className="btn btn-danger" style={{ padding: '3px 8px', fontSize: 11 }} onClick={(e) => removeStrategy(e, s.id)}>✕</button>
+                <button className="btn btn-danger" style={{ padding: '3px 6px', fontSize: 11 }} onClick={(e) => removeStrategy(e, s.id)}><X size={14} /></button>
               </div>
               <div style={{ color: 'var(--text-dim)', fontSize: 11, marginBottom: 8 }}>{s.tradeCount} trades</div>
               {s.description && (
@@ -90,28 +92,29 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12.5 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Win Rate</span><span>{s.winRate}%</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Win Rate</span><span>{s.winRate ?? 0}%</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Profit Factor</span><span>{formatRatio(s.profitFactor)}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Profit Factor</span><span>{formatRatio(s.profitFactor ?? 0)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Expectancy / trade</span><span>${s.expectancy.toFixed(2)}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Expectancy / trade</span><span>${(s.expectancy ?? 0).toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Avg R Multiple</span><span>{s.avgRMultiple.toFixed(2)}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Avg R Multiple</span><span>{(s.avgRMultiple ?? 0).toFixed(2)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--text-muted)' }}>Plan Adherence</span><span>{s.planAdherence}%</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Plan Adherence</span><span>{s.planAdherence ?? 0}%</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Total P&L</span>
-                  <span className={s.totalPnl >= 0 ? 'pnl-positive' : 'pnl-negative'}>${s.totalPnl.toFixed(0)}</span>
+                  <span className={(s.totalPnl ?? 0) >= 0 ? 'pnl-positive' : 'pnl-negative'}>${(s.totalPnl ?? 0).toFixed(0)}</span>
                 </div>
               </div>
             </div>
+            </Reveal>
           ))}
-        </div>
+        </Stagger>
       )}
 
       {openStrategyId !== null && (

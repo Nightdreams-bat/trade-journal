@@ -23,7 +23,7 @@ export interface Release {
   version: string
   /** ISO date, YYYY-MM-DD. */
   date: string
-  /** Fraunces headline for the release. */
+  /** Headline for the release. */
   title: string
   /** One-sentence summary shown under the title. */
   summary: string
@@ -33,6 +33,65 @@ export interface Release {
 export type DemoId = 'whats-new-tab' | 'equity-curve' | 'tag-pills' | 'calendar-heatmap' | 'kpi-countup'
 
 export const RELEASES: Release[] = [
+  {
+    version: '0.4.0',
+    date: '2026-08-31',
+    title: 'visionOS redesign',
+    summary: 'Rebuilt the interface as a visionOS-style glass terminal — frosted graphite panels on near-black, signal-green accents, and a new Home dashboard.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'Rebuilt the whole interface as a frosted-glass trading terminal',
+        detail: 'Graphite glass panels on a near-black backdrop with a soft green glow, deep-round corners, floating nav—a complete visual system overhaul.',
+      },
+      {
+        kind: 'new',
+        text: 'New Home tab: bento-grid dashboard',
+        detail: 'Win rate, P&L, equity curve, calendar, prop-firm status, and recent trades at a glance—deep analytics moved to its own tab.',
+      },
+      {
+        kind: 'new',
+        text: 'Floating glass top nav + bottom quick-action ornament',
+        detail: 'Home / Search / Add trade / Profile shortcuts always within reach.',
+      },
+      {
+        kind: 'improved',
+        text: 'Switched to heavier system-sans typeface with tabular numerals',
+        detail: 'Dropped the Fraunces serif for a cleaner, more legible look at any size.',
+      },
+      {
+        kind: 'improved',
+        text: 'New dark palette — near-black surfaces, signal-green accents, off-white text',
+        detail: 'Deeper-blur graphite glass with a bright specular edge and softer ambient shadows.',
+      },
+    ],
+  },
+  {
+    version: '0.3.0',
+    date: '2026-08-31',
+    title: 'Liquid-glass UI pass',
+    summary: 'A frosted "liquid glass" treatment across the navigation, a smooth trailing cursor, and type that stays legible at any window size.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'Smooth cursor follower',
+        detail:
+          'A solid dot tracks the pointer tightly while a ring lags behind and grows over anything clickable. Runs entirely on the compositor and turns itself off for coarse pointers or when you\'ve asked for reduced motion.',
+      },
+      {
+        kind: 'new',
+        text: 'Liquid-glass interface over a photographic backdrop',
+        detail:
+          'The app now sits on a fixed landscape wallpaper. Every raised surface — cards, panels, the navigation, section rails and dialogs — is frosted "liquid glass": a blurred translucent fill with a lit inner edge and a soft outer glow. The navigation and large panels optically warp the scenery behind them (an SVG feTurbulence/feDisplacementMap of the blurred backdrop, ported from the ui-layouts liquid-glass component). A vignette scrim plus slightly more opaque cards keep dense tables and charts readable.',
+      },
+      {
+        kind: 'improved',
+        text: 'Font legibility at any size',
+        detail:
+          'Body text now scales fluidly with the window instead of sitting at a fixed size, never dropping below 13px. Muted text was darkened one step so it still meets contrast guidelines on the translucent panels.',
+      },
+    ],
+  },
   {
     version: '0.2.0',
     date: '2026-08-31',

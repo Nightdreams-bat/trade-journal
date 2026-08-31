@@ -1,22 +1,146 @@
+/* ============================================================
+   Trade Journal — "Warm Glass" theme
+   visionOS-style frosted glass suspended in a warm taupe interior
+   with soft ambient light — translucent off-white surfaces, a
+   restrained blue accent, warm layered contact shadows.
+   Palette: warm taupe / off-white / smoked glass, blue accent only.
+   ============================================================ */
+
 :root {
-  --bg: #0b0d0f;
-  --bg-elevated: #111417;
-  --card: #15181b;
-  --card-hover: #1a1e22;
-  --border: #262b2f;
-  --border-soft: #1e2226;
-  --text: #e8eaed;
-  --text-muted: #8b9299;
-  --text-dim: #5b6167;
-  --green: #34d399;
-  --green-soft: rgba(52, 211, 153, 0.14);
-  --red: #f87171;
-  --red-soft: rgba(248, 113, 113, 0.14);
-  --accent: #3ecf8e;
-  --radius: 10px;
-  --radius-sm: 6px;
-  font-family: -apple-system, 'Segoe UI', Inter, Roboto, Helvetica, Arial, sans-serif;
-  color-scheme: dark;
+  /* --- surfaces (warm taupe interior) --- */
+  --ink: #3B372F;
+  --bg: #E4DDD2;
+  --bg-elevated: #F5F1EA;
+  --card: #FBF9F5;        /* solid fallback fill when backdrop-filter unsupported */
+  --card-hover: #FFFFFF;
+  --border: #D8CFC0;
+  --border-soft: #E7E0D3;
+
+  /* --- text (AA on #FBF9F5) --- */
+  --text-strong: #2E2A24;
+  --text: #4A443B;
+  --text-muted: #6F665A;
+  --text-dim: #9A8F7E;
+
+  /* --- accent — vivid azure, plus a violet companion for range --- */
+  --accent: #3D6EE8;
+  --accent-deep: #2A4FC2;
+  --accent-bright: #6E93F6;
+  --accent-bg: rgba(61, 110, 232, 0.14);
+  --accent-border: rgba(61, 110, 232, 0.42);
+  --accent-2: #8A5CF0;         /* violet — secondary series / discipline ring */
+  --accent-2-bright: #A97DF7;
+  --accent-2-bg: rgba(138, 92, 240, 0.14);
+  --accent-gradient: linear-gradient(135deg, #3D6EE8 0%, #6E5CF0 55%, #8A5CF0 100%);
+
+  /* --- semantic (P&L) — vivid but AA-safe on the light glass --- */
+  --green: #12995F;
+  --green-bright: #1FBE78;
+  --green-soft: rgba(31, 190, 120, 0.18);
+  --red: #E23D45;
+  --red-bright: #F2545B;
+  --red-soft: rgba(226, 61, 69, 0.16);
+  --ember: #E23D45;
+  --amber: #F5A623;
+  --amber-soft: rgba(245, 166, 35, 0.18);
+
+  /* --- colored glow — used for hover / active lift on cards, rings, buttons --- */
+  --glow-green: 0 8px 24px -8px rgba(31, 190, 120, 0.42);
+  --glow-red: 0 8px 24px -8px rgba(226, 61, 69, 0.42);
+  --glow-violet: 0 10px 28px -10px rgba(138, 92, 240, 0.40);
+
+  /* --- geometry (visionOS: very round) --- */
+  --radius-window: 46px;  /* outer glass window / bento container */
+  --radius-panel: 34px;   /* full-width panels, modal */
+  --radius-card: 28px;    /* widget cards, chart cards */
+  --radius-control: 18px; /* buttons, inputs, selects */
+  --radius-pill: 999px;   /* nav bar, ornament, chips, rings */
+  --radius: 20px;         /* legacy alias — keep un-migrated inline styles round */
+  --radius-sm: 14px;      /* legacy alias */
+
+  /* --- spacing scale --- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+
+  /* --- motion --- */
+  --dur-fast: 0.12s;
+  --dur: 0.2s;
+  --dur-medium: 0.3s;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-sig: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-slow: 0.42s;
+  --dur-hero: 0.5s;
+
+  /* --- elevation — layered soft WARM contact shadows, no black glows --- */
+  --glow-accent:
+    0 0 0 1px var(--accent-border),
+    0 12px 30px -10px rgba(61, 110, 232, 0.42);
+  --shadow-lift: 0 2px 8px -4px rgba(60, 50, 38, 0.16);
+  --shadow-card:
+    0 1px 2px rgba(60, 50, 38, 0.06),
+    0 10px 24px -12px rgba(60, 50, 38, 0.16),
+    0 28px 56px -28px rgba(60, 50, 38, 0.14);
+  --shadow-window:
+    0 2px 6px rgba(60, 50, 38, 0.08),
+    0 24px 56px -18px rgba(60, 50, 38, 0.20),
+    0 60px 130px -44px rgba(60, 50, 38, 0.26);
+
+  /* --- liquid glass (shared by .card / .glass / .glass-rail / .modal-panel) ---
+     visionOS-style frosted material: a bright translucent fill, a deep blur,
+     a bright specular hairline along the top edge that reads as glass
+     thickness, plus a soft deep ambient shadow. The optical warp comes from
+     `filter: url(#liquid-glass-bend)` on a ::before layer (see index.html);
+     `--glass-specular` is a static sheen painted by a ::after layer. */
+  --glass-fill: rgba(255, 253, 250, 0.55);
+  --glass-fill-strong: rgba(252, 250, 246, 0.84);
+  --glass-border: rgba(255, 255, 255, 0.65);
+  --glass-blur: blur(28px) saturate(1.06);
+  --glass-blur-deep: blur(40px) saturate(1.08);
+  --glass-edge:
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.75),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(120, 105, 85, 0.10),
+    inset -1px -1px 2px rgba(120, 105, 85, 0.05);
+  --glass-face:
+    0 0 0 1px rgba(120, 105, 85, 0.10),
+    0 0 1px rgba(255, 255, 255, 0.6);
+  --glass-specular: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(255, 255, 255, 0.08) 16%,
+    rgba(255, 255, 255, 0) 40%
+  );
+
+  /* --- gaze / hover highlight --- */
+  --gaze-brightness: 1.02;
+  --gaze-scale: 1.008;
+  --gaze-glow:
+    0 0 0 1px var(--accent-border),
+    0 14px 34px -14px rgba(61, 110, 232, 0.34),
+    var(--shadow-card);
+
+  /* --- type (visionOS system sans; no serif) --- */
+  --font-display: -apple-system, BlinkMacSystemFont, 'Inter Variable', 'Inter', 'Segoe UI', Roboto, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Inter Variable', 'Inter', 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  --weight-body: 450;
+  --weight-medium: 550;
+  --weight-title: 680;
+
+  font-family: var(--font-body);
+  font-weight: var(--weight-body);
+  font-feature-settings: 'tnum' 1;
+  color-scheme: light;
+
+  /* Fluid base: legible in a ~900px window, doesn't balloon at 4K.
+     Clamp keeps content text >= 13px at every window size / DPI. */
+  font-size: clamp(13px, 0.35vw + 11px, 15px);
 }
 
 * {
@@ -28,10 +152,28 @@ html, body, #root {
   margin: 0;
 }
 
+/* Always reserve the scrollbar gutter so switching to a shorter tab
+   doesn't change the viewport width and re-lay-out the fixed backdrop. */
+html {
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
-  font-size: 13px;
+  font-size: 1rem; /* follows the fluid :root clamp above */
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-body);
+  font-weight: var(--weight-title);
+  color: var(--text-strong);
+  letter-spacing: -0.015em;
 }
 
 button, input, select, textarea {
@@ -45,7 +187,11 @@ button {
 }
 
 a {
-  color: inherit;
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--accent-bright);
 }
 
 ::-webkit-scrollbar {
@@ -53,68 +199,410 @@ a {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #23272b;
-  border-radius: 6px;
+  background: #CFC5B4;
+  border-radius: var(--radius-pill);
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+::selection {
+  background: var(--accent-bg);
+  color: var(--text-strong);
+}
+
+/* ---------- editorial helpers ---------- */
+
+.display {
+  font-family: var(--font-body);
+  font-weight: var(--weight-title);
+  letter-spacing: -0.02em;
+  color: var(--text-strong);
+}
+
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mono-chip {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+}
+
+.accent-word {
+  color: var(--accent);
+}
+
+/* ============================================================
+   LIQUID GLASS — the default surface treatment
+   ============================================================
+   `.liquid-glass` is the shared implementation. `.card`, `.glass`,
+   `.glass-rail` and `.modal-panel` all compose it so every raised
+   surface in the app is the same frosted glass. Layer model:
+   translucent fill + `--glass-blur` backdrop, a ::before "bend"
+   layer warped by the SVG displacement filter (index.html
+   #liquid-glass-bend), a ::after static specular sheen, an inset
+   "edge" highlight, and an outer "face" glow + ambient shadow. */
+
+.liquid-glass,
+.card,
+.glass,
+.glass-rail {
+  position: relative;
+  isolation: isolate;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-face), var(--glass-edge), var(--shadow-card);
+}
+
+/* Only the hero slabs frost their backdrop. Per §0, backdrop-filter blanks
+   under any transformed ancestor — every other surface uses the translucent
+   solid fill above, visually equivalent on the bright scene. */
+.liquid-glass--hero {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+}
+
+/* the bend layer: a plain extra frost on the hero slabs only. */
+.liquid-glass--hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  backdrop-filter: blur(3px) saturate(1.12);
+  -webkit-backdrop-filter: blur(3px) saturate(1.12);
+  filter: url(#liquid-glass-bend-strong);
+  pointer-events: none;
+}
+
+/* static specular sheen down from the top edge — reads as a lit glass face */
+.liquid-glass::after,
+.card::after,
+.glass::after,
+.glass-rail::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--glass-specular);
+  pointer-events: none;
+}
+
+/* keep real content above the bend + sheen layers */
+.liquid-glass > *,
+.card > *,
+.glass > *,
+.glass-rail > * {
+  position: relative;
+  z-index: 1;
+}
 
 .card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
+  transition: background var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    filter var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
 }
+
+.glass--rail {
+  border: none;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+/* Shared rail treatment — every secondary nav / section-pill strip
+   renders through <GlassRail> so they are visually identical. */
+.glass-rail {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  border-radius: var(--radius-pill);
+}
+.glass-rail--flush {
+  border-radius: 0;
+  border: none;
+  border-bottom: 1px solid var(--glass-border);
+  flex-wrap: nowrap;
+}
+
+/* Non-blur / no-SVG-filter fallback (older Chromium, disabled compositing). */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .liquid-glass,
+  .card,
+  .glass,
+  .glass-rail {
+    background: var(--card);
+  }
+  .modal-panel {
+    background: var(--bg-elevated);
+  }
+  .liquid-glass::before,
+  .glass::before,
+  .glass-rail::before,
+  .liquid-glass::after,
+  .card::after,
+  .glass::after,
+  .glass-rail::after {
+    display: none;
+  }
+}
+
+/* ---------- ambient room (CSS-only, compositor-driven) ---------- */
+
+.ambient-root {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+/* "Warm aurora glass" room — a bright cream field with slow-moving pools of
+   blush, warm gold and periwinkle. Reads premium and alive but never dark;
+   every stop stays light so the frosted slabs float clearly on top. */
+.ambient-room {
+  position: absolute;
+  inset: -4px;
+  background:
+    radial-gradient(1300px 1000px at 28% 4%, #FFFDF9 0%, rgba(255, 253, 249, 0) 55%),
+    radial-gradient(1200px 950px at 88% 92%, #EFE6D7 0%, rgba(239, 230, 215, 0) 62%),
+    linear-gradient(165deg, #F7F2EA 0%, #F0E8DA 46%, #EAE1D2 100%);
+}
+
+/* A very large, very slow iridescent wash rotating behind everything —
+   the "fancy" layer. Heavily blurred so it never resolves into shapes. */
+.ambient-aurora {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 160vmax;
+  height: 160vmax;
+  margin-left: -80vmax;
+  margin-top: -80vmax;
+  border-radius: 45%;
+  background: conic-gradient(
+    from 0deg,
+    rgba(248, 214, 198, 0.55) 0deg,
+    rgba(244, 231, 205, 0.5) 70deg,
+    rgba(214, 226, 244, 0.5) 150deg,
+    rgba(230, 214, 236, 0.45) 220deg,
+    rgba(249, 227, 210, 0.5) 300deg,
+    rgba(248, 214, 198, 0.55) 360deg
+  );
+  filter: blur(120px) saturate(1.05);
+  opacity: 0.5;
+  will-change: transform;
+  animation: ambient-spin 140s linear infinite;
+}
+
+/* Soft light pools that drift slowly — now clearly visible, still smooth. */
+.ambient-pool {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.7;
+  will-change: transform;
+  animation: ambient-drift 60s ease-in-out infinite alternate;
+}
+.ambient-pool.p2 { animation-duration: 78s; animation-delay: -20s; opacity: 0.6; }
+.ambient-pool.p3 { animation-duration: 96s; animation-delay: -46s; opacity: 0.5; }
+.ambient-pool.p4 { animation-duration: 110s; animation-delay: -12s; opacity: 0.5; }
+
+/* Film grain — kills gradient banding, adds a premium matte finish. */
+.ambient-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.86' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+}
+/* Vignette + a faint top highlight so the room feels lit from above-centre. */
+.ambient-root::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(80% 55% at 50% -10%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 60%),
+    radial-gradient(125% 125% at 50% 40%, rgba(58, 46, 34, 0) 48%, rgba(58, 46, 34, 0.14) 100%);
+}
+
+@keyframes ambient-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(3.5%, -4%, 0) scale(1.09); }
+}
+@keyframes ambient-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- surfaces ---------- */
+/* .card itself is defined in the LIQUID GLASS block above. */
+
+/* Opt-in gaze / hover elevation for clickable cards (add alongside .card). */
+.card--interactive {
+  cursor: pointer;
+}
+.card--interactive:hover {
+  transform: scale(var(--gaze-scale));
+  filter: brightness(var(--gaze-brightness));
+  border-color: var(--accent-border);
+  box-shadow: var(--glass-face), var(--glass-edge), var(--gaze-glow);
+}
+
+/* ---------- bento grid (home dashboard) ---------- */
+
+.bento {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+}
+/* BentoItem sets only `--c` / `--r` inline; the stylesheet owns grid-column
+   so the container queries below can override without !important. */
+.bento-item {
+  grid-column: span var(--c, 4);
+  grid-row: span var(--r, 1);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  contain: layout paint;
+}
+.bento-item.card {
+  padding: var(--sp-4);
+}
+/* over-wide items clamp to the available track count as the container shrinks */
+@container (max-width: 1100px) {
+  .bento { grid-template-columns: repeat(8, 1fr); }
+  .bento-item { grid-column: span min(var(--c, 4), 8); }
+}
+@container (max-width: 760px) {
+  .bento { grid-template-columns: repeat(4, 1fr); }
+  .bento-item {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
+}
+
+/* ---------- buttons ---------- */
 
 .btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 12px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-control);
   color: var(--text);
   font-size: 12.5px;
-  transition: background 0.12s, border-color 0.12s;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.02em;
+  transition: background var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 .btn:hover {
-  background: var(--card-hover);
-  border-color: #34393e;
+  background: rgba(255, 255, 255, 0.82);
+  border-color: var(--accent-border);
+  color: var(--text-strong);
+  transform: scale(1.02);
+  box-shadow: var(--shadow-lift);
 }
-.btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #06231a;
+.btn:active {
+  transform: scale(0.97);
+  transition-duration: var(--dur-fast);
+}
+.btn:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+.btn.btn-primary {
+  background-image: var(--accent-gradient);
+  background-color: #3D6EE8;
+  background-size: 180% 100%;
+  background-position: 0% 50%;
+  border-color: transparent;
+  color: #fff;
   font-weight: 600;
+  box-shadow: 0 6px 18px -8px rgba(61, 110, 232, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: background-position var(--dur-medium) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
-.btn-primary:hover {
-  background: #4fdba0;
+.btn.btn-primary:hover {
+  background-image: var(--accent-gradient);
+  background-color: #3D6EE8;
+  background-position: 100% 50%;
+  border-color: transparent;
+  color: #fff;
+  transform: scale(1.02);
+  box-shadow: 0 10px 28px -8px rgba(61, 110, 232, 0.6), 0 0 0 1px rgba(110, 92, 240, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
+.btn.btn-primary:active { transform: scale(0.97); }
+.btn.btn-primary svg,
+.btn.btn-primary:hover svg { color: #fff; }
+/* icon-only glass buttons stay legible on hover — dark glyph on light frost */
+.btn:not(.btn-primary):hover svg { color: var(--text-strong); }
 .btn-danger {
-  color: var(--red);
+  color: var(--ember);
+  border-color: rgba(226, 61, 69, 0.4);
+}
+.btn-danger:hover {
+  background: var(--red-soft);
+  border-color: var(--ember);
+  color: var(--ember);
 }
 
+/* ---------- form controls ---------- */
+
 .input, .select, textarea.input {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 7px 9px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-control);
+  padding: 9px 12px;
   color: var(--text);
   width: 100%;
+  transition: border-color var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
 }
 .input:focus, .select:focus, textarea.input:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+.input::placeholder, textarea.input::placeholder {
+  color: var(--text-dim);
 }
 
 label.field {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--text-muted);
 }
+
+/* ---------- P&L ---------- */
 
 .pnl-positive { color: var(--green); }
 .pnl-negative { color: var(--red); }
@@ -129,95 +617,101 @@ label.field {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
   border: 1px solid var(--border);
+  color: var(--text-muted);
+  transition: background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  animation: tag-pop var(--dur-fast) var(--ease-sig);
 }
 .tag-pill.positive { background: var(--green-soft); color: var(--green); border-color: transparent; }
 .tag-pill.negative { background: var(--red-soft); color: var(--red); border-color: transparent; }
 
+@keyframes tag-pop {
+  from { opacity: 0; transform: scale(0.8); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- modal ---------- */
+
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(60, 50, 38, 0.28);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 100;
 }
+/* Modal panel shares the glass tokens but uses the opaque-leaning fill
+   (content must stay readable) and skips the ::before bend layer — it is
+   an `overflow-y: auto` scroll container, where an absolute bend layer
+   would only cover the first screenful. */
 .modal-panel {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  background: var(--glass-fill-strong);
+  backdrop-filter: var(--glass-blur-deep);
+  -webkit-backdrop-filter: var(--glass-blur-deep);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-panel);
   width: 560px;
   max-width: 92vw;
   max-height: 88vh;
   overflow-y: auto;
-  padding: 20px 22px;
+  padding: var(--sp-6);
+  box-shadow: var(--shadow-window), var(--glass-edge);
 }
 .modal-panel.wide {
   width: 760px;
 }
 
+/* ---------- data table ---------- */
+
 table.data-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 table.data-table th {
   text-align: left;
-  padding: 8px 10px;
+  padding: 9px 10px;
   color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
   font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
   position: sticky;
   top: 0;
-  background: var(--card);
+  background: #F5F1EA;
 }
 table.data-table td {
   padding: 8px 10px;
   border-bottom: 1px solid var(--border-soft);
   white-space: nowrap;
 }
+table.data-table tbody tr {
+  transition: background var(--dur-fast) var(--ease-out);
+}
 table.data-table tbody tr:hover {
-  background: var(--card-hover);
+  background: rgba(60, 50, 38, 0.05);
   cursor: pointer;
 }
 
-/* ============================================================
-   What's New / Feature & Updates tab
-   Self-contained: only base tokens + the helpers defined here.
-   ============================================================ */
-
-.mono-label {
-  font-family: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Consolas, monospace;
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-.mono-chip {
-  font-family: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Consolas, monospace;
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 2px 6px;
-}
-.accent-word {
-  color: var(--accent);
-}
+/* ---------- what's new / updates tab ---------- */
 
 .wn-timeline {
   position: relative;
   padding-left: 26px;
 }
+/* the vertical rail */
 .wn-timeline::before {
   content: '';
   position: absolute;
@@ -225,7 +719,7 @@ table.data-table tbody tr:hover {
   top: 6px;
   bottom: 6px;
   width: 1px;
-  background: var(--border);
+  background: linear-gradient(var(--border), var(--border-soft));
 }
 .wn-node {
   position: absolute;
@@ -234,12 +728,12 @@ table.data-table tbody tr:hover {
   width: 13px;
   height: 13px;
   border-radius: 50%;
-  border: 1px solid var(--border);
+  border: 1px solid var(--accent-border);
   background: var(--bg);
 }
 .wn-node.latest {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(62, 207, 142, 0.14);
+  box-shadow: 0 0 0 3px var(--accent-bg);
 }
 .wn-node.latest::after {
   content: '';
@@ -253,7 +747,7 @@ table.data-table tbody tr:hover {
 .wn-collapsible {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: grid-template-rows var(--dur-medium) var(--ease-sig);
 }
 .wn-collapsible.open {
   grid-template-rows: 1fr;
@@ -264,79 +758,453 @@ table.data-table tbody tr:hover {
 }
 
 .wn-chip {
-  font-family: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
   border: 1px solid transparent;
   white-space: nowrap;
 }
-.wn-chip.new {
-  color: var(--accent);
-  background: rgba(62, 207, 142, 0.12);
-  border-color: rgba(62, 207, 142, 0.4);
-}
-.wn-chip.improved {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--border);
-}
-.wn-chip.fixed {
-  color: var(--green);
-  background: var(--green-soft);
-}
+.wn-chip.new { color: var(--accent-bright); background: var(--accent-bg); border-color: var(--accent-border); }
+.wn-chip.improved { color: var(--text-strong); background: rgba(245, 243, 238, 0.06); border-color: var(--border); }
+.wn-chip.fixed { color: var(--green); background: var(--green-soft); }
 
 .wn-demo {
   margin-top: 10px;
   padding: 16px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-card);
 }
 
-.wn-item {
-  animation: wn-item-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.wn-pop {
-  animation: wn-pop 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.wn-draw {
-  stroke-dasharray: var(--wn-len, 600);
-  animation: wn-draw 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.wn-cell {
-  opacity: 0;
-  animation: wn-cell-in 0.24s ease-out forwards;
-}
-
-@keyframes wn-item-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@keyframes wn-pop {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
-}
+/* one-shot line draw for the equity-curve demo */
 @keyframes wn-draw {
-  from { stroke-dashoffset: var(--wn-len, 600); }
+  from { stroke-dashoffset: var(--wn-path-len, 600); }
   to { stroke-dashoffset: 0; }
 }
+/* staggered fade-in for calendar-heatmap demo cells */
 @keyframes wn-cell-in {
   from { opacity: 0; transform: scale(0.6); }
   to { opacity: 1; transform: scale(1); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .wn-collapsible { transition-duration: 1ms; }
-  .wn-item, .wn-pop, .wn-draw, .wn-cell {
-    animation-duration: 1ms;
-    animation-delay: 0ms !important;
+/* active nav pill / selected chips read as lit glass */
+[data-nav-pill],
+.nav-pill {
+  box-shadow: 0 6px 18px -8px rgba(61, 110, 232, 0.34);
+}
+
+/* ============================================================
+   SPATIAL SHELL — warm-glass three-panel scene
+   ============================================================ */
+
+.app-root { min-height: 100vh; }
+
+/* The stage: fixed flex-centre. NEVER transform / perspective / filter /
+   contain / container-type here (§0) — it would blank the hero backdrop-filter. */
+.spatial-stage { overflow: hidden; }
+
+/* Focal hero slab — owns its own x/scale transform (see CenterPanel.tsx). */
+.center-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(1180px, calc(100vw - 96px));
+  height: min(880px, calc(100vh - 56px));
+  overflow: hidden;
+  transform-origin: center center;
+  transition: width var(--dur-hero) var(--ease-sig);
+}
+
+/* When a side slab is open, trim the hero a little so it clears the rail on a
+   wide viewport. Kept gentle — a large width jump makes the hero's
+   `backdrop-filter` re-sample abruptly and reads as a luminosity flash. */
+.spatial-stage[data-nav-open] .center-panel,
+.spatial-stage[data-utility-open] .center-panel {
+  width: min(1060px, calc(100vw - 220px));
+}
+.spatial-stage[data-nav-open][data-utility-open] .center-panel {
+  width: min(940px, calc(100vw - 400px));
+}
+
+.hero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding: 16px var(--sp-5);
+  border-bottom: 1px solid var(--border-soft);
+  flex-shrink: 0;
+}
+
+.hero-main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--sp-5);
+  position: relative;
+  z-index: 1;
+}
+
+/* ---- Home hero grid (§5) ---- */
+/* container-type lives on this INNER div, never on .center-panel / .hero-main (§0). */
+.hero-content {
+  container-type: inline-size;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* .hero-grid layout + areas are defined in the "HOME — richer bento" block
+   lower in this file (kept together with the stat/ring rules). */
+
+/* Analytics card — chart fills the whole card, P&L overlaid top-left, slim footer. */
+.hero-grid > .analytics {
+  min-height: 260px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+.analytics-overlay {
+  position: absolute;
+  top: var(--sp-4);
+  left: var(--sp-4);
+  z-index: 2;
+  pointer-events: none;
+}
+.analytics-chart {
+  flex: 1;
+  min-height: 200px;
+  width: 100%;
+}
+.analytics-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px var(--sp-4);
+  border-top: 1px solid var(--border-soft);
+}
+
+/* Side slabs — absolutely positioned so they share physical space as the
+   hero shifts. Each carries liquid-glass--hero and owns its own transform. */
+.nav-rail,
+.utility-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin-top: auto;
+  margin-bottom: auto;
+  height: min(760px, 78vh);
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-4);
+  border-radius: var(--radius-window);
+  z-index: 3;
+  /* Read as their own floating slabs, clearly detached from the hero edge:
+     near-opaque fill, a warm visible rim (the white --glass-border vanishes on
+     the off-white room), and a deep window-grade drop shadow. */
+  background: rgba(252, 250, 246, 0.9);
+  border: 1px solid rgba(120, 105, 85, 0.16);
+  box-shadow:
+    var(--glass-face),
+    var(--glass-edge),
+    0 2px 6px rgba(60, 50, 38, 0.10),
+    0 30px 60px -22px rgba(60, 50, 38, 0.30),
+    0 60px 120px -40px rgba(60, 50, 38, 0.28);
+}
+.nav-rail { left: 24px; width: 176px; }
+.utility-panel { right: 24px; width: 300px; overflow: hidden; }
+
+@media (max-width: 1100px) {
+  .nav-rail { left: 12px; }
+  .utility-panel { right: 12px; }
+}
+
+/* Timeline strip */
+.timeline { position: relative; }
+.timeline-strip {
+  display: flex;
+  gap: var(--sp-3);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 8px;
+}
+.timeline-card {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+  min-width: 132px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  text-align: left;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* §7 — glass rails go solid on the light scene (no backdrop-filter) */
+.glass-rail {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--glass-border);
+}
+
+/* ============================================================
+   SELECT — styled dropdown (src/components/Select.tsx)
+   Replaces every native <select>. Menu is a body portal.
+   ============================================================ */
+
+.tj-select { display: inline-block; position: relative; }
+
+.tj-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.01em;
+  text-align: left;
+  box-shadow: var(--glass-face);
+  transition: background var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out), box-shadow var(--dur) var(--ease-out);
+}
+.tj-select-trigger:hover {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--accent-border);
+}
+.tj-select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+.tj-select-trigger[aria-expanded='true'] {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+.tj-select-trigger:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.tj-select-icon {
+  display: inline-flex;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+.tj-select-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-strong);
+}
+.tj-select-value.is-placeholder { color: var(--text-dim); font-weight: var(--weight-body); }
+.tj-select-chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  transition: transform var(--dur) var(--ease-sig);
+}
+
+.tj-select-menu {
+  z-index: 300;
+  max-height: 264px;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--glass-fill-strong);
+  backdrop-filter: var(--glass-blur-deep);
+  -webkit-backdrop-filter: var(--glass-blur-deep);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card), var(--glass-edge);
+  transform-origin: top center;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tj-select-menu { background: var(--bg-elevated); }
+}
+
+.tj-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-control);
+  color: var(--text);
+  font-size: 12.5px;
+  text-align: left;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.tj-select-option.is-active { background: rgba(60, 50, 38, 0.06); color: var(--text-strong); }
+.tj-select-option.is-selected { color: var(--accent-deep); font-weight: var(--weight-medium); }
+.tj-select-option.is-selected.is-active,
+.tj-select-option.is-selected { background: var(--accent-bg); }
+.tj-select-option-label { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.tj-select-option-hint { font-size: 10.5px; color: var(--text-dim); }
+
+/* ============================================================
+   HOME — richer bento (src/pages/HomePage.tsx)
+   ============================================================ */
+
+/* fill the slab — no dead band under the timeline at tall viewports */
+.hero-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  grid-template-areas:
+    "analytics stats"
+    "rings rings"
+    "timeline timeline";
+  grid-template-rows: minmax(240px, 1fr) auto minmax(0, auto);
+  gap: var(--sp-4);
+}
+.hero-grid > .analytics { grid-area: analytics; }
+.hero-grid > .home-stats { grid-area: stats; }
+.hero-grid > .home-rings { grid-area: rings; }
+.hero-grid > .timeline { grid-area: timeline; }
+
+@container (max-width: 720px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "analytics"
+      "stats"
+      "rings"
+      "timeline";
+    grid-template-rows: none;
   }
-  .wn-cell { opacity: 1; }
+}
+
+/* KPI readout — one frosted panel, 2x2 cells split by hairlines. Monochrome
+   and quiet on purpose; the colour in the scene lives in the chart, rings and
+   actions, not here. */
+.home-stats.card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 0;
+  overflow: hidden;
+}
+.stat-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  padding: 18px 20px;
+  border-right: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
+  transition: background var(--dur) var(--ease-out);
+}
+.stat-cell:nth-child(2n) { border-right: none; }
+.stat-cell:nth-child(n+3) { border-bottom: none; }
+.stat-cell:hover { background: rgba(255, 255, 255, 0.45); }
+.stat-cell .stat-label {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.stat-cell .stat-value {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 23px;
+  font-weight: var(--weight-title);
+  color: var(--text-strong);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+.stat-cell .stat-arrow { font-size: 13px; line-height: 1; }
+
+/* rings + insight row */
+.home-rings {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--sp-5);
+  align-items: center;
+  padding: var(--sp-5);
+}
+.home-rings .rings-cluster {
+  display: flex;
+  gap: var(--sp-5);
+}
+.home-rings .insight-body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border-left: 1px solid var(--border-soft);
+  padding-left: var(--sp-5);
+}
+@container (max-width: 560px) {
+  .home-rings { grid-template-columns: 1fr; }
+  .home-rings .insight-body { border-left: none; padding-left: 0; border-top: 1px solid var(--border-soft); padding-top: var(--sp-4); }
+}
+
+/* accent gradient wash for the analytics hero card */
+.hero-grid > .analytics::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: linear-gradient(160deg, rgba(61, 110, 232, 0.10), rgba(138, 92, 240, 0.07) 45%, rgba(31, 190, 120, 0.06) 100%);
+  pointer-events: none;
+}
+
+/* ---------- reduced motion ---------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+  .btn:hover,
+  .card--interactive:hover {
+    transform: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+  }
+  .ambient-pool,
+  .ambient-aurora,
+  .ambient-room {
+    animation: none !important;
+  }
+  .nav-rail,
+  .utility-panel,
+  .center-panel {
+    transition: none !important;
+  }
+  /* hero never shifts under reduced motion — stays centred, panels overlay + scrim */
+  .center-panel {
+    transform: none !important;
+    filter: none !important;
+  }
+  .timeline-strip {
+    scroll-behavior: auto !important;
+  }
+  .liquid-glass--hero::before {
+    animation: none !important;
+  }
+  .wn-collapsible {
+    transition-duration: 1ms !important;
+  }
 }

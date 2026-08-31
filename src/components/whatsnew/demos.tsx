@@ -1,13 +1,14 @@
 import { useState, type ReactNode } from 'react'
+import { CountUpValue, usePrefersReducedMotion } from '../../anim'
 import type { DemoId } from '../../changelog'
 
 // ============================================================
 // Inline demos for the "What's New" tab.
 //
-// Built from CSS / SVG only — no images, GIFs or video. Each demo
-// mounts only when its entry is expanded, so animation cost is paid on
-// demand. Animations are CSS classes (see .wn-* in theme.css) so the
-// prefers-reduced-motion media query neutralises all of them at once.
+// Deliberately built from CSS / SVG / the app's own primitives —
+// no images, GIFs or video. Each demo mounts only when its entry is
+// expanded, so animation cost is paid on demand, and every one falls
+// back to a static final frame under prefers-reduced-motion.
 // ============================================================
 
 function DemoShell({ children, onReplay }: { children: ReactNode; onReplay?: () => void }) {
@@ -32,22 +33,30 @@ const CURVE = 'M4 64 L26 58 L48 61 L70 44 L92 49 L114 33 L136 37 L158 20 L180 12
 const CURVE_LEN = 240
 
 function EquityCurveDemo() {
+  const reduced = usePrefersReducedMotion()
   const [runKey, setRunKey] = useState(0)
   return (
-    <DemoShell onReplay={() => setRunKey((k) => k + 1)}>
+    <DemoShell onReplay={reduced ? undefined : () => setRunKey((k) => k + 1)}>
       <svg key={runKey} viewBox="0 0 184 72" width="100%" height="88" role="img" aria-label="Equity curve rising">
         <line x1="4" y1="64" x2="180" y2="64" stroke="var(--border)" strokeWidth="1" />
         <path
-          className="wn-draw"
           d={CURVE}
           fill="none"
           stroke="var(--accent)"
           strokeWidth="1.75"
           strokeLinecap="round"
           strokeLinejoin="round"
-          style={{ ['--wn-len' as string]: CURVE_LEN }}
+          style={
+            reduced
+              ? undefined
+              : {
+                  ['--wn-path-len' as string]: CURVE_LEN,
+                  strokeDasharray: CURVE_LEN,
+                  animation: 'wn-draw 0.9s var(--ease-sig) forwards',
+                }
+          }
         />
-        <circle cx="180" cy="12" r="2.5" fill="var(--accent)" />
+        <circle cx="180" cy="12" r="2.5" fill="var(--accent-bright)" />
       </svg>
     </DemoShell>
   )
@@ -55,12 +64,13 @@ function EquityCurveDemo() {
 
 // ---------- calendar-heatmap: staggered fade-in P&L grid ----------
 
-// Fixed illustrative pattern: >0 green, <0 red, 0 flat.
+// Fixed illustrative pattern: >0 green, <0 red, 0 flat. Weekends omitted.
 const HEAT: number[] = [
   1, 1, -1, 2, 1, 0, 0, -1, 1, 1, -2, 1, 0, 0, 1, 2, 1, 1, -1, 0, 0, 1, -1, 2, 1, 3,
 ]
 
 function CalendarHeatmapDemo() {
+  const reduced = usePrefersReducedMotion()
   const [runKey, setRunKey] = useState(0)
   const cell = (v: number) => {
     if (v > 1) return 'var(--green)'
@@ -69,18 +79,22 @@ function CalendarHeatmapDemo() {
     return 'var(--border-soft)'
   }
   return (
-    <DemoShell onReplay={() => setRunKey((k) => k + 1)}>
-      <div key={runKey} style={{ display: 'grid', gridTemplateColumns: 'repeat(13, 1fr)', gap: 4, maxWidth: 280 }}>
+    <DemoShell onReplay={reduced ? undefined : () => setRunKey((k) => k + 1)}>
+      <div
+        key={runKey}
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(13, 1fr)', gap: 4, maxWidth: 280 }}
+      >
         {HEAT.map((v, i) => (
           <div
             key={i}
-            className="wn-cell"
             title={v === 0 ? 'no trades' : v > 0 ? 'green day' : 'red day'}
             style={{
               aspectRatio: '1',
-              borderRadius: 2,
+              borderRadius: 4,
               background: cell(v),
-              animationDelay: `${i * 0.02}s`,
+              opacity: reduced ? 1 : 0,
+              animation: reduced ? undefined : `wn-cell-in 0.24s var(--ease-out) forwards`,
+              animationDelay: reduced ? undefined : `${i * 0.02}s`,
             }}
           />
         ))}
@@ -95,21 +109,27 @@ const POS = ['patient entry', 'followed plan', 'good R:R']
 const NEG = ['moved stop', 'revenge trade']
 
 function TagPillsDemo() {
+  const reduced = usePrefersReducedMotion()
   const [runKey, setRunKey] = useState(0)
-  const all = [
-    ...POS.map((t) => ({ t, cls: 'positive', sign: '+' })),
-    ...NEG.map((t) => ({ t, cls: 'negative', sign: '−' })),
-  ]
   return (
-    <DemoShell onReplay={() => setRunKey((k) => k + 1)}>
+    <DemoShell onReplay={reduced ? undefined : () => setRunKey((k) => k + 1)}>
       <div key={runKey} style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-        {all.map((p, i) => (
+        {POS.map((t, i) => (
           <span
-            key={p.t}
-            className={`tag-pill ${p.cls} wn-pop`}
-            style={{ animationDelay: `${i * 0.06}s` }}
+            key={t}
+            className="tag-pill positive"
+            style={reduced ? undefined : { animationDelay: `${i * 0.06}s` }}
           >
-            {p.sign} {p.t}
+            + {t}
+          </span>
+        ))}
+        {NEG.map((t, i) => (
+          <span
+            key={t}
+            className="tag-pill negative"
+            style={reduced ? undefined : { animationDelay: `${(POS.length + i) * 0.06}s` }}
+          >
+            − {t}
           </span>
         ))}
       </div>
@@ -117,20 +137,29 @@ function TagPillsDemo() {
   )
 }
 
-// ---------- kpi-countup ----------
+// ---------- kpi-countup: reuse the real KPI counter ----------
 
 function KpiCountUpDemo() {
+  const [runKey, setRunKey] = useState(0)
   return (
-    <DemoShell>
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+    <DemoShell onReplay={() => setRunKey((k) => k + 1)}>
+      <div key={runKey} style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         {[
-          { label: 'Net P&L', value: '$1,240', color: 'var(--green)' },
-          { label: 'Win Rate', value: '58.3%', color: 'var(--text)' },
-          { label: 'Profit Factor', value: '1.84', color: 'var(--green)' },
+          { label: 'Net P&L', value: '$1,240', positive: true },
+          { label: 'Win Rate', value: '58.3%', positive: null },
+          { label: 'Profit Factor', value: '1.84', positive: true },
         ].map((k) => (
           <div className="card" key={k.label} style={{ padding: '12px 14px', flex: 1, minWidth: 110 }}>
             <div style={{ color: 'var(--text-muted)', fontSize: 11, marginBottom: 5 }}>{k.label}</div>
-            <div style={{ fontSize: 19, fontWeight: 600, color: k.color }}>{k.value}</div>
+            <div
+              style={{
+                fontSize: 19,
+                fontWeight: 600,
+                color: k.positive == null ? 'var(--text)' : k.positive ? 'var(--green)' : 'var(--red)',
+              }}
+            >
+              <CountUpValue value={k.value} />
+            </div>
           </div>
         ))}
       </div>
@@ -151,7 +180,7 @@ function WhatsNewTabDemo() {
               height: 11,
               borderRadius: '50%',
               background: 'var(--accent)',
-              boxShadow: '0 0 0 3px rgba(62, 207, 142, 0.14)',
+              boxShadow: '0 0 0 3px var(--accent-bg)',
             }}
           />
           <span style={{ flex: 1, width: 1, background: 'var(--border)', marginTop: 2 }} />

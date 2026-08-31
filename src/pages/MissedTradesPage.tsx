@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { MissedTradeFormModal } from '../components/MissedTradeFormModal'
+import { Select } from '../components/Select'
+import { Plus } from '../components/icons'
 import type { Confluence, MissedTrade, Strategy } from '../types'
 
 type SortKey = 'date' | 'would_be_pnl' | 'pair'
@@ -71,17 +73,16 @@ export function MissedTradesPage({
             onKeyDown={(e) => e.key === 'Enter' && load()}
             style={{ width: 220 }}
           />
-          <select
-            className="select"
-            value={strategyId ?? ''}
-            onChange={(e) => setStrategyId(e.target.value ? Number(e.target.value) : null)}
-            style={{ width: 160 }}
-          >
-            <option value="">All Strategies</option>
-            {strategies.map((s) => (
-              <option key={s.id} value={s.id}>{s.name}</option>
-            ))}
-          </select>
+          <Select
+            ariaLabel="Filter by strategy"
+            width={170}
+            value={strategyId != null ? String(strategyId) : ''}
+            onChange={(v) => setStrategyId(v ? Number(v) : null)}
+            options={[
+              { value: '', label: 'All Strategies' },
+              ...strategies.map((s) => ({ value: String(s.id), label: s.name })),
+            ]}
+          />
           <div style={{ color: 'var(--text-muted)', fontSize: 12.5 }}>
             Missed opportunity cost:{' '}
             <span className={totalMissedPnl >= 0 ? 'pnl-positive' : 'pnl-negative'} style={{ fontWeight: 600 }}>
@@ -89,7 +90,7 @@ export function MissedTradesPage({
             </span>
           </div>
         </div>
-        <button className="btn btn-primary" onClick={() => setEditing(null)}>+ Log Missed Trade</button>
+        <button className="btn btn-primary" onClick={() => setEditing(null)}><Plus size={16} style={{ marginRight: 4 }} />Log Missed Trade</button>
       </div>
 
       <div className="card" style={{ overflowX: 'auto', maxHeight: 640, overflowY: 'auto' }}>

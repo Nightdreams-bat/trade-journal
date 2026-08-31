@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>tradejournal — browser preview</title>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <!-- Shared "liquid glass" displacement filter (mirrors index.html). -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <filter id="liquid-glass-bend" x="-30%" y="-30%" width="160%" height="160%" filterUnits="objectBoundingBox">
+          <feTurbulence type="fractalNoise" baseFrequency="0.004 0.008" numOctaves="2" seed="7" result="noise" />
+          <feGaussianBlur in="noise" stdDeviation="4.5" result="softNoise" />
+          <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="14" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="liquid-glass-bend-strong" x="-40%" y="-40%" width="180%" height="180%" filterUnits="objectBoundingBox">
+          <feTurbulence type="fractalNoise" baseFrequency="0.003 0.006" numOctaves="2" seed="4" result="noise" />
+          <feGaussianBlur in="noise" stdDeviation="5" result="softNoise" />
+          <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="22" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+    </svg>
+
+    <!--
+      Dev-only harness: runs the real React app in a plain browser by stubbing
+      the Electron `window.api` bridge with generated demo data. Lets us screenshot
+      the UI (liquid glass, ambient room, rails) without packaging Electron.
+      Open http://localhost:5173/dev-preview.html
+    -->
+    <script>
+      (() => {
+        const today = new Date()
+        const iso = (d) => d.toISOString().slice(0, 10)
+        const daysAgo = (n) => { const d = new Date(today); d.setDate(d.getDate() - n); return d }
+
+        // deterministic-ish equity walk
+        let cum = 0
+        const equityCurve = []
+        const calendar = {}
+        const dailyBars = []
+        for (let i = 60; i >= 0; i--) {
+          const day = daysAgo(i)
+          const pnl = Math.round((Math.sin(i * 0.7) * 320 + (i % 5 === 0 ? -450 : 180) + (Math.random() - 0.4) * 260))
+          cum += pnl
+          equityCurve.push({ date: iso(day), cumulativePnl: cum })
+          if (day.getDay() !== 0 && day.getDay() !== 6) {
+            calendar[iso(day)] = { pnl, count: 1 + (i % 3) }
+            if (i < 21) dailyBars.push({ day: iso(day), pnl })
+          }
+        }
+        let peak = -Infinity
+        const ddSeries = equityCurve.map((p) => {
+          peak = Math.max(peak, p.cumulativePnl)
+          return { date: p.date, drawdown: +(p.cumulativePnl - peak).toFixed(0) }
+        })
+        const maxDrawdown = Math.min(...ddSeries.map((d) => d.drawdown))
+
+        const summary = {
+          kpis: { winRate: 58, totalPnl: cum, returnsPct: 8.3, profitFactor: 1.94 },
+          radar: [
+            { metric: 'Win Rate', value: 58 },
+            { metric: 'Profit Factor', value: 72 },
+            { metric: 'Consistency', value: 64 },
+            { metric: 'Risk Mgmt', value: 81 },
+            { metric: 'Discipline', value: 69 },
+            { metric: 'Recovery', value: 55 },
+          ],
+          equityCurve,
+          drawdown: { series: ddSeries, maxDrawdown },
+          dailyBars,
+          dayOfWeek: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((d, i) => ({
+            day: d, trades: 12 - i, pnl: [1240, -320, 880, 210, 1510][i], winRate: [61, 44, 58, 52, 67][i],
+          })),
+          calendar,
+          monthlyStats: {
+            winRate: 58, riskReward: 1.7, profitFactor: 1.94,
+            bestDayPnl: 1510, worstDayPnl: -980, avgDailyPnl: 156, tradeCount: 84,
+          },
+          insights: [
+            'Your win rate on Fridays (67%) is well above your weekly average.',
+            'Tuesday is consistently your weakest day — consider trading smaller size.',
+            'Largest drawdown this period was ' + maxDrawdown.toLocaleString() + '.',
+          ],
+          overall: { winRate: 57, profitFactor: 1.88, avgWin: 420, avgLoss: -240, totalTrades: 312 },
+        }
+
+        const accounts = [
+          { id: 1, name: 'FTMO 100K', broker: 'FTMO', starting_balance: 100000, currency: 'USD' },
+          { id: 2, name: 'Personal', broker: 'IC Markets', starting_balance: 15000, currency: 'USD' },
+        ]
+        const strategies = [
+          { id: 1, name: 'ICT Silver Bullet', description: 'London/NY killzone FVG entries' },
+          { id: 2, name: 'Trend pullback', description: '20/50 EMA continuation' },
+        ]
+        const confluences = [
+          { id: 1, name: 'FVG' }, { id: 2, name: 'OB' }, { id: 3, name: 'Liquidity sweep' },
+        ]
+        const mkTrade = (id, back, pair, direction, pnl, r, followed) => ({
+          id,
+          name: pair + ' ' + direction,
+          date: iso(daysAgo(back)),
+          pair,
+          session: 'London',
+          direction,
+          risk_per_trade: 1,
+          pnl,
+          r_multiple: r,
+          followed_plan: followed,
+          break_even: false,
+          entry_win: pnl >= 0,
+          strategy_id: 1,
+          account_id: 1,
+          positive_tags: followed ? ['A+ setup'] : [],
+          negative_tags: followed ? [] : ['early entry'],
+          notes: null,
+          created_at: new Date().toISOString(),
+          confluence_ids: [1, 2],
+        })
+        const trades = [
+          mkTrade(1, 1, 'EURUSD', 'Long', 640, 2.1, true),
+          mkTrade(2, 2, 'GBPUSD', 'Short', -220, -1, false),
+          mkTrade(3, 4, 'XAUUSD', 'Long', 1180, 3.4, true),
+          mkTrade(4, 6, 'NAS100', 'Short', 410, 1.6, true),
+          mkTrade(5, 9, 'US30', 'Long', -180, -0.8, false),
+          mkTrade(6, 12, 'BTCUSD', 'Long', 920, 2.7, true),
+        ]
+
+        const ok = async () => true
+        const list = (v) => async () => v
+        window.api = {
+          accounts: { getAll: list(accounts), create: ok, update: ok, delete: ok },
+          strategies: {
+            getAll: list(strategies), create: ok, update: ok, delete: ok,
+            getPerformance: list(strategies.map((s) => ({ ...s, winRate: 56, profitFactor: 1.8, expectancy: 120, tradeCount: 40, avgWinLoss: 1.6 }))),
+            getDetail: async (id) => ({ strategy: strategies.find((s) => s.id === id), trades: [], metrics: summary.overall }),
+          },
+          confluences: { getAll: list(confluences), create: ok, update: ok, delete: ok },
+          trades: { getAll: list(trades), create: ok, update: ok, delete: ok },
+          missedTrades: { getAll: list([]), create: ok, update: ok, delete: ok },
+          images: { add: ok, get: list([]), remove: ok },
+          reviews: { getAll: list([]), upsert: ok },
+          analytics: {
+            getSummary: async () => summary,
+            getMonthlyBreakdown: list(
+              Array.from({ length: 6 }, (_, i) => {
+                const d = new Date(today); d.setMonth(d.getMonth() - (5 - i))
+                return { month: iso(d).slice(0, 7), label: d.toLocaleDateString('en-US', { month: 'short' }), pnl: Math.round((Math.sin(i) * 3000 + 1500)), tradeCount: 30 + i * 4 }
+              }),
+            ),
+            simulateFundedChallenge: async () => ({
+              sampleSize: 5000, passRate: 0.62, dailyLossBreachRate: 0.14,
+              maxDrawdownBreachRate: 0.24, medianDaysToTarget: 18, expectedValue: 4200,
+            }),
+          },
+          csv: { openForImport: async () => null, import: async () => 0, export: async () => null },
+        }
+      })()
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

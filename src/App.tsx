@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import { usePrefersReducedMotion } from './anim'
+import { HomePage } from './pages/HomePage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
 import { PlaybooksPage } from './pages/PlaybooksPage'
 import { ReviewPage } from './pages/ReviewPage'
@@ -7,23 +10,31 @@ import { MissedTradesPage } from './pages/MissedTradesPage'
 import { WhatsNewPage } from './pages/WhatsNewPage'
 import { TradeFormModal } from './components/TradeFormModal'
 import { AccountsModal } from './components/AccountsModal'
+import { AmbientRoom } from './components/AmbientRoom'
+import { SpatialStage } from './components/SpatialStage'
+import { NavRail } from './components/NavRail'
+import { UtilityPanel } from './components/UtilityPanel'
+import { CenterPanel, type HeroShift } from './components/CenterPanel'
+import { HeroHeader } from './components/HeroHeader'
+import { EdgeHandle } from './components/EdgeHandle'
+import { Scrim } from './components/Scrim'
 import { LATEST_VERSION } from './changelog'
 import { getLastSeenVersion } from './whatsNewSeen'
+import { TABS, type TabKey } from './tabs'
+import { greeting } from './format'
 import type { Account, Confluence, Strategy } from './types'
 
-const TABS = [
-  { key: 'analytics', label: 'Analytics' },
-  { key: 'playbooks', label: 'Playbooks' },
-  { key: 'review', label: 'Review' },
-  { key: 'trades', label: 'Trades' },
-  { key: 'missed', label: 'Missed Trades' },
-  { key: 'whatsnew', label: "What's New" },
-] as const
+type UtilitySection = 'calendar' | 'profile'
 
-type TabKey = (typeof TABS)[number]['key']
+const HERO_SHIFTS: Record<'none' | 'utility' | 'nav' | 'both', HeroShift> = {
+  none: { x: 0, scale: 1 },
+  utility: { x: -64, scale: 0.99 },
+  nav: { x: 52, scale: 0.99 },
+  both: { x: -18, scale: 0.98 },
+}
 
 function App() {
-  const [tab, setTab] = useState<TabKey>('analytics')
+  const [tab, setTab] = useState<TabKey>('home')
   const [accounts, setAccounts] = useState<Account[]>([])
   const [strategies, setStrategies] = useState<Strategy[]>([])
   const [confluences, setConfluences] = useState<Confluence[]>([])
@@ -33,6 +44,11 @@ function App() {
   const [reviewJumpDate, setReviewJumpDate] = useState<string | null>(null)
   const [seenVersion, setSeenVersion] = useState<string | null>(getLastSeenVersion)
 
+  const [navOpen, setNavOpen] = useState(false)
+  const [utilityOpen, setUtilityOpen] = useState(false)
+  const [utilitySection, setUtilitySection] = useState<UtilitySection>('calendar')
+  const [isNarrow, setIsNarrow] = useState(false)
+
   const loadLookups = () => {
     window.api.accounts.getAll().then(setAccounts)
     window.api.strategies.getAll().then(setStrategies)
@@ -41,99 +57,182 @@ function App() {
 
   useEffect(loadLookups, [])
 
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1100px)')
+    const sync = () => setIsNarrow(mq.matches)
+    sync()
+    mq.addEventListener('change', sync)
+    return () => mq.removeEventListener('change', sync)
+  }, [])
+
   const bumpRefresh = () => setRefreshKey((k) => k + 1)
+  const reducedMotion = usePrefersReducedMotion()
+
+  const closePanels = () => {
+    setNavOpen(false)
+    setUtilityOpen(false)
+  }
+
+  const openUtility = (section: UtilitySection) => {
+    setUtilitySection(section)
+    setUtilityOpen(true)
+  }
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closePanels()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const goTab = (k: string) => {
+    setTab(k as TabKey)
+    if (k === 'whatsnew') setSeenVersion(LATEST_VERSION)
+  }
+
+  const openDailyReview = () => {
+    setReviewJumpDate(new Date().toISOString().slice(0, 10))
+    setTab('review')
+    closePanels()
+  }
+
+  const heroShift = reducedMotion
+    ? HERO_SHIFTS.none
+    : navOpen && utilityOpen
+      ? HERO_SHIFTS.both
+      : utilityOpen
+        ? HERO_SHIFTS.utility
+        : navOpen
+          ? HERO_SHIFTS.nav
+          : HERO_SHIFTS.none
+
+  const accountLabel = accounts[0] ? `${accounts[0].name} · ${accounts[0].currency}` : 'No account yet'
+
+  // Dim the rest of the scene whenever a side panel is open — the open panel
+  // stays lit (it sits above the scrim), everything behind it recedes.
+  const scrimShow = navOpen || utilityOpen
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <header style={{ padding: '20px 28px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 22 }}>📈</span>
-            <h1 style={{ fontSize: 18, letterSpacing: 0.5, margin: 0, fontWeight: 700 }}>TRADE JOURNAL + ANALYTICS</h1>
-          </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn" onClick={() => setShowAccounts(true)}>Accounts</button>
-            <button className="btn" onClick={() => { setReviewJumpDate(new Date().toISOString().slice(0, 10)); setTab('review') }}>
-              + Daily Review
-            </button>
-            <button className="btn btn-primary" onClick={() => setShowNewTrade(true)}>+ Trade Entry</button>
-          </div>
-        </div>
+    <div className="app-root" style={{ minHeight: '100vh', position: 'relative' }}>
+      <AmbientRoom />
 
-        <nav style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)' }}>
-          {TABS.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => {
-                setTab(t.key)
-                if (t.key === 'whatsnew') setSeenVersion(LATEST_VERSION)
-              }}
-              className="btn"
-              style={{
-                position: 'relative',
-                border: 'none',
-                borderRadius: 0,
-                borderBottom: tab === t.key ? '2px solid var(--accent)' : '2px solid transparent',
-                background: 'transparent',
-                color: tab === t.key ? 'var(--text)' : 'var(--text-muted)',
-                fontWeight: tab === t.key ? 600 : 400,
-                padding: '10px 14px',
-              }}
-            >
-              {t.label}
-              {t.key === 'whatsnew' && seenVersion !== LATEST_VERSION && (
-                <span
-                  aria-label="new updates"
-                  style={{
-                    position: 'absolute',
-                    top: 6,
-                    right: 2,
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: 'var(--accent)',
-                  }}
-                />
-              )}
-            </button>
-          ))}
-        </nav>
-      </header>
+      <SpatialStage navOpen={navOpen} utilityOpen={utilityOpen}>
+        <NavRail
+          open={navOpen}
+          onClose={closePanels}
+          tabs={TABS}
+          active={tab}
+          onSelect={(k) => {
+            goTab(k)
+            if (isNarrow) closePanels()
+          }}
+          showWhatsNewDot={seenVersion !== LATEST_VERSION}
+          onAccounts={() => setShowAccounts(true)}
+          onDailyReview={openDailyReview}
+        />
 
-      <main style={{ padding: 24, flex: 1 }}>
-        {tab === 'analytics' && (
-          <AnalyticsPage
-            accounts={accounts}
-            strategies={strategies}
-            confluences={confluences}
-            onConfluencesChanged={loadLookups}
-            refreshKey={refreshKey}
-            bumpRefresh={bumpRefresh}
+        <EdgeHandle side="left" hidden={navOpen} onOpen={() => setNavOpen(true)} label="Open navigation" />
+
+        <CenterPanel shift={heroShift}>
+          <HeroHeader
+            greeting={greeting()}
+            accountLabel={accountLabel}
+            showWhatsNewDot={seenVersion !== LATEST_VERSION}
+            onNewTrade={() => setShowNewTrade(true)}
+            onOpenCalendar={() => openUtility('calendar')}
+            onOpenProfile={() => openUtility('profile')}
           />
-        )}
-        {tab === 'playbooks' && <PlaybooksPage refreshKey={refreshKey} onStrategiesChanged={loadLookups} />}
-        {tab === 'review' && <ReviewPage jumpToDate={reviewJumpDate} />}
-        {tab === 'trades' && (
-          <TradesDbPage
-            accounts={accounts}
-            strategies={strategies}
-            confluences={confluences}
-            onConfluencesChanged={loadLookups}
-            refreshKey={refreshKey}
-            bumpRefresh={bumpRefresh}
-          />
-        )}
-        {tab === 'missed' && (
-          <MissedTradesPage
-            strategies={strategies}
-            confluences={confluences}
-            onConfluencesChanged={loadLookups}
-            refreshKey={refreshKey}
-            bumpRefresh={bumpRefresh}
-          />
-        )}
-        {tab === 'whatsnew' && <WhatsNewPage />}
-      </main>
+
+          <main className="hero-main">
+            {(() => {
+              const pages = (
+                <>
+                  {tab === 'home' && (
+                    <HomePage
+                      accounts={accounts}
+                      strategies={strategies}
+                      confluences={confluences}
+                      onConfluencesChanged={loadLookups}
+                      refreshKey={refreshKey}
+                      bumpRefresh={bumpRefresh}
+                      onNavigate={goTab}
+                      onNewTrade={() => setShowNewTrade(true)}
+                    />
+                  )}
+                  {tab === 'analytics' && (
+                    <AnalyticsPage
+                      accounts={accounts}
+                      strategies={strategies}
+                      confluences={confluences}
+                      onConfluencesChanged={loadLookups}
+                      refreshKey={refreshKey}
+                      bumpRefresh={bumpRefresh}
+                    />
+                  )}
+                  {tab === 'playbooks' && <PlaybooksPage refreshKey={refreshKey} onStrategiesChanged={loadLookups} />}
+                  {tab === 'review' && <ReviewPage jumpToDate={reviewJumpDate} />}
+                  {tab === 'trades' && (
+                    <TradesDbPage
+                      accounts={accounts}
+                      strategies={strategies}
+                      confluences={confluences}
+                      onConfluencesChanged={loadLookups}
+                      refreshKey={refreshKey}
+                      bumpRefresh={bumpRefresh}
+                    />
+                  )}
+                  {tab === 'missed' && (
+                    <MissedTradesPage
+                      strategies={strategies}
+                      confluences={confluences}
+                      onConfluencesChanged={loadLookups}
+                      refreshKey={refreshKey}
+                      bumpRefresh={bumpRefresh}
+                    />
+                  )}
+                  {tab === 'whatsnew' && <WhatsNewPage />}
+                </>
+              )
+              return reducedMotion ? (
+                pages
+              ) : (
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={tab}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      transition: { duration: 0.22, ease: [0.16, 1, 0.3, 1] },
+                    }}
+                    exit={{
+                      opacity: 0,
+                      y: -6,
+                      transition: { duration: 0.1, ease: 'easeIn' },
+                    }}
+                    style={{ position: 'relative', zIndex: 1, willChange: 'transform, opacity' }}
+                  >
+                    {pages}
+                  </motion.div>
+                </AnimatePresence>
+              )
+            })()}
+          </main>
+        </CenterPanel>
+
+        <UtilityPanel
+          open={utilityOpen}
+          onClose={closePanels}
+          section={utilitySection}
+          onSectionChange={setUtilitySection}
+          onManageAccounts={() => setShowAccounts(true)}
+          accounts={accounts}
+          refreshKey={refreshKey}
+        />
+
+        <Scrim show={scrimShow} onClick={closePanels} />
+      </SpatialStage>
 
       {showNewTrade && (
         <TradeFormModal

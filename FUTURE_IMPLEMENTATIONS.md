@@ -12,7 +12,26 @@ into this app (Vite + React 19 + TypeScript + Electron + better-sqlite3).
 
 ---
 
-## PART 0 — UI / polish pass (TOP priority, do first)
+## PART 0 — UI / polish pass  ✅ DONE (shipped 0.3.0, 2026-08-31)
+
+Implemented on `feature/whats-new-tab`:
+- **0.1 liquid glass** — ported the real ui-layouts `liquid-glass` layer model
+  (frosted fill + inset edge highlight + outer glow + an SVG `feTurbulence` →
+  `feDisplacementMap` "bend" layer). Shared `#liquid-glass-bend` filter lives in
+  `index.html`; `.liquid-glass` / `.card` / `.glass` / `.glass-rail` / `.modal-panel`
+  all compose the same tokens in `theme.css`, so it is now the **default surface
+  treatment app-wide**. The displacement bend layer is applied only to the hero
+  surfaces (nav + rails + standalone `.glass`) — not to every `.card` (15+ live
+  displacement filters would jank on scroll) and not to `.modal-panel` (an
+  `overflow-y:auto` scroll container). `<LiquidGlass>` component for one-offs.
+- **0.2 cursor follower** — `CursorFollower.tsx`, refs + translate3d, delegated
+  hover, gated on `(pointer: fine)` + reduced-motion.
+- **0.3 rails** — shared `<GlassRail>`; App tab bar + AnalyticsPage section rail.
+- **0.4 legibility** — fluid `clamp()` base font, `--text-muted` contrast bump,
+  `text-rendering: optimizeLegibility`, Fraunces weight bump at small sizes.
+
+Verified rendering in-app (frosted fill + edge light + subtle warp on rails;
+content stays crisp above the bend layer).
 
 Requested 2026-08-31. All of this lands on a dedicated branch and is committed early —
 another Claude session concurrently reworks `polish/animations` and rebases/resets it,

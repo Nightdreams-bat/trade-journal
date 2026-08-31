@@ -12,7 +12,7 @@ function Row({ label, value, color }: { label: string; value: string; color?: st
 
 export function MonthlyStatsPanel({ stats }: { stats: AnalyticsSummary['monthlyStats'] }) {
   return (
-    <div className="card" style={{ padding: 16, width: 240, flexShrink: 0 }}>
+    <div className="card" style={{ padding: 'var(--sp-4)', width: 240, flexShrink: 0 }}>
       <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>Monthly Stats</div>
       <Row label="Win Rate" value={`${stats.winRate}%`} />
       <Row label="Risk/Reward" value={formatRatio(stats.riskReward)} />

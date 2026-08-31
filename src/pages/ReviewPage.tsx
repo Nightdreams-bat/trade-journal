@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
+import { Select } from '../components/Select'
 import type { DailyReview } from '../types'
 
 const EMOTIONS = ['Calm', 'Confident', 'Anxious', 'Frustrated', 'Excited', 'Tired', 'FOMO']
@@ -43,19 +44,22 @@ export function ReviewPage({ jumpToDate }: { jumpToDate?: string | null }) {
     }
   }
 
-  if (loading) return <div style={{ padding: 24, color: 'var(--text-muted)' }}>Loading reviews…</div>
+  if (loading) return <div style={{ padding: 'var(--sp-5)', color: 'var(--text-muted)' }}>Loading reviews…</div>
 
   return (
-    <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-      <div className="card" style={{ padding: 16, flex: 2 }}>
-        <div style={{ display: 'flex', gap: 12, marginBottom: 14 }}>
+    <div style={{ display: 'flex', gap: 'var(--sp-4)', alignItems: 'flex-start' }}>
+      <div className="card" style={{ padding: 'var(--sp-4)', flex: 2 }}>
+        <div style={{ display: 'flex', gap: 'var(--sp-3)', marginBottom: 14 }}>
           <label className="field" style={{ flex: 1 }}>Date
             <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </label>
           <label className="field" style={{ flex: 1 }}>Emotion / State
-            <select className="select" value={emotion} onChange={(e) => setEmotion(e.target.value)}>
-              {EMOTIONS.map((e) => <option key={e} value={e}>{e}</option>)}
-            </select>
+            <Select
+              ariaLabel="Emotion / State"
+              value={emotion}
+              onChange={setEmotion}
+              options={EMOTIONS.map((e) => ({ value: e, label: e }))}
+            />
           </label>
         </div>
         <label className="field" style={{ marginBottom: 14 }}>Review Notes
@@ -67,7 +71,7 @@ export function ReviewPage({ jumpToDate }: { jumpToDate?: string | null }) {
         <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save Review'}</button>
       </div>
 
-      <div className="card" style={{ padding: 16, flex: 1, maxHeight: 560, overflowY: 'auto' }}>
+      <div className="card" style={{ padding: 'var(--sp-4)', flex: 1, maxHeight: 560, overflowY: 'auto' }}>
         <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 10 }}>Past Reviews</div>
         {reviews.length === 0 && <div style={{ color: 'var(--text-dim)', fontSize: 12 }}>No reviews yet.</div>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -77,7 +81,7 @@ export function ReviewPage({ jumpToDate }: { jumpToDate?: string | null }) {
               onClick={() => setDate(r.date)}
               style={{
                 padding: '8px 10px',
-                borderRadius: 6,
+                borderRadius: 'var(--radius-control)',
                 cursor: 'pointer',
                 background: r.date === date ? 'var(--card-hover)' : 'transparent',
                 border: '1px solid var(--border-soft)',

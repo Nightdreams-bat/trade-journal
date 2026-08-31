@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { RELEASES, LATEST_VERSION, type ChangeItem, type Release } from '../changelog'
 import { Demo } from '../components/whatsnew/demos'
+import { Stagger, Reveal } from '../anim'
 import { setLastSeenVersion } from '../whatsNewSeen'
 
 const KIND_LABEL: Record<ChangeItem['kind'], string> = {
@@ -87,10 +88,10 @@ function ReleaseCard({ release, defaultOpen }: { release: Release; defaultOpen: 
             aria-hidden
             style={{
               color: 'var(--text-dim)',
-              fontFamily: 'ui-monospace, monospace',
+              fontFamily: 'var(--font-mono)',
               fontSize: 12,
               transform: open ? 'rotate(90deg)' : 'none',
-              transition: 'transform 0.18s ease',
+              transition: 'transform var(--dur) var(--ease-out)',
               marginTop: 4,
             }}
           >
@@ -139,13 +140,13 @@ export function WhatsNewPage() {
         </div>
       </div>
 
-      <div className="wn-timeline">
+      <Stagger className="wn-timeline">
         {RELEASES.map((r, i) => (
-          <div key={r.version} className="wn-item" style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}>
+          <Reveal key={r.version}>
             <ReleaseCard release={r} defaultOpen={i === 0} />
-          </div>
+          </Reveal>
         ))}
-      </div>
+      </Stagger>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { useState, type CSSProperties } from 'react'
 import { format } from 'date-fns'
 import { Modal } from './Modal'
+import { Select } from './Select'
 import { TagInput } from './TagInput'
 import { ImageGallery } from './ImageGallery'
 import { ConfluenceSelector } from './ConfluenceSelector'
@@ -89,11 +90,11 @@ export function TradeFormModal({
     onClose()
   }
 
-  const grid: CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }
+  const grid: CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }
 
   return (
     <Modal title={savedTrade ? 'Edit Trade' : 'New Trade'} onClose={onClose} wide>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
         <div style={grid}>
           <label className="field">Name
             <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. EURUSD London breakout" />
@@ -108,27 +109,35 @@ export function TradeFormModal({
             <input className="input" value={pair} onChange={(e) => setPair(e.target.value)} placeholder="EURUSD" />
           </label>
           <label className="field">Session
-            <select className="select" value={session} onChange={(e) => setSession(e.target.value)}>
-              {SESSIONS.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
+            <Select
+              ariaLabel="Session"
+              value={session}
+              onChange={setSession}
+              options={SESSIONS.map((s) => ({ value: s, label: s }))}
+            />
           </label>
         </div>
 
         <div style={grid}>
           <label className="field">Direction
-            <select className="select" value={direction} onChange={(e) => setDirection(e.target.value)}>
-              {DIRECTIONS.map((d) => <option key={d} value={d}>{d}</option>)}
-            </select>
+            <Select
+              ariaLabel="Direction"
+              value={direction}
+              onChange={setDirection}
+              options={DIRECTIONS.map((d) => ({ value: d, label: d }))}
+            />
           </label>
           <label className="field">Account
-            <select className="select" value={accountId} onChange={(e) => setAccountId(e.target.value ? Number(e.target.value) : '')}>
-              <option value="">—</option>
-              {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
+            <Select
+              ariaLabel="Account"
+              value={accountId === '' ? '' : String(accountId)}
+              onChange={(v) => setAccountId(v ? Number(v) : '')}
+              options={[{ value: '', label: '—' }, ...accounts.map((a) => ({ value: String(a.id), label: a.name }))]}
+            />
           </label>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 'var(--sp-3)' }}>
           <label className="field">Risk per Trade ($)
             <input className="input" type="number" step="any" value={riskPerTrade} onChange={(e) => setRiskPerTrade(e.target.value)} />
           </label>
@@ -139,10 +148,12 @@ export function TradeFormModal({
             <input className="input" type="number" step="any" value={rMultiple} onChange={(e) => setRMultiple(e.target.value)} />
           </label>
           <label className="field">Model / Strategy
-            <select className="select" value={strategyId} onChange={(e) => setStrategyId(e.target.value ? Number(e.target.value) : '')}>
-              <option value="">—</option>
-              {strategies.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+            <Select
+              ariaLabel="Model / Strategy"
+              value={strategyId === '' ? '' : String(strategyId)}
+              onChange={(v) => setStrategyId(v ? Number(v) : '')}
+              options={[{ value: '', label: '—' }, ...strategies.map((s) => ({ value: String(s.id), label: s.name }))]}
+            />
           </label>
         </div>
 

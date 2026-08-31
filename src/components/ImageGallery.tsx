@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Modal } from './Modal'
+import { Plus, X } from './icons'
 
 export function ImageGallery({ entityType, entityId }: { entityType: 'trade' | 'missed_trade'; entityId: number }) {
   const [images, setImages] = useState<{ id: number; dataUrl: string }[]>([])
@@ -47,7 +48,7 @@ export function ImageGallery({ entityType, entityId }: { entityType: 'trade' | '
                   width: 88,
                   height: 88,
                   objectFit: 'cover',
-                  borderRadius: 8,
+                  borderRadius: 'var(--radius-card)',
                   border: '1px solid var(--border)',
                   cursor: 'pointer',
                   display: 'block',
@@ -74,19 +75,19 @@ export function ImageGallery({ entityType, entityId }: { entityType: 'trade' | '
                   cursor: 'pointer',
                 }}
               >
-                ✕
+                <X size={12} />
               </button>
             </div>
           ))}
         </div>
       )}
-      <button className="btn" onClick={addImages} disabled={adding} style={{ marginTop: images.length ? 0 : 6, width: 'fit-content' }}>
-        {adding ? 'Adding…' : '+ Add Images'}
+      <button className="btn" onClick={addImages} disabled={adding} style={{ marginTop: images.length ? 0 : 6, width: 'fit-content', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <Plus size={16} />{adding ? 'Adding…' : 'Add Images'}
       </button>
 
       {lightbox && (
         <Modal title="Image" onClose={() => setLightbox(null)} wide>
-          <img src={lightbox} alt="attachment full size" style={{ maxWidth: '100%', borderRadius: 8 }} />
+          <img src={lightbox} alt="attachment full size" style={{ maxWidth: '100%', borderRadius: 'var(--radius-card)' }} />
         </Modal>
       )}
     </div>

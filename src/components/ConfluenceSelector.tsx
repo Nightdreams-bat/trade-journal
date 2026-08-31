@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Check, Edit, X } from './icons'
 import type { Confluence } from '../types'
 
 export function ConfluenceSelector({
@@ -68,7 +69,7 @@ export function ConfluenceSelector({
                 }}
                 style={{ width: 130, padding: '2px 6px', fontSize: 11.5 }}
               />
-              <button className="btn" style={{ padding: '2px 6px', fontSize: 11 }} onClick={saveEdit}>✓</button>
+              <button className="btn" style={{ padding: '2px 6px', fontSize: 11, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={saveEdit}><Check size={12} /></button>
             </span>
           ) : (
             <span
@@ -82,9 +83,9 @@ export function ConfluenceSelector({
                 gap: 6,
               }}
             >
-              <span onClick={() => toggle(c.id)}>{selectedIds.includes(c.id) ? '✓ ' : ''}{c.name}</span>
-              <span style={{ opacity: 0.6, cursor: 'pointer', fontSize: 10 }} onClick={() => startEdit(c)} title="Rename">✎</span>
-              <span style={{ opacity: 0.6, cursor: 'pointer', fontSize: 10 }} onClick={() => removeConfluence(c.id)} title="Delete">✕</span>
+              <span onClick={() => toggle(c.id)}>{selectedIds.includes(c.id) ? <Check size={12} style={{ marginRight: 4 }} /> : ''}{c.name}</span>
+              <span style={{ opacity: 0.6, cursor: 'pointer', fontSize: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => startEdit(c)} title="Rename"><Edit size={12} /></span>
+              <span style={{ opacity: 0.6, cursor: 'pointer', fontSize: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => removeConfluence(c.id)} title="Delete"><X size={12} /></span>
             </span>
           )
         )}
@@ -105,7 +106,7 @@ export function ConfluenceSelector({
             }
           }}
         />
-        <button className="btn" onClick={addConfluence} style={{ flexShrink: 0 }}>+ Add</button>
+        <button className="btn" onClick={addConfluence} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>+ Add</button>
       </div>
     </div>
   )
