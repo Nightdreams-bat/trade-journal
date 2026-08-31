@@ -47,9 +47,9 @@ export const RELEASES: Release[] = [
       },
       {
         kind: 'improved',
-        text: 'Liquid-glass navigation and section rails',
+        text: 'Liquid-glass surfaces everywhere',
         detail:
-          'The top tab bar and the Analytics section rail now share one frosted-glass treatment — a blurred, faintly refracting surface — defined in a single place so every rail looks identical.',
+          'Every raised surface — cards, panels, the navigation, section rails and dialogs — now shares one frosted "liquid glass" treatment: a blurred translucent fill with a lit inner edge and a soft outer glow. The navigation and rails add a gentle optical warp (an SVG displacement of the blurred backdrop, ported from the ui-layouts liquid-glass component).',
       },
       {
         kind: 'improved',

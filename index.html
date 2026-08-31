@@ -8,6 +8,19 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Shared "liquid glass" displacement filter (ui-layouts technique):
+         low-frequency fractal noise -> feDisplacementMap warps the frosted
+         backdrop behind any surface that sets `filter: url(#liquid-glass-bend)`.
+         One definition, referenced by .card / .glass / .glass-rail / .modal-panel. -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <filter id="liquid-glass-bend" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox">
+          <feTurbulence type="fractalNoise" baseFrequency="0.004 0.009" numOctaves="2" seed="7" result="noise" />
+          <feGaussianBlur in="noise" stdDeviation="1.4" result="softNoise" />
+          <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="18" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+    </svg>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

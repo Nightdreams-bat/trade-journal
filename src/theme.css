@@ -50,6 +50,23 @@
   --shadow-lift: 0 2px 10px -4px rgba(0, 0, 0, 0.5);
   --shadow-card: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
 
+  /* --- liquid glass (shared by .card / .glass / .glass-rail / .modal-panel) ---
+     Port of the ui-layouts liquid-glass layer model: a frosted translucent
+     fill, an inner "edge" highlight that reads as glass thickness, and an
+     outer "face" glow. The optical warp comes from `filter: url(#liquid-glass-bend)`
+     on a ::before bend layer (see index.html). */
+  --glass-fill: rgba(27, 36, 54, 0.55);
+  --glass-fill-strong: rgba(23, 32, 50, 0.82);
+  --glass-border: rgba(245, 243, 238, 0.10);
+  --glass-blur: blur(16px) saturate(1.7);
+  --glass-edge:
+    inset 2px 2px 3px rgba(245, 243, 238, 0.16),
+    inset -2px -2px 3px rgba(245, 243, 238, 0.07);
+  --glass-face:
+    0 4px 4px rgba(0, 0, 0, 0.14),
+    0 0 12px rgba(0, 0, 0, 0.08),
+    0 0 26px rgba(91, 194, 216, 0.10);
+
   /* --- type --- */
   --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
   --font-body: 'Inter Variable', 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -167,71 +184,72 @@ a:hover {
   color: var(--accent);
 }
 
-/* ---------- liquid glass ---------- */
+/* ============================================================
+   LIQUID GLASS — the default surface treatment
+   ============================================================
+   `.liquid-glass` is the shared implementation. `.card`, `.glass`,
+   `.glass-rail` and `.modal-panel` all compose it so every raised
+   surface in the app is the same frosted glass. Layer model (from
+   ui-layouts' liquid-glass): translucent fill + `--glass-blur`
+   backdrop, a ::before "bend" layer warped by the SVG displacement
+   filter (index.html #liquid-glass-bend), an inset "edge" highlight,
+   and an outer "face" glow. */
 
-.glass {
-  background: rgba(19, 28, 46, 0.55);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  border: 1px solid rgba(245, 243, 238, 0.07);
-}
-.glass--rail {
-  border: none;
-  border-bottom: 1px solid rgba(245, 243, 238, 0.08);
-  box-shadow: 0 6px 20px -14px rgba(0, 0, 0, 0.7);
-}
-
-/* Hero "liquid glass" surface — use on ONE or TWO surfaces only
-   (nav rail, modal panels). Blur + a drifting refraction highlight +
-   a static turbulence grain. No rAF, compositor-only animation. */
-.liquid-glass {
+.liquid-glass,
+.card,
+.glass,
+.glass-rail {
   position: relative;
   isolation: isolate;
-  overflow: hidden;
-  background: linear-gradient(180deg, rgba(27, 36, 54, 0.6), rgba(19, 28, 46, 0.48));
-  backdrop-filter: blur(16px) saturate(1.6);
-  -webkit-backdrop-filter: blur(16px) saturate(1.6);
-  border: 1px solid rgba(245, 243, 238, 0.08);
-  box-shadow:
-    inset 0 1px 0 rgba(245, 243, 238, 0.07),
-    inset 0 -1px 0 rgba(5, 9, 18, 0.4),
-    0 10px 34px -18px rgba(0, 0, 0, 0.75);
+  background: var(--glass-fill);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-face), var(--glass-edge);
 }
-.liquid-glass > * {
-  position: relative;
-  z-index: 1;
-}
-.liquid-glass::before {
-  content: '';
-  position: absolute;
-  inset: -45%;
-  z-index: 0;
-  background:
-    radial-gradient(38% 55% at 28% 20%, rgba(91, 194, 216, 0.16), transparent 70%),
-    radial-gradient(42% 50% at 82% 88%, rgba(63, 228, 228, 0.11), transparent 72%);
-  filter: blur(22px);
-  animation: liquid-drift 19s ease-in-out infinite alternate;
-  pointer-events: none;
-}
-.liquid-glass::after {
+
+/* the bend layer: an inset, rounded, extra-blurred copy of the backdrop,
+   displaced by the shared fractal-noise filter for the optical "liquid" warp.
+   Applied to the hero surfaces (nav rail, section rails, standalone .glass
+   panels) — NOT to every .card, where 15+ live displacement filters would
+   jank on scroll. Cards still get the frosted fill + edge + glow below. */
+.liquid-glass::before,
+.glass::before,
+.glass-rail::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 0;
-  /* feTurbulence grain, inlined so there is no DOM/asset dependency */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: 0.22;
-  mix-blend-mode: overlay;
+  border-radius: inherit;
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  filter: url(#liquid-glass-bend);
   pointer-events: none;
 }
 
-@keyframes liquid-drift {
-  from { transform: translate3d(-3%, -2%, 0) rotate(0deg); }
-  to { transform: translate3d(3%, 2%, 0) rotate(4deg); }
+/* keep real content above the bend layer */
+.liquid-glass > *,
+.glass > *,
+.glass-rail > * {
+  position: relative;
+  z-index: 1;
+}
+
+.card {
+  border-radius: var(--radius);
+  transition: background var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out),
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
+}
+
+.glass--rail {
+  border: none;
+  border-bottom: 1px solid var(--glass-border);
 }
 
 /* Shared rail treatment — every secondary nav / section-pill strip
-   uses this so they are visually identical. See <GlassRail>. */
+   renders through <GlassRail> so they are visually identical. */
 .glass-rail {
   display: flex;
   align-items: center;
@@ -239,25 +257,26 @@ a:hover {
   flex-wrap: wrap;
   padding: 4px 6px;
   border-radius: var(--radius);
-  background: rgba(19, 28, 46, 0.55);
-  backdrop-filter: blur(14px) saturate(1.5);
-  -webkit-backdrop-filter: blur(14px) saturate(1.5);
-  border: 1px solid rgba(245, 243, 238, 0.07);
-  box-shadow: 0 6px 20px -14px rgba(0, 0, 0, 0.7);
 }
 .glass-rail--flush {
   border-radius: 0;
   border: none;
-  border-bottom: 1px solid rgba(245, 243, 238, 0.08);
+  border-bottom: 1px solid var(--glass-border);
   flex-wrap: nowrap;
 }
 
-/* Non-blur fallback (older Chromium / disabled compositing). */
+/* Non-blur / no-SVG-filter fallback (older Chromium, disabled compositing). */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .liquid-glass,
+  .card,
   .glass,
   .glass-rail {
-    background: var(--bg-elevated);
+    background: var(--card);
+  }
+  .liquid-glass::before,
+  .glass::before,
+  .glass-rail::before {
+    display: none;
   }
 }
 
@@ -335,16 +354,7 @@ body.has-cursor-follower [contenteditable='true'] {
 }
 
 /* ---------- surfaces ---------- */
-
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  transition: background var(--dur) var(--ease-out),
-    border-color var(--dur) var(--ease-out),
-    transform var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur) var(--ease-out);
-}
+/* .card itself is defined in the LIQUID GLASS block above. */
 
 /* Opt-in hover elevation for clickable cards (add alongside .card). */
 .card--interactive {
@@ -353,7 +363,7 @@ body.has-cursor-follower [contenteditable='true'] {
 .card--interactive:hover {
   transform: translateY(-2px);
   border-color: var(--accent-border);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--glass-face), var(--glass-edge), var(--shadow-card);
 }
 
 /* ---------- buttons ---------- */
@@ -490,18 +500,22 @@ label.field {
   justify-content: center;
   z-index: 100;
 }
+/* Modal panel shares the glass tokens but uses the opaque-leaning fill
+   (content must stay readable) and skips the ::before bend layer — it is
+   an `overflow-y: auto` scroll container, where an absolute bend layer
+   would only cover the first screenful. */
 .modal-panel {
-  background: rgba(19, 28, 46, 0.82);
-  backdrop-filter: blur(18px) saturate(1.4);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  border: 1px solid rgba(245, 243, 238, 0.09);
+  background: var(--glass-fill-strong);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   width: 560px;
   max-width: 92vw;
   max-height: 88vh;
   overflow-y: auto;
   padding: 22px 24px;
-  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.6), var(--glass-edge);
 }
 .modal-panel.wide {
   width: 760px;
