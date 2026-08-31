@@ -149,8 +149,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  /* keeps text readable where it sits over the photographic backdrop */
-  text-shadow: 0 1px 3px rgba(3, 6, 14, 0.28);
+  /* keeps text readable where it sits over the ambient glow */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
 h1, h2, h3, h4 {
