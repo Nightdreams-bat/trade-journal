@@ -721,6 +721,112 @@ table.data-table tbody tr:hover {
   box-shadow: 0 6px 18px -8px rgba(76, 111, 165, 0.28);
 }
 
+/* ============================================================
+   SPATIAL SHELL — warm-glass three-panel scene
+   ============================================================ */
+
+.app-root { min-height: 100vh; }
+
+/* The stage: fixed flex-centre. NEVER transform / perspective / filter /
+   contain / container-type here (§0) — it would blank the hero backdrop-filter. */
+.spatial-stage { overflow: hidden; }
+
+/* Focal hero slab — owns its own x/scale transform (see CenterPanel.tsx). */
+.center-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(1180px, calc(100vw - 96px));
+  height: min(880px, calc(100vh - 56px));
+  overflow: hidden;
+  transform-origin: center center;
+}
+
+.hero-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+  padding: 16px var(--sp-5);
+  border-bottom: 1px solid var(--border-soft);
+  flex-shrink: 0;
+}
+
+.hero-main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--sp-5);
+  position: relative;
+  z-index: 1;
+}
+
+/* Side slabs — absolutely positioned so they share physical space as the
+   hero shifts. Each carries liquid-glass--hero and owns its own transform. */
+.nav-rail,
+.utility-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin-top: auto;
+  margin-bottom: auto;
+  height: min(760px, 78vh);
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-4);
+  border-radius: var(--radius-window);
+  z-index: 3;
+}
+.nav-rail { left: 24px; width: 172px; }
+.utility-panel { right: 24px; width: 304px; }
+
+@media (max-width: 1100px) {
+  .nav-rail { left: 12px; }
+  .utility-panel { right: 12px; }
+}
+
+/* Timeline strip */
+.timeline { position: relative; }
+.timeline-strip {
+  display: flex;
+  gap: var(--sp-3);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 8px;
+}
+.timeline-strip::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  pointer-events: none;
+}
+.timeline-card {
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+  min-width: 132px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  text-align: left;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* §7 — glass rails go solid on the light scene (no backdrop-filter) */
+.glass-rail {
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid var(--glass-border);
+}
+
 /* ---------- reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {

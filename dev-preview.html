@@ -88,8 +88,8 @@
         }
 
         const accounts = [
-          { id: 1, name: 'FTMO 100K', starting_balance: 100000, currency: 'USD' },
-          { id: 2, name: 'Personal', starting_balance: 15000, currency: 'USD' },
+          { id: 1, name: 'FTMO 100K', broker: 'FTMO', starting_balance: 100000, currency: 'USD' },
+          { id: 2, name: 'Personal', broker: 'IC Markets', starting_balance: 15000, currency: 'USD' },
         ]
         const strategies = [
           { id: 1, name: 'ICT Silver Bullet', description: 'London/NY killzone FVG entries' },
@@ -98,7 +98,35 @@
         const confluences = [
           { id: 1, name: 'FVG' }, { id: 2, name: 'OB' }, { id: 3, name: 'Liquidity sweep' },
         ]
-        const trades = []
+        const mkTrade = (id, back, pair, direction, pnl, r, followed) => ({
+          id,
+          name: pair + ' ' + direction,
+          date: iso(daysAgo(back)),
+          pair,
+          session: 'London',
+          direction,
+          risk_per_trade: 1,
+          pnl,
+          r_multiple: r,
+          followed_plan: followed,
+          break_even: false,
+          entry_win: pnl >= 0,
+          strategy_id: 1,
+          account_id: 1,
+          positive_tags: followed ? ['A+ setup'] : [],
+          negative_tags: followed ? [] : ['early entry'],
+          notes: null,
+          created_at: new Date().toISOString(),
+          confluence_ids: [1, 2],
+        })
+        const trades = [
+          mkTrade(1, 1, 'EURUSD', 'Long', 640, 2.1, true),
+          mkTrade(2, 2, 'GBPUSD', 'Short', -220, -1, false),
+          mkTrade(3, 4, 'XAUUSD', 'Long', 1180, 3.4, true),
+          mkTrade(4, 6, 'NAS100', 'Short', 410, 1.6, true),
+          mkTrade(5, 9, 'US30', 'Long', -180, -0.8, false),
+          mkTrade(6, 12, 'BTCUSD', 'Long', 920, 2.7, true),
+        ]
 
         const ok = async () => true
         const list = (v) => async () => v
