@@ -114,7 +114,7 @@ export function TopNav({
                   border: 'none',
                   background: 'transparent',
                   boxShadow: 'none',
-                  color: isActive ? 'var(--text-strong)' : 'var(--text-muted)',
+                  color: isActive ? 'var(--accent-bright)' : 'var(--text-muted)',
                   fontWeight: 'var(--weight-medium)',
                   padding: '7px 13px',
                 }}
@@ -126,7 +126,9 @@ export function TopNav({
                         position: 'absolute',
                         inset: 0,
                         borderRadius: 'var(--radius-pill)',
-                        background: 'rgba(255,255,255,0.1)',
+                        background: 'var(--accent-bg)',
+                        border: '1px solid var(--accent-border)',
+                        boxShadow: '0 0 24px -4px rgba(93,214,44,0.5)',
                         zIndex: -1,
                       }}
                     />
@@ -137,7 +139,9 @@ export function TopNav({
                         position: 'absolute',
                         inset: 0,
                         borderRadius: 'var(--radius-pill)',
-                        background: 'rgba(255,255,255,0.1)',
+                        background: 'var(--accent-bg)',
+                        border: '1px solid var(--accent-border)',
+                        boxShadow: '0 0 24px -4px rgba(93,214,44,0.5)',
                         zIndex: -1,
                       }}
                       transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}

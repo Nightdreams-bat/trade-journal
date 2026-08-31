@@ -44,11 +44,12 @@ export function RingStat({
             strokeLinecap="round"
             strokeDasharray={c}
             strokeDashoffset={offset}
-            style={
-              reduced
-                ? undefined
-                : { transition: 'stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1)', strokeDashoffset: offset }
-            }
+            style={{
+              filter: `drop-shadow(0 0 6px ${color === 'var(--accent)' ? 'rgba(93,214,44,0.55)' : color})`,
+              ...(reduced
+                ? null
+                : { transition: 'stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1)', strokeDashoffset: offset }),
+            }}
           />
         </svg>
         <div

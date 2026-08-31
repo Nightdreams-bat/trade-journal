@@ -25,16 +25,24 @@
   /* --- accents (signal green) --- */
   --accent: #5dd62c;
   --accent-deep: #337418;
-  --accent-bright: #7cf049;
-  --accent-bg: rgba(93, 214, 44, 0.14);
-  --accent-border: rgba(93, 214, 44, 0.5);
+  --accent-bright: #8cff4a;
+  --accent-bg: rgba(93, 214, 44, 0.16);
+  --accent-border: rgba(93, 214, 44, 0.55);
 
   /* --- semantic (P&L) --- */
   --green: #5dd62c;
-  --green-soft: rgba(93, 214, 44, 0.15);
+  --green-soft: rgba(93, 214, 44, 0.16);
   --red: #ff5b52;
-  --red-soft: rgba(255, 91, 82, 0.15);
+  --red-soft: rgba(255, 91, 82, 0.16);
   --ember: #ff5b52;
+
+  /* --- colored glow (bleeds onto the glass on hover / for live values) --- */
+  --glow-green:
+    0 0 22px -2px rgba(93, 214, 44, 0.6),
+    0 0 54px -10px rgba(93, 214, 44, 0.4);
+  --glow-red:
+    0 0 22px -2px rgba(255, 91, 82, 0.55),
+    0 0 54px -10px rgba(255, 91, 82, 0.38);
 
   /* --- geometry (visionOS: very round) --- */
   --radius-window: 46px;  /* outer glass window / bento container */
@@ -63,7 +71,10 @@
   --ease-sig: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* --- elevation (soft, deep, ambient) --- */
-  --glow-accent: 0 0 0 1px var(--accent-border), 0 10px 40px -8px rgba(93, 214, 44, 0.4);
+  --glow-accent:
+    0 0 0 1px var(--accent-bright),
+    0 0 26px -2px rgba(93, 214, 44, 0.65),
+    0 0 66px -8px rgba(93, 214, 44, 0.42);
   --shadow-lift: 0 6px 20px -8px rgba(0, 0, 0, 0.55);
   --shadow-card:
     0 30px 60px -24px rgba(0, 0, 0, 0.8),
@@ -78,20 +89,20 @@
      thickness, plus a soft deep ambient shadow. The optical warp comes from
      `filter: url(#liquid-glass-bend)` on a ::before layer (see index.html);
      `--glass-specular` is a static sheen painted by a ::after layer. */
-  --glass-fill: rgba(34, 34, 34, 0.52);
-  --glass-fill-strong: rgba(16, 16, 16, 0.86);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-blur: blur(28px) saturate(1.3) brightness(1.06);
-  --glass-blur-deep: blur(40px) saturate(1.4) brightness(1.08);
+  --glass-fill: rgba(28, 30, 27, 0.30);
+  --glass-fill-strong: rgba(14, 16, 13, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-blur: blur(22px) saturate(1.9) brightness(1.14);
+  --glass-blur-deep: blur(34px) saturate(2) brightness(1.14);
   --glass-edge:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.34),
-    inset 1px 1px 1px rgba(255, 255, 255, 0.14),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
-    inset -1px -1px 2px rgba(255, 255, 255, 0.04);
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.4),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.05);
   --glass-face:
-    0 4px 8px rgba(0, 0, 0, 0.28),
-    0 0 1px rgba(255, 255, 255, 0.22),
-    0 0 28px rgba(93, 214, 44, 0.05);
+    0 4px 8px rgba(0, 0, 0, 0.24),
+    0 0 1px rgba(255, 255, 255, 0.3),
+    0 0 44px rgba(93, 214, 44, 0.09);
   --glass-specular: linear-gradient(
     180deg,
     rgba(255, 255, 255, 0.1) 0%,
@@ -100,9 +111,13 @@
   );
 
   /* --- gaze / hover highlight --- */
-  --gaze-brightness: 1.08;
+  --gaze-brightness: 1.1;
   --gaze-scale: 1.012;
-  --gaze-glow: 0 0 0 1px var(--accent-border), 0 0 30px -6px rgba(93, 214, 44, 0.28), var(--shadow-card);
+  --gaze-glow:
+    0 0 0 1px var(--accent-border),
+    0 0 40px -4px rgba(93, 214, 44, 0.4),
+    0 0 90px -12px rgba(93, 214, 44, 0.22),
+    var(--shadow-card);
 
   /* --- type (visionOS system sans; no serif) --- */
   --font-display: -apple-system, BlinkMacSystemFont, 'Inter Variable', 'Inter', 'Segoe UI', Roboto, sans-serif;
@@ -140,8 +155,9 @@ html {
 
 body {
   background:
-    radial-gradient(1100px 700px at 50% 120%, rgba(93, 214, 44, 0.06), transparent 60%),
-    radial-gradient(900px 500px at 82% -10%, rgba(51, 116, 24, 0.14), transparent 62%),
+    radial-gradient(1100px 720px at 50% 118%, rgba(93, 214, 44, 0.16), transparent 60%),
+    radial-gradient(900px 520px at 84% -12%, rgba(51, 116, 24, 0.24), transparent 62%),
+    radial-gradient(760px 560px at 10% 24%, rgba(93, 214, 44, 0.08), transparent 60%),
     var(--bg);
   color: var(--text);
   font-size: 1rem; /* follows the fluid :root clamp above */
@@ -226,6 +242,7 @@ a:hover {
 
 .accent-word {
   color: var(--accent);
+  text-shadow: 0 0 20px rgba(93, 214, 44, 0.55);
 }
 
 /* ============================================================
@@ -374,6 +391,7 @@ a:hover {
   height: 7px;
   margin: -3.5px 0 0 -3.5px;
   background: var(--accent-bright);
+  box-shadow: 0 0 12px 2px rgba(93, 214, 44, 0.7);
 }
 .cursor-follower__ring {
   width: 28px;
@@ -432,15 +450,15 @@ body.has-cursor-follower [contenteditable='true'] {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(120% 90% at 50% 40%, transparent, rgba(8, 8, 8, 0.5) 78%, rgba(6, 6, 6, 0.82)),
-    linear-gradient(180deg, rgba(8, 8, 8, 0.35), rgba(8, 8, 8, 0.15) 40%, rgba(8, 8, 8, 0.5));
+    radial-gradient(120% 90% at 50% 40%, transparent, rgba(8, 8, 8, 0.32) 80%, rgba(6, 6, 6, 0.62)),
+    linear-gradient(180deg, rgba(8, 8, 8, 0.22), rgba(8, 8, 8, 0.04) 40%, rgba(8, 8, 8, 0.34));
 }
 .ambient-blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(52px);
+  filter: blur(56px);
   mix-blend-mode: screen;
-  opacity: 0.6;
+  opacity: 0.85;
   will-change: transform;
   animation: ambient-drift 52s ease-in-out infinite alternate;
 }
@@ -536,15 +554,16 @@ body.has-cursor-follower [contenteditable='true'] {
   outline-offset: 2px;
 }
 .btn-primary {
-  background: var(--accent-bg);
+  background: rgba(93, 214, 44, 0.18);
   border-color: var(--accent-border);
-  color: var(--text-strong);
+  color: var(--accent-bright);
   font-weight: 600;
+  box-shadow: 0 0 18px -6px rgba(93, 214, 44, 0.45);
 }
 .btn-primary:hover {
-  background: rgba(93, 214, 44, 0.24);
+  background: rgba(93, 214, 44, 0.32);
   border-color: var(--accent-bright);
-  color: var(--text-strong);
+  color: #ffffff;
   box-shadow: var(--glow-accent);
 }
 .btn-danger {
@@ -591,8 +610,8 @@ label.field {
 
 /* ---------- P&L ---------- */
 
-.pnl-positive { color: var(--green); }
-.pnl-negative { color: var(--red); }
+.pnl-positive { color: var(--green); text-shadow: 0 0 16px rgba(93, 214, 44, 0.5); }
+.pnl-negative { color: var(--red); text-shadow: 0 0 16px rgba(255, 91, 82, 0.5); }
 
 .checkbox-cell {
   display: inline-flex;
@@ -615,8 +634,8 @@ label.field {
     color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
   animation: tag-pop var(--dur-fast) var(--ease-sig);
 }
-.tag-pill.positive { background: var(--green-soft); color: var(--green); border-color: transparent; }
-.tag-pill.negative { background: var(--red-soft); color: var(--red); border-color: transparent; }
+.tag-pill.positive { background: var(--green-soft); color: var(--green); border-color: transparent; box-shadow: 0 0 16px -4px rgba(93, 214, 44, 0.45); }
+.tag-pill.negative { background: var(--red-soft); color: var(--red); border-color: transparent; box-shadow: 0 0 16px -4px rgba(255, 91, 82, 0.42); }
 
 @keyframes tag-pop {
   from { opacity: 0; transform: scale(0.8); }
@@ -776,6 +795,24 @@ table.data-table tbody tr:hover {
 @keyframes wn-cell-in {
   from { opacity: 0; transform: scale(0.6); }
   to { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- chart glow ---------- */
+/* the accent equity / area curves cast a soft green light onto the glass */
+.recharts-surface .recharts-line-curve,
+.recharts-surface .recharts-area-curve {
+  filter: drop-shadow(0 0 6px rgba(93, 214, 44, 0.5));
+}
+.recharts-surface .recharts-area-area {
+  filter: drop-shadow(0 0 10px rgba(93, 214, 44, 0.28));
+}
+.recharts-surface .recharts-dot {
+  filter: drop-shadow(0 0 5px rgba(93, 214, 44, 0.6));
+}
+/* active nav pill / selected chips read as lit glass */
+[data-nav-pill],
+.nav-pill {
+  box-shadow: 0 0 24px -4px rgba(93, 214, 44, 0.45);
 }
 
 /* ---------- reduced motion ---------- */
