@@ -1,78 +1,117 @@
 /* ============================================================
-   Trade Journal — "Digitz" theme
-   Editorial dark-marine palette, Fraunces display serif,
-   Geist body, JetBrains Mono for technical labels.
-   Adapted from the design language of https://digitz.fr
+   Trade Journal — "Spatial Glass" theme
+   Apple visionOS-style design language: bright frosted glass
+   panels, very round geometry, heavy white system sans type,
+   a floating glass nav + bottom ornament. Numerals tabular.
    ============================================================ */
 
 :root {
-  /* --- surfaces --- */
-  --ink: #0a101c;
-  --bg: #0d1828;
-  --bg-elevated: #131c2e;
-  --card: #1b2436;
-  --card-hover: #222d43;
-  --border: #243049;
-  --border-soft: #1a2335;
+  /* --- surfaces (brighter, cooler) --- */
+  --ink: #05070d;
+  --bg: #0b1220;
+  --bg-elevated: #131b2d;
+  --card: #1a2338;        /* solid fallback fill when backdrop-filter unsupported */
+  --card-hover: #212c45;
+  --border: #2a3a58;
+  --border-soft: #1c2740;
 
-  /* --- text --- */
-  --text-strong: #f5f3ee;
-  --text: #e5e3db;
-  --text-muted: #9aa6b8; /* bumped one step for WCAG AA on translucent glass */
-  --text-dim: #5b6577;
+  /* --- text (white / near-white, heavier) --- */
+  --text-strong: #ffffff;
+  --text: #eef2f8;
+  --text-muted: #b7c0d0;  /* raised for WCAG AA on bright translucent glass */
+  --text-dim: #7d8798;
 
   /* --- accents --- */
-  --accent: #5bc2d8;
-  --accent-bright: #3fe4e4;
-  --accent-bg: rgba(91, 194, 216, 0.12);
-  --accent-border: rgba(91, 194, 216, 0.45);
+  --accent: #5fd0e6;
+  --accent-bright: #8df0f0;
+  --accent-bg: rgba(95, 208, 230, 0.14);
+  --accent-border: rgba(95, 208, 230, 0.5);
 
   /* --- semantic (P&L) --- */
-  --green: #5bb98f;
-  --green-soft: rgba(91, 185, 143, 0.14);
-  --red: #e6886e;
-  --red-soft: rgba(230, 136, 110, 0.14);
-  --ember: #e6886e;
+  --green: #4ec98a;
+  --green-soft: rgba(78, 201, 138, 0.16);
+  --red: #ff8f6b;
+  --red-soft: rgba(255, 143, 107, 0.16);
+  --ember: #ff8f6b;
 
-  /* --- geometry --- */
-  --radius: 3px;
-  --radius-sm: 2px;
+  /* --- geometry (visionOS: very round) --- */
+  --radius-window: 46px;  /* outer glass window / bento container */
+  --radius-panel: 34px;   /* full-width panels, modal */
+  --radius-card: 28px;    /* widget cards, chart cards */
+  --radius-control: 18px; /* buttons, inputs, selects */
+  --radius-pill: 999px;   /* nav bar, ornament, chips, rings */
+  --radius: 20px;         /* legacy alias — keep un-migrated inline styles round */
+  --radius-sm: 14px;      /* legacy alias */
+
+  /* --- spacing scale --- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
 
   /* --- motion --- */
   --dur-fast: 0.12s;
-  --dur: 0.18s;
-  --dur-medium: 0.26s;
+  --dur: 0.2s;
+  --dur-medium: 0.3s;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-sig: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* --- elevation --- */
-  --glow-accent: 0 0 0 1px var(--accent-border), 0 4px 16px -4px rgba(91, 194, 216, 0.35);
-  --shadow-lift: 0 2px 10px -4px rgba(0, 0, 0, 0.5);
-  --shadow-card: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  /* --- elevation (soft, deep, ambient) --- */
+  --glow-accent: 0 0 0 1px var(--accent-border), 0 10px 40px -8px rgba(95, 208, 230, 0.4);
+  --shadow-lift: 0 6px 20px -8px rgba(0, 0, 0, 0.45);
+  --shadow-card:
+    0 30px 60px -24px rgba(3, 6, 14, 0.7),
+    0 8px 24px -12px rgba(3, 6, 14, 0.5);
+  --shadow-window:
+    0 60px 140px -40px rgba(3, 6, 14, 0.8),
+    0 20px 50px -20px rgba(3, 6, 14, 0.55);
 
   /* --- liquid glass (shared by .card / .glass / .glass-rail / .modal-panel) ---
-     Port of the ui-layouts liquid-glass layer model: a frosted translucent
-     fill, an inner "edge" highlight that reads as glass thickness, and an
-     outer "face" glow. The optical warp comes from `filter: url(#liquid-glass-bend)`
-     on a ::before bend layer (see index.html). */
-  --glass-fill: rgba(24, 33, 51, 0.64);
-  --glass-fill-strong: rgba(21, 30, 48, 0.88);
-  --glass-border: rgba(245, 243, 238, 0.10);
-  --glass-blur: blur(16px) saturate(1.7);
+     visionOS-style frosted material: a bright translucent fill, a deep blur,
+     a bright specular hairline along the top edge that reads as glass
+     thickness, plus a soft deep ambient shadow. The optical warp comes from
+     `filter: url(#liquid-glass-bend)` on a ::before layer (see index.html);
+     `--glass-specular` is a static sheen painted by a ::after layer. */
+  --glass-fill: rgba(30, 42, 66, 0.42);
+  --glass-fill-strong: rgba(20, 28, 46, 0.8);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-blur: blur(28px) saturate(1.9) brightness(1.08);
+  --glass-blur-deep: blur(40px) saturate(2) brightness(1.1);
   --glass-edge:
-    inset 2px 2px 3px rgba(245, 243, 238, 0.16),
-    inset -2px -2px 3px rgba(245, 243, 238, 0.07);
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.5),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.05);
   --glass-face:
-    0 4px 4px rgba(0, 0, 0, 0.14),
-    0 0 12px rgba(0, 0, 0, 0.08),
-    0 0 26px rgba(91, 194, 216, 0.10);
+    0 4px 8px rgba(0, 0, 0, 0.12),
+    0 0 1px rgba(255, 255, 255, 0.3);
+  --glass-specular: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.14) 0%,
+    rgba(255, 255, 255, 0.03) 18%,
+    rgba(255, 255, 255, 0) 42%
+  );
 
-  /* --- type --- */
-  --font-display: 'Fraunces Variable', 'Fraunces', Georgia, 'Times New Roman', serif;
-  --font-body: 'Inter Variable', 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* --- gaze / hover highlight --- */
+  --gaze-brightness: 1.06;
+  --gaze-scale: 1.012;
+  --gaze-glow: 0 0 0 1px rgba(255, 255, 255, 0.22), var(--shadow-card);
+
+  /* --- type (visionOS system sans; no serif) --- */
+  --font-display: -apple-system, BlinkMacSystemFont, 'Inter Variable', 'Inter', 'Segoe UI', Roboto, sans-serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Inter Variable', 'Inter', 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  --weight-body: 450;
+  --weight-medium: 550;
+  --weight-title: 680;
 
   font-family: var(--font-body);
+  font-weight: var(--weight-body);
+  font-feature-settings: 'tnum' 1;
   color-scheme: dark;
 
   /* Fluid base: legible in a ~900px window, doesn't balloon at 4K.
@@ -98,7 +137,7 @@ html {
 
 body {
   background:
-    radial-gradient(1200px 600px at 78% -10%, rgba(91, 194, 216, 0.06), transparent 60%),
+    radial-gradient(1200px 600px at 78% -10%, rgba(95, 208, 230, 0.07), transparent 60%),
     var(--bg);
   color: var(--text);
   font-size: 1rem; /* follows the fluid :root clamp above */
@@ -107,23 +146,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   /* keeps text readable where it sits over the photographic backdrop */
-  text-shadow: 0 1px 2px rgba(6, 10, 18, 0.35);
+  text-shadow: 0 1px 3px rgba(3, 6, 14, 0.28);
 }
 
 h1, h2, h3, h4 {
-  font-family: var(--font-display);
-  font-weight: 340;
+  font-family: var(--font-body);
+  font-weight: var(--weight-title);
   color: var(--text-strong);
-  letter-spacing: -0.01em;
-}
-
-/* Fraunces at weight 340 reads thin/blurry below ~20px on Windows —
-   give the smaller headings more body. */
-h3, h4 {
-  font-weight: 400;
-}
-@media (max-width: 1100px) {
-  h1, h2 { font-weight: 380; }
+  letter-spacing: -0.015em;
 }
 
 button, input, select, textarea {
@@ -149,8 +179,8 @@ a:hover {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #223052;
-  border-radius: 0;
+  background: #2a3a58;
+  border-radius: var(--radius-pill);
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -163,17 +193,17 @@ a:hover {
 /* ---------- editorial helpers ---------- */
 
 .display {
-  font-family: var(--font-display);
-  font-weight: 300;
+  font-family: var(--font-body);
+  font-weight: var(--weight-title);
   letter-spacing: -0.02em;
   color: var(--text-strong);
 }
 
 .mono-label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -186,7 +216,8 @@ a:hover {
   text-transform: uppercase;
   color: var(--accent);
   border: 1px solid var(--border);
-  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
 }
 
 .accent-word {
@@ -198,11 +229,11 @@ a:hover {
    ============================================================
    `.liquid-glass` is the shared implementation. `.card`, `.glass`,
    `.glass-rail` and `.modal-panel` all compose it so every raised
-   surface in the app is the same frosted glass. Layer model (from
-   ui-layouts' liquid-glass): translucent fill + `--glass-blur`
-   backdrop, a ::before "bend" layer warped by the SVG displacement
-   filter (index.html #liquid-glass-bend), an inset "edge" highlight,
-   and an outer "face" glow. */
+   surface in the app is the same frosted glass. Layer model:
+   translucent fill + `--glass-blur` backdrop, a ::before "bend"
+   layer warped by the SVG displacement filter (index.html
+   #liquid-glass-bend), a ::after static specular sheen, an inset
+   "edge" highlight, and an outer "face" glow + ambient shadow. */
 
 .liquid-glass,
 .card,
@@ -214,14 +245,14 @@ a:hover {
   backdrop-filter: var(--glass-blur);
   -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--glass-border);
-  box-shadow: var(--glass-face), var(--glass-edge);
+  box-shadow: var(--glass-face), var(--glass-edge), var(--shadow-card);
 }
 
 /* the bend layer: an inset, rounded, extra-blurred copy of the backdrop,
-   displaced by the shared fractal-noise filter for the optical "liquid" warp.
-   Applied to the hero surfaces (nav rail, section rails, standalone .glass
-   panels) — NOT to every .card, where 15+ live displacement filters would
-   jank on scroll. Cards still get the frosted fill + edge + glow below. */
+   displaced by the shared fractal-noise filter for a subtle optical warp.
+   Applied to the hero surfaces (nav, ornament, bento window, standalone
+   .glass panels) — NOT to every .card, where 15+ live displacement filters
+   would jank on scroll. Cards still get the frosted fill + edge + sheen. */
 .liquid-glass::before,
 .glass::before,
 .glass-rail::before {
@@ -230,19 +261,34 @@ a:hover {
   inset: 0;
   z-index: 0;
   border-radius: inherit;
-  backdrop-filter: blur(2px) brightness(1.08) saturate(1.4);
-  -webkit-backdrop-filter: blur(2px) brightness(1.08) saturate(1.4);
+  backdrop-filter: blur(3px) brightness(1.05) saturate(1.3);
+  -webkit-backdrop-filter: blur(3px) brightness(1.05) saturate(1.3);
   filter: url(#liquid-glass-bend);
   pointer-events: none;
 }
 
-/* showcase surfaces (nav, big panels): stronger lens warp */
+/* showcase surfaces (nav, ornament, bento window): stronger lens warp */
 .liquid-glass--hero::before {
   filter: url(#liquid-glass-bend-strong);
 }
 
-/* keep real content above the bend layer */
+/* static specular sheen down from the top edge — reads as a lit glass face */
+.liquid-glass::after,
+.card::after,
+.glass::after,
+.glass-rail::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  background: var(--glass-specular);
+  pointer-events: none;
+}
+
+/* keep real content above the bend + sheen layers */
 .liquid-glass > *,
+.card > *,
 .glass > *,
 .glass-rail > * {
   position: relative;
@@ -250,10 +296,11 @@ a:hover {
 }
 
 .card {
-  border-radius: var(--radius);
+  border-radius: var(--radius-card);
   transition: background var(--dur) var(--ease-out),
     border-color var(--dur) var(--ease-out),
     transform var(--dur-fast) var(--ease-out),
+    filter var(--dur) var(--ease-out),
     box-shadow var(--dur) var(--ease-out);
 }
 
@@ -267,10 +314,10 @@ a:hover {
 .glass-rail {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--sp-1);
   flex-wrap: wrap;
-  padding: 4px 6px;
-  border-radius: var(--radius);
+  padding: 6px 8px;
+  border-radius: var(--radius-pill);
 }
 .glass-rail--flush {
   border-radius: 0;
@@ -287,9 +334,16 @@ a:hover {
   .glass-rail {
     background: var(--card);
   }
+  .modal-panel {
+    background: var(--bg-elevated);
+  }
   .liquid-glass::before,
   .glass::before,
-  .glass-rail::before {
+  .glass-rail::before,
+  .liquid-glass::after,
+  .card::after,
+  .glass::after,
+  .glass-rail::after {
     display: none;
   }
 }
@@ -362,15 +416,15 @@ body.has-cursor-follower [contenteditable='true'] {
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
-  filter: saturate(1.12) brightness(0.92) contrast(1.04);
+  filter: saturate(1.1) brightness(0.95) contrast(1.02);
 }
 /* light wash + vignette so dense content stays readable but the photo shows through */
 .ambient-scrim {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(130% 100% at 50% 0%, rgba(13, 24, 40, 0.22), rgba(11, 18, 32, 0.5) 65%, rgba(9, 14, 24, 0.66)),
-    linear-gradient(180deg, rgba(10, 16, 28, 0.2), rgba(10, 16, 28, 0.5));
+    radial-gradient(130% 100% at 50% 0%, rgba(11, 18, 32, 0.18), rgba(9, 15, 27, 0.44) 65%, rgba(7, 12, 22, 0.6)),
+    linear-gradient(180deg, rgba(9, 15, 27, 0.16), rgba(9, 15, 27, 0.46));
 }
 .ambient-blob {
   position: absolute;
@@ -393,14 +447,47 @@ body.has-cursor-follower [contenteditable='true'] {
 /* ---------- surfaces ---------- */
 /* .card itself is defined in the LIQUID GLASS block above. */
 
-/* Opt-in hover elevation for clickable cards (add alongside .card). */
+/* Opt-in gaze / hover elevation for clickable cards (add alongside .card). */
 .card--interactive {
   cursor: pointer;
 }
 .card--interactive:hover {
-  transform: translateY(-2px);
+  transform: scale(var(--gaze-scale));
+  filter: brightness(var(--gaze-brightness));
   border-color: var(--accent-border);
-  box-shadow: var(--glass-face), var(--glass-edge), var(--shadow-card);
+  box-shadow: var(--glass-face), var(--glass-edge), var(--gaze-glow);
+}
+
+/* ---------- bento grid (home dashboard) ---------- */
+
+.bento {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--sp-4);
+  padding: var(--sp-5);
+}
+/* BentoItem sets only `--c` / `--r` inline; the stylesheet owns grid-column
+   so the container queries below can override without !important. */
+.bento-item {
+  grid-column: span var(--c, 4);
+  grid-row: span var(--r, 1);
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-4);
+  contain: layout paint;
+}
+/* over-wide items clamp to the available track count as the container shrinks */
+@container (max-width: 1100px) {
+  .bento { grid-template-columns: repeat(8, 1fr); }
+  .bento-item { grid-column: span min(var(--c, 4), 8); }
+}
+@container (max-width: 760px) {
+  .bento { grid-template-columns: repeat(4, 1fr); }
+  .bento-item {
+    grid-column: 1 / -1;
+    grid-row: auto;
+  }
 }
 
 /* ---------- buttons ---------- */
@@ -409,48 +496,48 @@ body.has-cursor-follower [contenteditable='true'] {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 7px 13px;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  padding: 9px 16px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-control);
   color: var(--text);
   font-size: 12.5px;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
   letter-spacing: 0.02em;
   transition: background var(--dur) var(--ease-out),
     border-color var(--dur) var(--ease-out), color var(--dur) var(--ease-out),
     box-shadow var(--dur) var(--ease-out), transform var(--dur-fast) var(--ease-out);
 }
 .btn:hover {
-  background: var(--card-hover);
+  background: rgba(255, 255, 255, 0.09);
   border-color: var(--accent-border);
   color: var(--text-strong);
-  transform: translateY(-1px);
+  transform: scale(1.02);
   box-shadow: var(--shadow-lift);
 }
 .btn:active {
-  transform: translateY(0) scale(0.97);
+  transform: scale(0.97);
   transition-duration: var(--dur-fast);
 }
 .btn:focus-visible {
   outline: 1px solid var(--accent);
-  outline-offset: 1px;
+  outline-offset: 2px;
 }
 .btn-primary {
   background: var(--accent-bg);
-  border-color: var(--accent);
-  color: var(--accent-bright);
+  border-color: var(--accent-border);
+  color: var(--text-strong);
   font-weight: 600;
 }
 .btn-primary:hover {
-  background: rgba(91, 194, 216, 0.2);
+  background: rgba(95, 208, 230, 0.22);
   border-color: var(--accent-bright);
   color: var(--text-strong);
   box-shadow: var(--glow-accent);
 }
 .btn-danger {
   color: var(--ember);
-  border-color: rgba(230, 136, 110, 0.4);
+  border-color: rgba(255, 143, 107, 0.4);
 }
 .btn-danger:hover {
   background: var(--red-soft);
@@ -461,10 +548,10 @@ body.has-cursor-follower [contenteditable='true'] {
 /* ---------- form controls ---------- */
 
 .input, .select, textarea.input {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 7px 9px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-control);
+  padding: 9px 12px;
   color: var(--text);
   width: 100%;
   transition: border-color var(--dur) var(--ease-out),
@@ -473,7 +560,7 @@ body.has-cursor-follower [contenteditable='true'] {
 .input:focus, .select:focus, textarea.input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent-bg);
+  box-shadow: 0 0 0 3px var(--accent-bg);
 }
 .input::placeholder, textarea.input::placeholder {
   color: var(--text-dim);
@@ -505,8 +592,8 @@ label.field {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
   font-family: var(--font-mono);
   font-size: 10.5px;
   letter-spacing: 0.06em;
@@ -529,9 +616,9 @@ label.field {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(5, 9, 18, 0.62);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(3, 6, 14, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -543,16 +630,16 @@ label.field {
    would only cover the first screenful. */
 .modal-panel {
   background: var(--glass-fill-strong);
-  backdrop-filter: blur(18px) saturate(1.5);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  backdrop-filter: var(--glass-blur-deep);
+  -webkit-backdrop-filter: var(--glass-blur-deep);
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-panel);
   width: 560px;
   max-width: 92vw;
   max-height: 88vh;
   overflow-y: auto;
-  padding: 22px 24px;
-  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.6), var(--glass-edge);
+  padding: var(--sp-6);
+  box-shadow: var(--shadow-window), var(--glass-edge);
 }
 .modal-panel.wide {
   width: 760px;
@@ -570,7 +657,7 @@ table.data-table th {
   padding: 9px 10px;
   color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -589,7 +676,7 @@ table.data-table tbody tr {
   transition: background var(--dur-fast) var(--ease-out);
 }
 table.data-table tbody tr:hover {
-  background: var(--card-hover);
+  background: rgba(255, 255, 255, 0.05);
   cursor: pointer;
 }
 
@@ -651,8 +738,8 @@ table.data-table tbody tr:hover {
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
   border: 1px solid transparent;
   white-space: nowrap;
 }
@@ -665,7 +752,7 @@ table.data-table tbody tr:hover {
   padding: 16px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-soft);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-card);
 }
 
 /* one-shot line draw for the equity-curve demo */
@@ -693,6 +780,7 @@ table.data-table tbody tr:hover {
   .btn:hover,
   .card--interactive:hover {
     transform: none !important;
+    filter: none !important;
     box-shadow: none !important;
   }
   .ambient-blob {
