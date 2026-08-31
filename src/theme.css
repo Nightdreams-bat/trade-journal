@@ -1,38 +1,40 @@
 /* ============================================================
-   Trade Journal — "Spatial Glass" theme
-   Apple visionOS-style design language: bright frosted glass
-   panels, very round geometry, heavy white system sans type,
-   a floating glass nav + bottom ornament. Numerals tabular.
+   Trade Journal — "Terminal Glass" theme
+   Apple visionOS-style frosted glass over a near-black trading
+   terminal — soft green ambient glow, dark graphite surfaces,
+   off-white heavy system-sans type, tabular numerals.
+   Palette: #0F0F0F #202020 #5DD62C #337418 #F8F8F8
    ============================================================ */
 
 :root {
-  /* --- surfaces (brighter, cooler) --- */
-  --ink: #05070d;
-  --bg: #0b1220;
-  --bg-elevated: #131b2d;
-  --card: #1a2338;        /* solid fallback fill when backdrop-filter unsupported */
-  --card-hover: #212c45;
-  --border: #2a3a58;
-  --border-soft: #1c2740;
+  /* --- surfaces (near-black graphite) --- */
+  --ink: #080808;
+  --bg: #0f0f0f;
+  --bg-elevated: #202020;
+  --card: #202020;        /* solid fallback fill when backdrop-filter unsupported */
+  --card-hover: #2a2a2a;
+  --border: #333333;
+  --border-soft: #242424;
 
-  /* --- text (white / near-white, heavier) --- */
-  --text-strong: #ffffff;
-  --text: #eef2f8;
-  --text-muted: #b7c0d0;  /* raised for WCAG AA on bright translucent glass */
-  --text-dim: #7d8798;
+  /* --- text (off-white, heavier) --- */
+  --text-strong: #f8f8f8;
+  --text: #e6e6e6;
+  --text-muted: #a6a6a6;  /* AA on graphite glass */
+  --text-dim: #6b6b6b;
 
-  /* --- accents --- */
-  --accent: #5fd0e6;
-  --accent-bright: #8df0f0;
-  --accent-bg: rgba(95, 208, 230, 0.14);
-  --accent-border: rgba(95, 208, 230, 0.5);
+  /* --- accents (signal green) --- */
+  --accent: #5dd62c;
+  --accent-deep: #337418;
+  --accent-bright: #7cf049;
+  --accent-bg: rgba(93, 214, 44, 0.14);
+  --accent-border: rgba(93, 214, 44, 0.5);
 
   /* --- semantic (P&L) --- */
-  --green: #4ec98a;
-  --green-soft: rgba(78, 201, 138, 0.16);
-  --red: #ff8f6b;
-  --red-soft: rgba(255, 143, 107, 0.16);
-  --ember: #ff8f6b;
+  --green: #5dd62c;
+  --green-soft: rgba(93, 214, 44, 0.15);
+  --red: #ff5b52;
+  --red-soft: rgba(255, 91, 82, 0.15);
+  --ember: #ff5b52;
 
   /* --- geometry (visionOS: very round) --- */
   --radius-window: 46px;  /* outer glass window / bento container */
@@ -61,14 +63,14 @@
   --ease-sig: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* --- elevation (soft, deep, ambient) --- */
-  --glow-accent: 0 0 0 1px var(--accent-border), 0 10px 40px -8px rgba(95, 208, 230, 0.4);
-  --shadow-lift: 0 6px 20px -8px rgba(0, 0, 0, 0.45);
+  --glow-accent: 0 0 0 1px var(--accent-border), 0 10px 40px -8px rgba(93, 214, 44, 0.4);
+  --shadow-lift: 0 6px 20px -8px rgba(0, 0, 0, 0.55);
   --shadow-card:
-    0 30px 60px -24px rgba(3, 6, 14, 0.7),
-    0 8px 24px -12px rgba(3, 6, 14, 0.5);
+    0 30px 60px -24px rgba(0, 0, 0, 0.8),
+    0 8px 24px -12px rgba(0, 0, 0, 0.6);
   --shadow-window:
-    0 60px 140px -40px rgba(3, 6, 14, 0.8),
-    0 20px 50px -20px rgba(3, 6, 14, 0.55);
+    0 60px 140px -40px rgba(0, 0, 0, 0.85),
+    0 20px 50px -20px rgba(0, 0, 0, 0.6);
 
   /* --- liquid glass (shared by .card / .glass / .glass-rail / .modal-panel) ---
      visionOS-style frosted material: a bright translucent fill, a deep blur,
@@ -76,30 +78,31 @@
      thickness, plus a soft deep ambient shadow. The optical warp comes from
      `filter: url(#liquid-glass-bend)` on a ::before layer (see index.html);
      `--glass-specular` is a static sheen painted by a ::after layer. */
-  --glass-fill: rgba(30, 42, 66, 0.42);
-  --glass-fill-strong: rgba(20, 28, 46, 0.8);
-  --glass-border: rgba(255, 255, 255, 0.16);
-  --glass-blur: blur(28px) saturate(1.9) brightness(1.08);
-  --glass-blur-deep: blur(40px) saturate(2) brightness(1.1);
+  --glass-fill: rgba(34, 34, 34, 0.52);
+  --glass-fill-strong: rgba(16, 16, 16, 0.86);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-blur: blur(28px) saturate(1.3) brightness(1.06);
+  --glass-blur-deep: blur(40px) saturate(1.4) brightness(1.08);
   --glass-edge:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.5),
-    inset 1px 1px 1px rgba(255, 255, 255, 0.22),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.06),
-    inset -1px -1px 2px rgba(255, 255, 255, 0.05);
+    inset 0 1.5px 0 rgba(255, 255, 255, 0.34),
+    inset 1px 1px 1px rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    inset -1px -1px 2px rgba(255, 255, 255, 0.04);
   --glass-face:
-    0 4px 8px rgba(0, 0, 0, 0.12),
-    0 0 1px rgba(255, 255, 255, 0.3);
+    0 4px 8px rgba(0, 0, 0, 0.28),
+    0 0 1px rgba(255, 255, 255, 0.22),
+    0 0 28px rgba(93, 214, 44, 0.05);
   --glass-specular: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.14) 0%,
-    rgba(255, 255, 255, 0.03) 18%,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.02) 18%,
     rgba(255, 255, 255, 0) 42%
   );
 
   /* --- gaze / hover highlight --- */
-  --gaze-brightness: 1.06;
+  --gaze-brightness: 1.08;
   --gaze-scale: 1.012;
-  --gaze-glow: 0 0 0 1px rgba(255, 255, 255, 0.22), var(--shadow-card);
+  --gaze-glow: 0 0 0 1px var(--accent-border), 0 0 30px -6px rgba(93, 214, 44, 0.28), var(--shadow-card);
 
   /* --- type (visionOS system sans; no serif) --- */
   --font-display: -apple-system, BlinkMacSystemFont, 'Inter Variable', 'Inter', 'Segoe UI', Roboto, sans-serif;
@@ -137,7 +140,8 @@ html {
 
 body {
   background:
-    radial-gradient(1200px 600px at 78% -10%, rgba(95, 208, 230, 0.07), transparent 60%),
+    radial-gradient(1100px 700px at 50% 120%, rgba(93, 214, 44, 0.06), transparent 60%),
+    radial-gradient(900px 500px at 82% -10%, rgba(51, 116, 24, 0.14), transparent 62%),
     var(--bg);
   color: var(--text);
   font-size: 1rem; /* follows the fluid :root clamp above */
@@ -179,7 +183,7 @@ a:hover {
   height: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a3a58;
+  background: #333333;
   border-radius: var(--radius-pill);
 }
 ::-webkit-scrollbar-track {
@@ -410,28 +414,33 @@ body.has-cursor-follower [contenteditable='true'] {
   pointer-events: none;
   overflow: hidden;
 }
+/* faint trading-terminal grid — the surface the glass panels refract */
 .ambient-photo {
   position: absolute;
-  inset: 0;
+  inset: -2px;
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px, 40px 40px, 200px 200px, 200px 200px;
   background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  filter: saturate(1.1) brightness(0.95) contrast(1.02);
 }
-/* light wash + vignette so dense content stays readable but the photo shows through */
+/* vignette + bottom wash so dense content stays readable over the glow */
 .ambient-scrim {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(130% 100% at 50% 0%, rgba(11, 18, 32, 0.18), rgba(9, 15, 27, 0.44) 65%, rgba(7, 12, 22, 0.6)),
-    linear-gradient(180deg, rgba(9, 15, 27, 0.16), rgba(9, 15, 27, 0.46));
+    radial-gradient(120% 90% at 50% 40%, transparent, rgba(8, 8, 8, 0.5) 78%, rgba(6, 6, 6, 0.82)),
+    linear-gradient(180deg, rgba(8, 8, 8, 0.35), rgba(8, 8, 8, 0.15) 40%, rgba(8, 8, 8, 0.5));
 }
 .ambient-blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(44px);
+  filter: blur(52px);
   mix-blend-mode: screen;
-  opacity: 0.7;
+  opacity: 0.6;
   will-change: transform;
   animation: ambient-drift 52s ease-in-out infinite alternate;
 }
@@ -533,7 +542,7 @@ body.has-cursor-follower [contenteditable='true'] {
   font-weight: 600;
 }
 .btn-primary:hover {
-  background: rgba(95, 208, 230, 0.22);
+  background: rgba(93, 214, 44, 0.24);
   border-color: var(--accent-bright);
   color: var(--text-strong);
   box-shadow: var(--glow-accent);

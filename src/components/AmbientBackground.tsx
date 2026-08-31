@@ -1,5 +1,4 @@
 import { usePrefersReducedMotion } from '../anim'
-import backdrop from '../assets/backdrop.jpg'
 
 type Anchor = { x: number; y: number }
 
@@ -7,7 +6,8 @@ interface AmbientBackgroundProps {
   anchor?: Anchor
 }
 
-const AURORA_COLORS = ['#5bc2d8', '#3fe4e4', '#7b6bd8', '#2f7fae']
+// Signal-green glow on near-black — the light the glass panels pick up.
+const GLOW_COLORS = ['#5dd62c', '#337418', '#5dd62c', '#2a5f13']
 
 function hexToRgba(hex: string, a: number): string {
   const n = parseInt(hex.slice(1), 16)
@@ -17,7 +17,7 @@ function hexToRgba(hex: string, a: number): string {
   return `rgba(${r}, ${g}, ${b}, ${a})`
 }
 
-function blobBg(hex: string, alpha = 0.36): string {
+function blobBg(hex: string, alpha = 0.5): string {
   return `radial-gradient(circle at 50% 50%, ${hexToRgba(hex, alpha)}, transparent 70%)`
 }
 
@@ -27,29 +27,30 @@ export function AmbientBackground({ anchor = { x: 240, y: 120 } }: AmbientBackgr
 
   return (
     <div className="ambient-root" aria-hidden="true">
-      {/* photographic wallpaper — the surface the liquid-glass panels refract */}
-      <div className="ambient-photo" style={{ backgroundImage: `url(${backdrop})` }} />
-      {/* scrim: keeps dense tables / muted text legible over the photo */}
-      <div className="ambient-scrim" />
+      {/* faint terminal grid — refraction surface for the glass */}
+      <div className="ambient-photo" />
+
+      {/* green glow pools, screen-blended over the black */}
       <div
         className="ambient-blob"
         style={{
-          width: '64vw',
-          height: '64vw',
-          left: '-14vw',
-          top: '-16vw',
-          background: blobBg(AURORA_COLORS[0]),
+          width: '70vw',
+          height: '70vw',
+          left: '50%',
+          bottom: '-34vw',
+          transform: 'translateX(-50%)',
+          background: blobBg(GLOW_COLORS[0], 0.55),
           animation: anim,
         }}
       />
       <div
         className="ambient-blob b2"
         style={{
-          width: '70vw',
-          height: '70vw',
-          right: '-18vw',
-          bottom: '-20vw',
-          background: blobBg(AURORA_COLORS[3]),
+          width: '58vw',
+          height: '58vw',
+          left: '-20vw',
+          top: '8vh',
+          background: blobBg(GLOW_COLORS[1], 0.5),
           animation: anim,
         }}
       />
@@ -58,23 +59,26 @@ export function AmbientBackground({ anchor = { x: 240, y: 120 } }: AmbientBackgr
         style={{
           width: '52vw',
           height: '52vw',
-          right: '-10vw',
-          top: '18vh',
-          background: blobBg(AURORA_COLORS[2]),
+          right: '-18vw',
+          top: '-14vw',
+          background: blobBg(GLOW_COLORS[3], 0.42),
           animation: anim,
         }}
       />
       <div
         className="ambient-blob b4"
         style={{
-          width: '30vw',
-          height: '30vw',
+          width: '26vw',
+          height: '26vw',
           left: anchor.x,
           top: anchor.y,
-          background: blobBg(AURORA_COLORS[1], 0.42),
+          background: blobBg(GLOW_COLORS[2], 0.34),
           animation: anim,
         }}
       />
+
+      {/* vignette + wash for legibility */}
+      <div className="ambient-scrim" />
     </div>
   )
 }

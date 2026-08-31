@@ -37,12 +37,12 @@ export const RELEASES: Release[] = [
     version: '0.4.0',
     date: '2026-08-31',
     title: 'visionOS redesign',
-    summary: 'Rebuilt the interface in an Apple visionOS glass style with floating panels, deep-round corners, and a new Home dashboard.',
+    summary: 'Rebuilt the interface as a visionOS-style glass terminal — frosted graphite panels on near-black, signal-green accents, and a new Home dashboard.',
     changes: [
       {
         kind: 'new',
-        text: 'Rebuilt the whole interface in an Apple visionOS glass style',
-        detail: 'Bright frosted panels, deep-round corners, floating nav—a complete visual system overhaul.',
+        text: 'Rebuilt the whole interface as a frosted-glass trading terminal',
+        detail: 'Graphite glass panels on a near-black backdrop with a soft green glow, deep-round corners, floating nav—a complete visual system overhaul.',
       },
       {
         kind: 'new',
@@ -61,8 +61,8 @@ export const RELEASES: Release[] = [
       },
       {
         kind: 'improved',
-        text: 'Lighter, deeper-blur glass with bright specular edge',
-        detail: 'Softer ambient shadows and refined glass depth for a premium feel.',
+        text: 'New dark palette — near-black surfaces, signal-green accents, off-white text',
+        detail: 'Deeper-blur graphite glass with a bright specular edge and softer ambient shadows.',
       },
     ],
   },
