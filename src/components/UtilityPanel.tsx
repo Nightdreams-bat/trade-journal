@@ -6,6 +6,7 @@ import { PANEL, PANEL_OUT } from '../anim/tokens'
 import { MiniCalendar } from './MiniCalendar'
 import { ChallengeRing } from './ChallengeRing'
 import { CalendarDays } from './icons'
+import { greeting } from '../format'
 import type { Account, AnalyticsSummary } from '../types'
 
 interface UtilityPanelProps {
@@ -21,14 +22,6 @@ const PROP_RE = /ftmo|prop|funded|the5ers|the 5ers|mff|myff|fundingpips|e8|alpha
 function money(n: number): string {
   const sign = n < 0 ? '-' : ''
   return `${sign}$${Math.abs(Math.round(n)).toLocaleString('en-US')}`
-}
-
-function greetingNow(): string {
-  const h = new Date().getHours()
-  if (h < 5) return 'Late session'
-  if (h < 12) return 'Good morning'
-  if (h < 18) return 'Good afternoon'
-  return 'Good evening'
 }
 
 export function UtilityPanel({ open, onClose, section, accounts, refreshKey }: UtilityPanelProps) {
@@ -78,7 +71,7 @@ export function UtilityPanel({ open, onClose, section, accounts, refreshKey }: U
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)', overflowY: 'auto', height: '100%' }}>
         <section data-section="profile" style={{ outline: section === 'profile' ? '1px solid var(--accent-border)' : 'none', borderRadius: 'var(--radius)', padding: section === 'profile' ? 8 : 0 }}>
           <div style={{ fontSize: 16, fontWeight: 'var(--weight-title)', color: 'var(--text-strong)' }}>
-            {greetingNow()}
+            {greeting()}
           </div>
           {primary ? (
             <>

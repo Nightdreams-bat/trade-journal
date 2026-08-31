@@ -21,15 +21,16 @@ import { Scrim } from './components/Scrim'
 import { LATEST_VERSION } from './changelog'
 import { getLastSeenVersion } from './whatsNewSeen'
 import { TABS, type TabKey } from './tabs'
+import { greeting } from './format'
 import type { Account, Confluence, Strategy } from './types'
 
 type UtilitySection = 'calendar' | 'profile'
 
 const HERO_SHIFTS: Record<'none' | 'utility' | 'nav' | 'both', HeroShift> = {
   none: { x: 0, scale: 1 },
-  utility: { x: -36, scale: 0.975 },
-  nav: { x: 32, scale: 0.978 },
-  both: { x: -6, scale: 0.955 },
+  utility: { x: -96, scale: 0.972 },
+  nav: { x: 64, scale: 0.975 },
+  both: { x: -24, scale: 0.95 },
 }
 
 function App() {
@@ -96,8 +97,9 @@ function App() {
     closePanels()
   }
 
-  const heroShift =
-    navOpen && utilityOpen
+  const heroShift = reducedMotion
+    ? HERO_SHIFTS.none
+    : navOpen && utilityOpen
       ? HERO_SHIFTS.both
       : utilityOpen
         ? HERO_SHIFTS.utility
@@ -105,13 +107,6 @@ function App() {
           ? HERO_SHIFTS.nav
           : HERO_SHIFTS.none
 
-  const greeting = (() => {
-    const h = new Date().getHours()
-    if (h < 5) return 'Late session'
-    if (h < 12) return 'Good morning'
-    if (h < 18) return 'Good afternoon'
-    return 'Good evening'
-  })()
   const accountLabel = accounts[0] ? `${accounts[0].name} · ${accounts[0].currency}` : 'No account yet'
 
   const scrimShow = (navOpen || utilityOpen) && (isNarrow || reducedMotion)
@@ -139,7 +134,7 @@ function App() {
 
         <CenterPanel shift={heroShift}>
           <HeroHeader
-            greeting={greeting}
+            greeting={greeting()}
             accountLabel={accountLabel}
             showWhatsNewDot={seenVersion !== LATEST_VERSION}
             onNewTrade={() => setShowNewTrade(true)}
@@ -229,7 +224,7 @@ function App() {
         <UtilityPanel
           open={utilityOpen}
           onClose={closePanels}
-          section={utilitySection === 'profile' ? 'profile' : 'calendar'}
+          section={utilitySection}
           accounts={accounts}
           refreshKey={refreshKey}
         />
