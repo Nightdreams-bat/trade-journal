@@ -28,9 +28,9 @@ type UtilitySection = 'calendar' | 'profile'
 
 const HERO_SHIFTS: Record<'none' | 'utility' | 'nav' | 'both', HeroShift> = {
   none: { x: 0, scale: 1 },
-  utility: { x: -96, scale: 0.972 },
-  nav: { x: 64, scale: 0.975 },
-  both: { x: -24, scale: 0.95 },
+  utility: { x: -100, scale: 0.972 },
+  nav: { x: 76, scale: 0.975 },
+  both: { x: -30, scale: 0.94 },
 }
 
 function App() {
