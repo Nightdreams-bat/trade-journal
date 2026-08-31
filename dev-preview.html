@@ -3,176 +3,129 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Trade Journal — dev preview</title>
-    <script>
-      // Stubbed window.api so the renderer runs in a plain browser tab (no Electron IPC).
-      // Owned by Stream 0; other streams may add fixtures. NOT shipped (gitignored-ish; delete before release).
-      (function () {
-        const days = (n) =>
-          Array.from({ length: n }, (_, i) => {
-            const d = new Date(2026, 0, 1 + i);
-            return d.toISOString().slice(0, 10);
-          });
-        const D = days(60);
-        let cum = 0;
-        const equityCurve = D.map((date, i) => {
-          cum += Math.round(Math.sin(i / 4) * 180 + 40);
-          return { date, cumulativePnl: cum };
-        });
-        const drawdownSeries = equityCurve.map((e, i) => ({
-          date: e.date,
-          drawdown: Math.max(0, Math.round(Math.max(...equityCurve.slice(0, i + 1).map((x) => x.cumulativePnl)) - e.cumulativePnl)),
-        }));
-        const calendar = {};
-        D.forEach((date, i) => {
-          if (i % 3 === 0) calendar[date] = { pnl: Math.round(Math.cos(i) * 320), count: (i % 4) + 1 };
-        });
-
-        const SUMMARY = {
-          kpis: { winRate: 58.3, totalPnl: 4182, returnsPct: 8.4, profitFactor: 1.82 },
-          radar: [
-            { metric: 'Win Rate', value: 58 },
-            { metric: 'Profit Factor', value: 72 },
-            { metric: 'Discipline', value: 84 },
-            { metric: 'Consistency', value: 63 },
-            { metric: 'Risk Mgmt', value: 77 },
-            { metric: 'R Multiple', value: 51 },
-          ],
-          equityCurve,
-          drawdown: { series: drawdownSeries, maxDrawdown: 640 },
-          dailyBars: days(14).map((day, i) => ({ day: day.slice(5), pnl: Math.round(Math.sin(i) * 500) })),
-          dayOfWeek: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day, i) => ({
-            day,
-            trades: (i % 3) + 2,
-            pnl: Math.round(Math.cos(i) * 700),
-            winRate: 40 + i * 7,
-          })),
-          calendar,
-          monthlyStats: {
-            winRate: 58.3,
-            riskReward: 1.6,
-            profitFactor: 1.82,
-            bestDayPnl: 1240,
-            worstDayPnl: -1050,
-            avgDailyPnl: 132,
-            tradeCount: 84,
-          },
-          insights: [
-            'Your win rate on London-session trades is 14% higher than New York.',
-            'Trades where you followed your plan average +0.8R more.',
-            'Thursday is your weakest day — consider sizing down.',
-          ],
-          overall: { winRate: 58.3, profitFactor: 1.82, avgWin: 410, avgLoss: -260, totalTrades: 84 },
-        };
-
-        const STRATS = [
-          { id: 1, name: 'ICT Silver Bullet', description: 'London open liquidity raid + FVG entry.', tradeCount: 42, winRate: 61, profitFactor: 2.1, expectancy: 0.42, totalPnl: 3120, avgRMultiple: 1.4, planAdherence: 88, avgWin: 430, avgLoss: -240 },
-          { id: 2, name: 'Breakout Retest', description: 'Range break, wait for retest, enter on confirmation.', tradeCount: 28, winRate: 50, profitFactor: 1.5, expectancy: 0.2, totalPnl: 900, avgRMultiple: 0.9, planAdherence: 74, avgWin: 380, avgLoss: -290 },
-          { id: 3, name: 'Trend Pullback', description: 'EMA pullback in established trend.', tradeCount: 19, winRate: 63, profitFactor: 1.9, expectancy: 0.35, totalPnl: 1450, avgRMultiple: 1.2, planAdherence: 81, avgWin: 400, avgLoss: -210 },
-        ];
-
-        const FIXTURES = {
-          'accounts:getAll': [
-            { id: 1, name: 'FTMO 100k', broker: 'FTMO', starting_balance: 100000, currency: 'USD' },
-            { id: 2, name: 'Personal', broker: 'IBKR', starting_balance: 25000, currency: 'USD' },
-          ],
-          'strategies:getAll': STRATS.map((s) => ({ id: s.id, name: s.name, description: s.description })),
-          'strategies:getPerformance': STRATS,
-          'strategies:getDetail': {
-            id: 1,
-            name: 'ICT Silver Bullet',
-            description: 'London open liquidity raid + FVG entry.',
-            stats: { tradeCount: 42, winRate: 61, profitFactor: 2.1, expectancy: 0.42, totalPnl: 3120, avgRMultiple: 1.4, planAdherence: 88, avgWin: 430, avgLoss: -240 },
-            equityCurve,
-            drawdown: { series: drawdownSeries, maxDrawdown: 640 },
-            dayOfWeek: SUMMARY.dayOfWeek,
-            trades: D.slice(0, 12).map((date, i) => ({ id: i + 1, date, name: 'SB ' + (i + 1), pair: 'NQ', pnl: Math.round(Math.sin(i) * 400), followed_plan: i % 2 === 0 })),
-          },
-          'confluences:getAll': [
-            { id: 1, name: 'HTF bias aligned' },
-            { id: 2, name: 'Liquidity swept' },
-            { id: 3, name: 'FVG present' },
-          ],
-          'trades:getAll': D.slice(0, 24).map((date, i) => ({
-            id: i + 1,
-            name: 'Trade ' + (i + 1),
-            date,
-            pair: ['NQ', 'ES', 'EURUSD', 'GBPUSD'][i % 4],
-            session: ['London', 'New York', 'Asia'][i % 3],
-            direction: i % 2 ? 'Long' : 'Short',
-            risk_per_trade: 250,
-            pnl: Math.round(Math.sin(i) * 420),
-            r_multiple: Number((Math.sin(i) * 2).toFixed(1)),
-            followed_plan: i % 3 !== 0,
-            break_even: false,
-            entry_win: i % 2 === 0,
-            strategy_id: (i % 3) + 1,
-            account_id: (i % 2) + 1,
-            positive_tags: i % 2 ? ['patient', 'a+ setup'] : [],
-            negative_tags: i % 4 === 0 ? ['fomo'] : [],
-            notes: 'Clean execution.',
-            created_at: date,
-            confluence_ids: [1, 3],
-          })),
-          'missedTrades:getAll': D.slice(0, 10).map((date, i) => ({
-            id: i + 1,
-            date,
-            pair: ['NQ', 'ES', 'EURUSD'][i % 3],
-            direction: i % 2 ? 'Long' : 'Short',
-            would_be_pnl: Math.round(Math.abs(Math.cos(i)) * 600),
-            reason_missed: 'Away from desk',
-            strategy_id: (i % 3) + 1,
-            tags: ['hesitation'],
-            notes: '',
-            confluence_ids: [2],
-          })),
-          'reviews:getAll': D.slice(0, 8).map((date, i) => ({
-            date,
-            notes: 'Felt sharp today. Waited for A+ setups and it paid off. Session ' + (i + 1) + '.',
-            emotion: ['Calm', 'Anxious', 'Confident'][i % 3],
-            lessons_learned: 'Stop moving my stop.',
-          })),
-          'analytics:getSummary': SUMMARY,
-          'analytics:getMonthlyBreakdown': ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'].map((label, i) => ({
-            month: '2026-0' + (i + 1),
-            label,
-            pnl: Math.round(Math.sin(i) * 2400),
-            tradeCount: 8 + i,
-          })),
-          'analytics:simulateFundedChallenge': {
-            sampleSize: 500,
-            passRate: 0.42,
-            dailyLossBreachRate: 0.11,
-            maxDrawdownBreachRate: 0.19,
-            ranOutOfDaysRate: 0.28,
-            medianDaysToPass: 14,
-            insufficientData: false,
-          },
-          'images:get': [],
-        };
-
-        const safe = new Proxy(function () {}, {
-          get: () => safe,
-          apply: () => Promise.resolve([]),
-        });
-        const handler = (ns) => ({
-          get: (_t, method) => {
-            const key = ns + ':' + String(method);
-            if (key in FIXTURES) return () => Promise.resolve(FIXTURES[key]);
-            return () => Promise.resolve(safe);
-          },
-        });
-        window.api = new Proxy(
-          {},
-          {
-            get: (_t, ns) => new Proxy({}, handler(String(ns))),
-          },
-        );
-      })();
-    </script>
-    <script type="module" src="/src/main.tsx"></script>
+    <title>tradejournal — browser preview</title>
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Shared "liquid glass" displacement filter (mirrors index.html). -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <filter id="liquid-glass-bend" x="-20%" y="-20%" width="140%" height="140%" filterUnits="objectBoundingBox">
+          <feTurbulence type="fractalNoise" baseFrequency="0.004 0.009" numOctaves="2" seed="7" result="noise" />
+          <feGaussianBlur in="noise" stdDeviation="1.4" result="softNoise" />
+          <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="18" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+    </svg>
+
+    <!--
+      Dev-only harness: runs the real React app in a plain browser by stubbing
+      the Electron `window.api` bridge with generated demo data. Lets us screenshot
+      the UI (liquid glass, cursor follower, rails) without packaging Electron.
+      Open http://localhost:5173/dev-preview.html
+    -->
+    <script>
+      (() => {
+        const today = new Date()
+        const iso = (d) => d.toISOString().slice(0, 10)
+        const daysAgo = (n) => { const d = new Date(today); d.setDate(d.getDate() - n); return d }
+
+        // deterministic-ish equity walk
+        let cum = 0
+        const equityCurve = []
+        const calendar = {}
+        const dailyBars = []
+        for (let i = 60; i >= 0; i--) {
+          const day = daysAgo(i)
+          const pnl = Math.round((Math.sin(i * 0.7) * 320 + (i % 5 === 0 ? -450 : 180) + (Math.random() - 0.4) * 260))
+          cum += pnl
+          equityCurve.push({ date: iso(day), cumulativePnl: cum })
+          if (day.getDay() !== 0 && day.getDay() !== 6) {
+            calendar[iso(day)] = { pnl, count: 1 + (i % 3) }
+            if (i < 21) dailyBars.push({ day: iso(day), pnl })
+          }
+        }
+        let peak = -Infinity
+        const ddSeries = equityCurve.map((p) => {
+          peak = Math.max(peak, p.cumulativePnl)
+          return { date: p.date, drawdown: +(p.cumulativePnl - peak).toFixed(0) }
+        })
+        const maxDrawdown = Math.min(...ddSeries.map((d) => d.drawdown))
+
+        const summary = {
+          kpis: { winRate: 58, totalPnl: cum, returnsPct: 8.3, profitFactor: 1.94 },
+          radar: [
+            { metric: 'Win Rate', value: 58 },
+            { metric: 'Profit Factor', value: 72 },
+            { metric: 'Consistency', value: 64 },
+            { metric: 'Risk Mgmt', value: 81 },
+            { metric: 'Discipline', value: 69 },
+            { metric: 'Recovery', value: 55 },
+          ],
+          equityCurve,
+          drawdown: { series: ddSeries, maxDrawdown },
+          dailyBars,
+          dayOfWeek: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((d, i) => ({
+            day: d, trades: 12 - i, pnl: [1240, -320, 880, 210, 1510][i], winRate: [61, 44, 58, 52, 67][i],
+          })),
+          calendar,
+          monthlyStats: {
+            winRate: 58, riskReward: 1.7, profitFactor: 1.94,
+            bestDayPnl: 1510, worstDayPnl: -980, avgDailyPnl: 156, tradeCount: 84,
+          },
+          insights: [
+            'Your win rate on Fridays (67%) is well above your weekly average.',
+            'Tuesday is consistently your weakest day — consider trading smaller size.',
+            'Largest drawdown this period was ' + maxDrawdown.toLocaleString() + '.',
+          ],
+          overall: { winRate: 57, profitFactor: 1.88, avgWin: 420, avgLoss: -240, totalTrades: 312 },
+        }
+
+        const accounts = [
+          { id: 1, name: 'FTMO 100K', starting_balance: 100000, currency: 'USD' },
+          { id: 2, name: 'Personal', starting_balance: 15000, currency: 'USD' },
+        ]
+        const strategies = [
+          { id: 1, name: 'ICT Silver Bullet', description: 'London/NY killzone FVG entries' },
+          { id: 2, name: 'Trend pullback', description: '20/50 EMA continuation' },
+        ]
+        const confluences = [
+          { id: 1, name: 'FVG' }, { id: 2, name: 'OB' }, { id: 3, name: 'Liquidity sweep' },
+        ]
+        const trades = []
+
+        const ok = async () => true
+        const list = (v) => async () => v
+        window.api = {
+          accounts: { getAll: list(accounts), create: ok, update: ok, delete: ok },
+          strategies: {
+            getAll: list(strategies), create: ok, update: ok, delete: ok,
+            getPerformance: list(strategies.map((s) => ({ ...s, winRate: 56, profitFactor: 1.8, expectancy: 120, tradeCount: 40, avgWinLoss: 1.6 }))),
+            getDetail: async (id) => ({ strategy: strategies.find((s) => s.id === id), trades: [], metrics: summary.overall }),
+          },
+          confluences: { getAll: list(confluences), create: ok, update: ok, delete: ok },
+          trades: { getAll: list(trades), create: ok, update: ok, delete: ok },
+          missedTrades: { getAll: list([]), create: ok, update: ok, delete: ok },
+          images: { add: ok, get: list([]), remove: ok },
+          reviews: { getAll: list([]), upsert: ok },
+          analytics: {
+            getSummary: async () => summary,
+            getMonthlyBreakdown: list(
+              Array.from({ length: 6 }, (_, i) => {
+                const d = new Date(today); d.setMonth(d.getMonth() - (5 - i))
+                return { month: iso(d).slice(0, 7), label: d.toLocaleDateString('en-US', { month: 'short' }), pnl: Math.round((Math.sin(i) * 3000 + 1500)), tradeCount: 30 + i * 4 }
+              }),
+            ),
+            simulateFundedChallenge: async () => ({
+              sampleSize: 5000, passRate: 0.62, dailyLossBreachRate: 0.14,
+              maxDrawdownBreachRate: 0.24, medianDaysToTarget: 18, expectedValue: 4200,
+            }),
+          },
+          csv: { openForImport: async () => null, import: async () => 0, export: async () => null },
+        }
+      })()
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
