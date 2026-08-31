@@ -1,4 +1,5 @@
 import { usePrefersReducedMotion } from '../anim'
+import backdrop from '../assets/backdrop.jpg'
 
 type Anchor = { x: number; y: number }
 
@@ -26,6 +27,10 @@ export function AmbientBackground({ anchor = { x: 240, y: 120 } }: AmbientBackgr
 
   return (
     <div className="ambient-root" aria-hidden="true">
+      {/* photographic wallpaper — the surface the liquid-glass panels refract */}
+      <div className="ambient-photo" style={{ backgroundImage: `url(${backdrop})` }} />
+      {/* scrim: keeps dense tables / muted text legible over the photo */}
+      <div className="ambient-scrim" />
       <div
         className="ambient-blob"
         style={{

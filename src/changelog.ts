@@ -46,10 +46,10 @@ export const RELEASES: Release[] = [
           'A solid dot tracks the pointer tightly while a ring lags behind and grows over anything clickable. Runs entirely on the compositor and turns itself off for coarse pointers or when you\'ve asked for reduced motion.',
       },
       {
-        kind: 'improved',
-        text: 'Liquid-glass surfaces everywhere',
+        kind: 'new',
+        text: 'Liquid-glass interface over a photographic backdrop',
         detail:
-          'Every raised surface — cards, panels, the navigation, section rails and dialogs — now shares one frosted "liquid glass" treatment: a blurred translucent fill with a lit inner edge and a soft outer glow. The navigation and rails add a gentle optical warp (an SVG displacement of the blurred backdrop, ported from the ui-layouts liquid-glass component).',
+          'The app now sits on a fixed landscape wallpaper. Every raised surface — cards, panels, the navigation, section rails and dialogs — is frosted "liquid glass": a blurred translucent fill with a lit inner edge and a soft outer glow. The navigation and large panels optically warp the scenery behind them (an SVG feTurbulence/feDisplacementMap of the blurred backdrop, ported from the ui-layouts liquid-glass component). A vignette scrim plus slightly more opaque cards keep dense tables and charts readable.',
       },
       {
         kind: 'improved',
