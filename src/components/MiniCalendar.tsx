@@ -5,14 +5,24 @@ function money(n: number): string {
   return `${sign}$${Math.abs(Math.round(n)).toLocaleString('en-US')}`
 }
 
-/** Extracted from HomePage — current month, day P&L tints. */
-export function MiniCalendar({ calendar }: { calendar: AnalyticsSummary['calendar'] }) {
+/** Extracted from HomePage — day P&L tints for a given month. */
+export function MiniCalendar({
+  calendar,
+  year,
+  month,
+}: {
+  calendar: AnalyticsSummary['calendar']
+  /** Full year, e.g. 2026. Defaults to the current year. */
+  year?: number
+  /** 0-indexed month (0 = January). Defaults to the current month. */
+  month?: number
+}) {
   const today = new Date()
-  const year = today.getFullYear()
-  const month = today.getMonth()
-  const first = new Date(year, month, 1)
+  const y = year ?? today.getFullYear()
+  const m = month ?? today.getMonth()
+  const first = new Date(y, m, 1)
   const startCol = (first.getDay() + 6) % 7 // Monday-first
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const daysInMonth = new Date(y, m + 1, 0).getDate()
   const cells: (number | null)[] = [
     ...Array.from({ length: startCol }, () => null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
@@ -26,7 +36,7 @@ export function MiniCalendar({ calendar }: { calendar: AnalyticsSummary['calenda
       ))}
       {cells.map((day, i) => {
         if (day == null) return <div key={i} />
-        const key = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+        const key = `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
         const entry = calendar[key]
         const bg = !entry
           ? 'rgba(var(--ink-rgb),0.06)'

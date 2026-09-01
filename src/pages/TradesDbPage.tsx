@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FilterBar } from '../components/FilterBar'
 import { TradeFormModal } from '../components/TradeFormModal'
 import { CsvImportModal } from '../components/CsvImportModal'
@@ -38,9 +38,12 @@ export function TradesDbPage({
   const strategyName = (id: number | null) => strategies.find((s) => s.id === id)?.name ?? '—'
   const accountName = (id: number | null) => accounts.find((a) => a.id === id)?.name ?? '—'
 
+  const requestIdRef = useRef(0)
   const load = () => {
+    const requestId = ++requestIdRef.current
     setLoading(true)
     window.api.trades.getAll({ accountId, strategyId, search: search || undefined }).then((t) => {
+      if (requestId !== requestIdRef.current) return // a newer filter/search request has since superseded this one
       setTrades(t)
       setLoading(false)
     })
@@ -120,7 +123,7 @@ export function TradesDbPage({
       </div>
 
       {view === 'gallery' ? (
-        <TradeImageGallery trades={trades} onOpenTrade={setEditingTrade} />
+        <TradeImageGallery trades={trades} accounts={accounts} onOpenTrade={setEditingTrade} />
       ) : (
       <div className="card" style={{ overflowX: 'auto', maxHeight: 640, overflowY: 'auto' }}>
         {loading ? (

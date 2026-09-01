@@ -84,12 +84,12 @@
             'Tuesday is consistently your weakest day — consider trading smaller size.',
             'Largest drawdown this period was ' + maxDrawdown.toLocaleString() + '.',
           ],
-          overall: { winRate: 57, profitFactor: 1.88, avgWin: 420, avgLoss: 240, totalTrades: 312 },
+          overall: { winRate: 57, profitFactor: 1.88, totalPnl: 18420, returnsPct: 18.4, avgWin: 420, avgLoss: 240, totalTrades: 312 },
         }
 
         const accounts = [
-          { id: 1, name: 'FTMO 100K', broker: 'FTMO', starting_balance: 100000, currency: 'USD' },
-          { id: 2, name: 'Personal', broker: 'IC Markets', starting_balance: 15000, currency: 'USD' },
+          { id: 1, name: 'FTMO 100K', broker: 'FTMO', starting_balance: 100000, currency: 'USD', account_type: 'prop' },
+          { id: 2, name: 'Personal', broker: 'IC Markets', starting_balance: 15000, currency: 'USD', account_type: 'live' },
         ]
         const strategies = [
           { id: 1, name: 'ICT Silver Bullet', description: 'London/NY killzone FVG entries' },

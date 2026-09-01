@@ -4,6 +4,7 @@ import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis } from 'recharts'
 import { RingStat } from '../components/RingStat'
 import { Timeline } from '../components/Timeline'
 import { TradeFormModal } from '../components/TradeFormModal'
+import { Select } from '../components/Select'
 import { CountUpValue, Reveal, Stagger } from '../anim'
 import { useColors } from '../themeMode'
 import { useChartTheme, CHART_ANIM } from '../charts/chartTheme'
@@ -42,13 +43,15 @@ export function HomePage({
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
   const [trades, setTrades] = useState<Trade[] | null>(null)
   const [openTrade, setOpenTrade] = useState<Trade | null>(null)
+  const [accountId, setAccountId] = useState<number | null>(null)
+  const [statsMode, setStatsMode] = useState<'month' | 'all'>('month')
 
   useEffect(() => {
     let cancelled = false
     const month = format(new Date(), 'yyyy-MM')
     Promise.all([
-      window.api.analytics.getSummary({ accountId: null, strategyId: null, month }),
-      window.api.trades.getAll(),
+      window.api.analytics.getSummary({ accountId, strategyId: null, month }),
+      window.api.trades.getAll({ accountId }),
     ]).then(([s, t]) => {
       if (cancelled) return
       setSummary(s)
@@ -57,7 +60,7 @@ export function HomePage({
     return () => {
       cancelled = true
     }
-  }, [refreshKey])
+  }, [refreshKey, accountId])
 
   const recent = useMemo(
     () => (trades ? [...trades].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 8) : []),
@@ -83,12 +86,58 @@ export function HomePage({
     [summary],
   )
 
-  const pnl = summary?.kpis.totalPnl ?? 0
+  const pnl = statsMode === 'month' ? summary?.kpis.totalPnl ?? 0 : summary?.overall.totalPnl ?? 0
   const pnlColor = pnl >= 0 ? 'var(--green)' : 'var(--red)'
+
+  const toolbar = (
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 'var(--sp-4)' }}>
+      <Select
+        ariaLabel="Account"
+        width={190}
+        value={accountId != null ? String(accountId) : ''}
+        onChange={(v) => setAccountId(v ? Number(v) : null)}
+        options={[
+          { value: '', label: 'All Accounts (combined)' },
+          ...accounts.map((a) => ({ value: String(a.id), label: a.name })),
+        ]}
+      />
+      <div
+        style={{
+          display: 'flex',
+          gap: 4,
+          padding: 4,
+          borderRadius: 'var(--radius-control)',
+          background: 'rgba(var(--ink-rgb),0.05)',
+        }}
+      >
+        {(['month', 'all'] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setStatsMode(k)}
+            aria-pressed={statsMode === k}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 'var(--radius-control)',
+              border: '1px solid',
+              borderColor: statsMode === k ? 'var(--accent-border)' : 'transparent',
+              background: statsMode === k ? 'var(--accent-bg)' : 'transparent',
+              color: statsMode === k ? 'var(--accent-deep)' : 'var(--text-muted)',
+              fontSize: 12,
+              fontWeight: 'var(--weight-medium)',
+            }}
+          >
+            {k === 'month' ? 'This month' : 'All-time'}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 
   if (loading) {
     return (
       <div className="hero-content">
+        {toolbar}
         <div className="hero-grid">
           <section className="analytics card" style={{ padding: 'var(--sp-5)', display: 'flex', flexDirection: 'column', gap: 14 }}>
             {skel(28, '40%')}
@@ -108,6 +157,7 @@ export function HomePage({
   if (empty) {
     return (
       <div className="hero-content">
+        {toolbar}
         <div
           style={{
             minHeight: '100%',
@@ -158,27 +208,31 @@ export function HomePage({
     )
   }
 
-  const returnsUp = summary!.kpis.returnsPct >= 0
+  const winRate = statsMode === 'month' ? summary!.kpis.winRate : summary!.overall.winRate
+  const returnsPct = statsMode === 'month' ? summary!.kpis.returnsPct : summary!.overall.returnsPct
+  const profitFactor = statsMode === 'month' ? summary!.kpis.profitFactor : summary!.overall.profitFactor
+  const returnsUp = returnsPct >= 0
   const stats: { label: string; value: string; color?: string; arrow?: string }[] = [
-    { label: 'Win rate', value: `${summary!.kpis.winRate}%` },
+    { label: 'Win rate', value: `${winRate}%` },
     {
       label: 'Returns',
-      value: `${Math.abs(summary!.kpis.returnsPct)}%`,
+      value: `${Math.abs(returnsPct)}%`,
       color: returnsUp ? 'var(--green)' : 'var(--red)',
       arrow: returnsUp ? '▲' : '▼',
     },
-    { label: 'Profit factor', value: formatRatio(summary!.kpis.profitFactor) },
+    { label: 'Profit factor', value: formatRatio(profitFactor) },
     { label: 'Max drawdown', value: money(summary!.drawdown.maxDrawdown) },
   ]
 
   return (
     <div className="hero-content">
+      {toolbar}
       <Stagger className="hero-grid">
         {/* ---- Analytics: full-bleed equity curve + P&L overlay ---- */}
         <Reveal className="analytics card">
           <div className="analytics-overlay">
             <div style={{ fontSize: 12, color: 'var(--text-muted)', letterSpacing: '0.01em' }}>
-              Total P&amp;L · {format(new Date(), 'MMMM')}
+              Total P&amp;L · {statsMode === 'month' ? format(new Date(), 'MMMM') : 'All-time'}
             </div>
             <div
               style={{
@@ -192,7 +246,7 @@ export function HomePage({
               <CountUpValue value={money(pnl)} />
             </div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
-              PF {formatRatio(summary!.kpis.profitFactor)} · {daysTraded} days traded
+              PF {formatRatio(profitFactor)} · {statsMode === 'month' ? `${daysTraded} days traded` : `${summary!.overall.totalTrades} trades`}
             </div>
           </div>
 
@@ -277,7 +331,7 @@ export function HomePage({
         {/* ---- Rings + insight ---- */}
         <Reveal className="home-rings card">
           <div className="rings-cluster">
-            <RingStat percent={summary!.kpis.winRate} caption="win rate" size={96} />
+            <RingStat percent={winRate} caption="win rate" size={96} />
             {discipline != null ? (
               <RingStat percent={discipline} caption="discipline" size={96} />
             ) : (

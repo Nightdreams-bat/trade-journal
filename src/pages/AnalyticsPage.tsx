@@ -45,6 +45,7 @@ export function AnalyticsPage({
   const [month, setMonth] = useState(format(new Date(), 'yyyy-MM'))
   const [accountId, setAccountId] = useState<number | null>(null)
   const [strategyId, setStrategyId] = useState<number | null>(null)
+  const [statsMode, setStatsMode] = useState<'month' | 'all'>('month')
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [openTrade, setOpenTrade] = useState<Trade | null>(null)
@@ -86,22 +87,54 @@ export function AnalyticsPage({
         {refreshing && (
           <span className="mono-label" style={{ color: 'var(--accent)', alignSelf: 'center' }}>// updating…</span>
         )}
-        <FilterBar
-          accounts={accounts}
-          strategies={strategies}
-          accountId={accountId}
-          strategyId={strategyId}
-          onAccountChange={setAccountId}
-          onStrategyChange={setStrategyId}
-        />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 4,
+              padding: 4,
+              borderRadius: 'var(--radius-control)',
+              background: 'rgba(var(--ink-rgb),0.05)',
+            }}
+          >
+            {(['month', 'all'] as const).map((k) => (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setStatsMode(k)}
+                aria-pressed={statsMode === k}
+                style={{
+                  padding: '5px 10px',
+                  borderRadius: 'var(--radius-control)',
+                  border: '1px solid',
+                  borderColor: statsMode === k ? 'var(--accent-border)' : 'transparent',
+                  background: statsMode === k ? 'var(--accent-bg)' : 'transparent',
+                  color: statsMode === k ? 'var(--accent-deep)' : 'var(--text-muted)',
+                  fontSize: 11.5,
+                  fontWeight: 'var(--weight-medium)',
+                }}
+              >
+                {k === 'month' ? 'This month' : 'All-time'}
+              </button>
+            ))}
+          </div>
+          <FilterBar
+            accounts={accounts}
+            strategies={strategies}
+            accountId={accountId}
+            strategyId={strategyId}
+            onAccountChange={setAccountId}
+            onStrategyChange={setStrategyId}
+          />
+        </div>
       </div>
 
       <div ref={(el) => { sectionRefs.current.overview = el }}>
         <Stagger style={{ display: 'flex', gap: 'var(--sp-3)', flexWrap: 'wrap' }}>
-          <Reveal><KpiCard label="Win Rate" value={`${summary.kpis.winRate}%`} /></Reveal>
-          <Reveal><KpiCard label="Total P&L" value={`$${summary.kpis.totalPnl.toLocaleString()}`} positive={summary.kpis.totalPnl >= 0} /></Reveal>
-          <Reveal><KpiCard label="Returns" value={`${summary.kpis.returnsPct}%`} positive={summary.kpis.returnsPct >= 0} /></Reveal>
-          <Reveal><KpiCard label="Profit Factor" value={formatRatio(summary.kpis.profitFactor)} positive={summary.kpis.profitFactor >= 1} /></Reveal>
+          <Reveal><KpiCard label="Win Rate" value={`${statsMode === 'month' ? summary.kpis.winRate : summary.overall.winRate}%`} /></Reveal>
+          <Reveal><KpiCard label={statsMode === 'month' ? 'Total P&L' : 'All-time P&L'} value={`$${(statsMode === 'month' ? summary.kpis.totalPnl : summary.overall.totalPnl).toLocaleString()}`} positive={(statsMode === 'month' ? summary.kpis.totalPnl : summary.overall.totalPnl) >= 0} /></Reveal>
+          <Reveal><KpiCard label="Returns" value={`${statsMode === 'month' ? summary.kpis.returnsPct : summary.overall.returnsPct}%`} positive={(statsMode === 'month' ? summary.kpis.returnsPct : summary.overall.returnsPct) >= 0} /></Reveal>
+          <Reveal><KpiCard label="Profit Factor" value={formatRatio(statsMode === 'month' ? summary.kpis.profitFactor : summary.overall.profitFactor)} positive={(statsMode === 'month' ? summary.kpis.profitFactor : summary.overall.profitFactor) >= 1} /></Reveal>
         </Stagger>
       </div>
 
@@ -128,7 +161,14 @@ export function AnalyticsPage({
       <Reveal index={3}>
         <div ref={(el) => { sectionRefs.current.calendar = el }} style={{ display: 'flex', gap: 'var(--sp-4)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 420 }}>
-            <CalendarHeatmap month={month} onMonthChange={setMonth} calendar={summary.calendar} onOpenTrade={setOpenTrade} />
+            <CalendarHeatmap
+              month={month}
+              onMonthChange={setMonth}
+              calendar={summary.calendar}
+              onOpenTrade={setOpenTrade}
+              accountId={accountId}
+              strategyId={strategyId}
+            />
           </div>
           <MonthlyStatsPanel stats={summary.monthlyStats} />
         </div>
@@ -136,7 +176,7 @@ export function AnalyticsPage({
 
       <Reveal index={4}>
         <div ref={(el) => { sectionRefs.current.propfirm = el }}>
-          <PropFirmToolsPanel overall={summary.overall} />
+          <PropFirmToolsPanel overall={summary.overall} accountId={accountId} strategyId={strategyId} />
         </div>
       </Reveal>
 

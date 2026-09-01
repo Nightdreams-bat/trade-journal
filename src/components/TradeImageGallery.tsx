@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Modal } from './Modal'
 import { ZoomableImage } from './ZoomableImage'
+import { Select } from './Select'
 import { Search } from './icons'
-import type { Trade } from '../types'
+import type { Account, Trade } from '../types'
 
 type GalleryImage = {
   id: number
@@ -15,11 +16,22 @@ type GalleryImage = {
   name: string | null
 }
 
-export function TradeImageGallery({ trades, onOpenTrade }: { trades: Trade[]; onOpenTrade: (trade: Trade) => void }) {
+type SortMode = 'date' | 'account'
+
+export function TradeImageGallery({
+  trades,
+  accounts,
+  onOpenTrade,
+}: {
+  trades: Trade[]
+  accounts: Account[]
+  onOpenTrade: (trade: Trade) => void
+}) {
   const [images, setImages] = useState<GalleryImage[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [outcome, setOutcome] = useState<'all' | 'win' | 'loss'>('all')
+  const [sortMode, setSortMode] = useState<SortMode>('date')
   const [active, setActive] = useState<GalleryImage | null>(null)
 
   const load = () => {
@@ -30,17 +42,49 @@ export function TradeImageGallery({ trades, onOpenTrade }: { trades: Trade[]; on
     })
   }
 
-  useEffect(load, [trades])
+  useEffect(load, [])
+
+  const accountNameById = useMemo(() => {
+    const m = new Map<number | null, string>()
+    for (const a of accounts) m.set(a.id, a.name)
+    return m
+  }, [accounts])
+
+  const tradeIds = useMemo(() => new Set(trades.map((t) => t.id)), [trades])
+  const accountByTrade = useMemo(() => new Map(trades.map((t) => [t.id, t.account_id])), [trades])
+
+  const nameFor = useCallback(
+    (tradeId: number) => accountNameById.get(accountByTrade.get(tradeId) ?? null) ?? 'No account',
+    [accountNameById, accountByTrade],
+  )
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
-    return images.filter((img) => {
+    const list = images.filter((img) => {
+      if (!tradeIds.has(img.tradeId)) return false // respect the account/strategy filter applied on the Trades page
       if (outcome === 'win' && img.pnl <= 0) return false
       if (outcome === 'loss' && img.pnl >= 0) return false
       if (q && !(img.pair ?? '').toLowerCase().includes(q) && !(img.name ?? '').toLowerCase().includes(q)) return false
       return true
     })
-  }, [images, search, outcome])
+    if (sortMode === 'account') {
+      list.sort((a, b) => nameFor(a.tradeId).localeCompare(nameFor(b.tradeId)) || b.date.localeCompare(a.date))
+    }
+    return list
+  }, [images, search, outcome, sortMode, tradeIds, nameFor])
+
+  const groups = useMemo(() => {
+    if (sortMode !== 'account') return [{ label: null as string | null, items: filtered }]
+    const byAccount = new Map<string, GalleryImage[]>()
+    for (const img of filtered) {
+      const label = nameFor(img.tradeId)
+      if (!byAccount.has(label)) byAccount.set(label, [])
+      byAccount.get(label)!.push(img)
+    }
+    return [...byAccount.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([label, items]) => ({ label, items }))
+  }, [filtered, sortMode, nameFor])
 
   const openFromGallery = (img: GalleryImage) => {
     const trade = trades.find((t) => t.id === img.tradeId)
@@ -78,6 +122,16 @@ export function TradeImageGallery({ trades, onOpenTrade }: { trades: Trade[]; on
               </button>
             ))}
           </div>
+          <Select
+            ariaLabel="Sort gallery"
+            width={150}
+            value={sortMode}
+            onChange={(v) => setSortMode(v as SortMode)}
+            options={[
+              { value: 'date', label: 'Sort: Newest' },
+              { value: 'account', label: 'Sort: Account' },
+            ]}
+          />
         </div>
         <div style={{ fontSize: 12, color: 'var(--text-muted)', alignSelf: 'center' }}>
           {filtered.length} image{filtered.length === 1 ? '' : 's'}
@@ -92,8 +146,16 @@ export function TradeImageGallery({ trades, onOpenTrade }: { trades: Trade[]; on
             {images.length === 0 ? 'No trade screenshots yet. Add images from a trade to see them here.' : 'No images match your filters.'}
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
-            {filtered.map((img) => (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {groups.map((group) => (
+            <div key={group.label ?? '__all'}>
+              {group.label != null && (
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-strong)', marginBottom: 10 }}>
+                  {group.label} <span style={{ fontWeight: 400, color: 'var(--text-dim)' }}>({group.items.length})</span>
+                </div>
+              )}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+            {group.items.map((img) => (
               <button
                 key={img.id}
                 onClick={() => setActive(img)}
@@ -135,6 +197,9 @@ export function TradeImageGallery({ trades, onOpenTrade }: { trades: Trade[]; on
                 </div>
               </button>
             ))}
+              </div>
+            </div>
+          ))}
           </div>
         )}
       </div>

@@ -235,6 +235,7 @@ function App() {
           onManageAccounts={() => setShowAccounts(true)}
           onOpenSettings={() => setShowSettings(true)}
           accounts={accounts}
+          strategies={strategies}
           refreshKey={refreshKey}
         />
 

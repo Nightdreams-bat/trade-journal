@@ -5,9 +5,10 @@ import { usePrefersReducedMotion } from '../anim'
 import { PANEL, PANEL_OUT } from '../anim/tokens'
 import { MiniCalendar } from './MiniCalendar'
 import { ChallengeRing } from './ChallengeRing'
+import { Select } from './Select'
 import { CalendarDays, Settings, User } from './icons'
 import { greeting } from '../format'
-import type { Account, AnalyticsSummary } from '../types'
+import type { Account, AnalyticsSummary, Strategy } from '../types'
 
 interface UtilityPanelProps {
   open: boolean
@@ -17,10 +18,9 @@ interface UtilityPanelProps {
   onManageAccounts: () => void
   onOpenSettings: () => void
   accounts: Account[]
+  strategies: Strategy[]
   refreshKey: number
 }
-
-const PROP_RE = /ftmo|prop|funded|the5ers|the 5ers|mff|myff|fundingpips|e8|alpha capital|topstep|apex/i
 
 function money(n: number): string {
   const sign = n < 0 ? '-' : ''
@@ -35,23 +35,34 @@ export function UtilityPanel({
   onManageAccounts,
   onOpenSettings,
   accounts,
+  strategies,
   refreshKey,
 }: UtilityPanelProps) {
   const reduced = usePrefersReducedMotion()
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
+  const [viewMonth, setViewMonth] = useState(() => format(new Date(), 'yyyy-MM'))
+  const [statsMode, setStatsMode] = useState<'month' | 'all'>('month')
+  const [accountId, setAccountId] = useState<number | null>(null)
+  const [strategyId, setStrategyId] = useState<number | null>(null)
+  const current = new Date(`${viewMonth}-01T00:00:00`)
 
   useEffect(() => {
     let cancelled = false
-    const month = format(new Date(), 'yyyy-MM')
     window.api.analytics
-      .getSummary({ accountId: null, strategyId: null, month })
+      .getSummary({ accountId, strategyId, month: viewMonth })
       .then((s) => {
         if (!cancelled) setSummary(s)
       })
     return () => {
       cancelled = true
     }
-  }, [refreshKey])
+  }, [refreshKey, viewMonth, accountId, strategyId])
+
+  const shiftMonth = (delta: number) => {
+    const d = new Date(`${viewMonth}-01T00:00:00`)
+    d.setMonth(d.getMonth() + delta)
+    setViewMonth(format(d, 'yyyy-MM'))
+  }
 
   const animate = reduced
     ? { opacity: open ? 1 : 0 }
@@ -63,7 +74,9 @@ export function UtilityPanel({
       }
 
   const primary = accounts[0]
-  const propAccounts = accounts.filter((a) => PROP_RE.test(`${a.name} ${a.broker}`))
+  const visibleAccounts = accountId != null ? accounts.filter((a) => a.id === accountId) : accounts
+  const propAccounts = visibleAccounts.filter((a) => a.account_type === 'prop' && a.starting_balance > 0)
+  const zeroBalanceProp = visibleAccounts.filter((a) => a.account_type === 'prop' && a.starting_balance <= 0)
   const maxDd = summary ? Math.abs(summary.drawdown.maxDrawdown) : 0
 
   const tab = (key: 'calendar' | 'profile', label: string, icon: React.ReactNode) => (
@@ -213,14 +226,77 @@ export function UtilityPanel({
           </>
         ) : (
           <>
-            <div className="mono-label">{format(new Date(), 'MMMM yyyy')}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+              <button type="button" className="btn" onClick={() => shiftMonth(-1)} style={{ padding: '3px 8px' }}>
+                ‹
+              </button>
+              <div className="mono-label">{format(current, 'MMMM yyyy')}</div>
+              <button type="button" className="btn" onClick={() => shiftMonth(1)} style={{ padding: '3px 8px' }}>
+                ›
+              </button>
+            </div>
             <section>
               {summary ? (
-                <MiniCalendar calendar={summary.calendar} />
+                <MiniCalendar calendar={summary.calendar} year={current.getFullYear()} month={current.getMonth()} />
               ) : (
                 <div style={{ height: 120, borderRadius: 8, background: 'rgba(var(--ink-rgb),0.06)' }} />
               )}
             </section>
+
+            <div
+              style={{
+                display: 'flex',
+                gap: 4,
+                padding: 4,
+                borderRadius: 'var(--radius-control)',
+                background: 'rgba(var(--ink-rgb),0.05)',
+              }}
+            >
+              {(['month', 'all'] as const).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setStatsMode(k)}
+                  aria-pressed={statsMode === k}
+                  style={{
+                    flex: 1,
+                    padding: '5px 8px',
+                    borderRadius: 'var(--radius-control)',
+                    border: '1px solid',
+                    borderColor: statsMode === k ? 'var(--accent-border)' : 'transparent',
+                    background: statsMode === k ? 'var(--accent-bg)' : 'transparent',
+                    color: statsMode === k ? 'var(--accent-deep)' : 'var(--text-muted)',
+                    fontSize: 11.5,
+                    fontWeight: 'var(--weight-medium)',
+                  }}
+                >
+                  {k === 'month' ? 'This month' : 'All-time'}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <Select
+                ariaLabel="Filter by account"
+                width="100%"
+                value={accountId != null ? String(accountId) : ''}
+                onChange={(v) => setAccountId(v ? Number(v) : null)}
+                options={[
+                  { value: '', label: 'All Accounts' },
+                  ...accounts.map((a) => ({ value: String(a.id), label: a.name })),
+                ]}
+              />
+              <Select
+                ariaLabel="Filter by strategy"
+                width="100%"
+                value={strategyId != null ? String(strategyId) : ''}
+                onChange={(v) => setStrategyId(v ? Number(v) : null)}
+                options={[
+                  { value: '', label: 'All Strategies' },
+                  ...strategies.map((s) => ({ value: String(s.id), label: s.name })),
+                ]}
+              />
+            </div>
 
             {summary && (
               <section
@@ -233,21 +309,21 @@ export function UtilityPanel({
                 }}
               >
                 <div>
-                  <div className="mono-label">Month P&amp;L</div>
+                  <div className="mono-label">{statsMode === 'month' ? 'Month P&L' : 'All-time P&L'}</div>
                   <div
                     style={{
                       fontSize: 18,
                       fontWeight: 'var(--weight-title)',
-                      color: summary.kpis.totalPnl >= 0 ? 'var(--green)' : 'var(--red)',
+                      color: (statsMode === 'month' ? summary.kpis.totalPnl : summary.overall.totalPnl) >= 0 ? 'var(--green)' : 'var(--red)',
                     }}
                   >
-                    {money(summary.kpis.totalPnl)}
+                    {money(statsMode === 'month' ? summary.kpis.totalPnl : summary.overall.totalPnl)}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div className="mono-label">Win rate</div>
                   <div style={{ fontSize: 18, fontWeight: 'var(--weight-title)', color: 'var(--text-strong)' }}>
-                    {summary.kpis.winRate}%
+                    {statsMode === 'month' ? summary.kpis.winRate : summary.overall.winRate}%
                   </div>
                 </div>
               </section>
@@ -270,6 +346,12 @@ export function UtilityPanel({
                   )
                 })}
               </section>
+            )}
+
+            {zeroBalanceProp.length > 0 && (
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
+                Set a starting balance for {zeroBalanceProp.map((a) => a.name).join(', ')} to see a real drawdown-limit gauge — with $0 balance the % shown would always be maxed out.
+              </div>
             )}
           </>
         )}

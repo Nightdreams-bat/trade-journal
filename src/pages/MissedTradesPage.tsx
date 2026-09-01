@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { MissedTradeFormModal } from '../components/MissedTradeFormModal'
 import { Select } from '../components/Select'
 import { Plus } from '../components/icons'
@@ -29,9 +29,12 @@ export function MissedTradesPage({
 
   const strategyName = (id: number | null) => strategies.find((s) => s.id === id)?.name ?? '—'
 
+  const requestIdRef = useRef(0)
   const load = () => {
+    const requestId = ++requestIdRef.current
     setLoading(true)
     window.api.missedTrades.getAll({ strategyId, search: search || undefined }).then((r) => {
+      if (requestId !== requestIdRef.current) return // a newer filter/search request has since superseded this one
       setRows(r)
       setLoading(false)
     })

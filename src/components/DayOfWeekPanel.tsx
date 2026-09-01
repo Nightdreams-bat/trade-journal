@@ -1,6 +1,7 @@
 import { useColors } from '../themeMode'
 import { usePrefersReducedMotion } from '../anim'
 import type { AnalyticsSummary } from '../types'
+import { ANALYTICS_TWIN_PANEL_HEIGHT } from './analyticsPanelSize'
 
 const RANK_RING = ['#F5A623', '#C7CAD1', '#B87A4A'] // gold / silver / bronze
 
@@ -12,8 +13,18 @@ export function DayOfWeekPanel({ data }: { data: AnalyticsSummary['dayOfWeek'] }
   const idle = data.filter((d) => d.trades === 0)
 
   return (
-    <div className="card" style={{ padding: 'var(--sp-4)', flex: 1, minWidth: 320 }}>
-      <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 10 }}>
+    <div
+      className="card"
+      style={{
+        padding: 'var(--sp-4)',
+        flex: 1,
+        minWidth: 320,
+        height: ANALYTICS_TWIN_PANEL_HEIGHT,
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
+      <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 10, flexShrink: 0 }}>
         Performance by Day of Week (all-time)
       </div>
 
@@ -22,7 +33,7 @@ export function DayOfWeekPanel({ data }: { data: AnalyticsSummary['dayOfWeek'] }
           Not enough trades yet to rank your days.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minHeight: 0, overflowY: 'auto', paddingRight: 4 }}>
           {active.map((d, i) => {
             const ring = RANK_RING[i]
             return (

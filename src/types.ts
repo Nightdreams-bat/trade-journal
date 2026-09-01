@@ -1,9 +1,19 @@
+export const ACCOUNT_TYPES = ['live', 'demo', 'prop', 'backtest'] as const
+export type AccountType = (typeof ACCOUNT_TYPES)[number]
+export const ACCOUNT_TYPE_LABELS: Record<AccountType, string> = {
+  live: 'Live',
+  demo: 'Demo',
+  prop: 'Prop Firm',
+  backtest: 'Backtest',
+}
+
 export interface Account {
   id: number
   name: string
   broker: string
   starting_balance: number
   currency: string
+  account_type: AccountType
 }
 
 export interface Strategy {
@@ -113,7 +123,15 @@ export interface AnalyticsSummary {
     tradeCount: number
   }
   insights: string[]
-  overall: { winRate: number; profitFactor: number; avgWin: number; avgLoss: number; totalTrades: number }
+  overall: {
+    winRate: number
+    profitFactor: number
+    totalPnl: number
+    returnsPct: number
+    avgWin: number
+    avgLoss: number
+    totalTrades: number
+  }
 }
 
 export interface MonthlyBreakdownEntry {
@@ -130,6 +148,8 @@ export interface FundedChallengeParams {
   maxOverallDrawdownPct: number
   riskPerTradePct: number
   tradingDaysRemaining: number
+  accountId?: number | null
+  strategyId?: number | null
 }
 
 export interface FundedChallengeResult {

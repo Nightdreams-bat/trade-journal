@@ -69,7 +69,7 @@ export function importTrades(rows: string[][], mapping: ColumnMapping, accountId
       mapping.pair !== undefined ? row[mapping.pair] ?? null : null,
       mapping.session !== undefined ? row[mapping.session] ?? null : null,
       mapping.direction !== undefined ? row[mapping.direction] ?? null : null,
-      mapping.risk_per_trade !== undefined ? parseFloat(row[mapping.risk_per_trade]) || null : null,
+      mapping.risk_per_trade !== undefined ? parseNumberOrNull(row[mapping.risk_per_trade]) : null,
       pnl,
       accountId
     )
@@ -78,10 +78,26 @@ export function importTrades(rows: string[][], mapping: ColumnMapping, accountId
   return count
 }
 
+function parseNumberOrNull(raw: string | undefined): number | null {
+  if (raw === undefined) return null
+  const v = parseFloat(raw)
+  return Number.isNaN(v) ? null : v
+}
+
 function normalizeDate(raw: string): string {
+  // Already ISO (yyyy-mm-dd, optionally with a time part) — keep the date part verbatim,
+  // no timezone conversion needed.
+  const isoMatch = raw.match(/^(\d{4}-\d{2}-\d{2})/)
+  if (isoMatch) return isoMatch[1]
+
   const d = new Date(raw)
   if (Number.isNaN(d.getTime())) return raw
-  return d.toISOString().slice(0, 10)
+  // Read back local date components rather than d.toISOString(), which converts to UTC
+  // and shifts the date back a day for anyone in a positive UTC offset.
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
 }
 
 export function tradesToCsv(): string {

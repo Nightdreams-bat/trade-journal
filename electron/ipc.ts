@@ -114,16 +114,16 @@ export function registerIpcHandlers() {
   ipcMain.handle('accounts:getAll', () => {
     return db.prepare('SELECT * FROM accounts ORDER BY name ASC').all()
   })
-  ipcMain.handle('accounts:create', (_e, payload: { name: string; broker?: string; starting_balance: number; currency: string }) => {
+  ipcMain.handle('accounts:create', (_e, payload: { name: string; broker?: string; starting_balance: number; currency: string; account_type?: string }) => {
     const info = db
-      .prepare('INSERT INTO accounts (name, broker, starting_balance, currency) VALUES (?, ?, ?, ?)')
-      .run(payload.name, payload.broker ?? '', payload.starting_balance, payload.currency)
+      .prepare('INSERT INTO accounts (name, broker, starting_balance, currency, account_type) VALUES (?, ?, ?, ?, ?)')
+      .run(payload.name, payload.broker ?? '', payload.starting_balance, payload.currency, payload.account_type ?? 'live')
     void obsidian.syncAccount(info.lastInsertRowid as number)
     return db.prepare('SELECT * FROM accounts WHERE id = ?').get(info.lastInsertRowid)
   })
   ipcMain.handle('accounts:update', (_e, id: number, payload: Record<string, unknown>) => {
-    db.prepare('UPDATE accounts SET name = ?, broker = ?, starting_balance = ?, currency = ? WHERE id = ?').run(
-      payload.name, payload.broker ?? '', payload.starting_balance, payload.currency, id
+    db.prepare('UPDATE accounts SET name = ?, broker = ?, starting_balance = ?, currency = ?, account_type = ? WHERE id = ?').run(
+      payload.name, payload.broker ?? '', payload.starting_balance, payload.currency, payload.account_type ?? 'live', id
     )
     void obsidian.syncAccount(id)
     return db.prepare('SELECT * FROM accounts WHERE id = ?').get(id)

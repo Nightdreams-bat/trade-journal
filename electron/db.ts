@@ -34,6 +34,22 @@ function migrateMissedTradesSchema(database: DatabaseSync) {
   }
 }
 
+function migrateAccountsSchema(database: DatabaseSync) {
+  if (columnExists(database, 'accounts', 'account_type')) return
+  database.exec("ALTER TABLE accounts ADD COLUMN account_type TEXT NOT NULL DEFAULT 'live'")
+  const legacyPropRe = /ftmo|prop|funded|the5ers|the 5ers|mff|myff|fundingpips|e8|alpha capital|topstep|apex/i
+  const rows = database.prepare('SELECT id, name, broker FROM accounts').all() as {
+    id: number
+    name: string
+    broker: string | null
+  }[]
+  for (const r of rows) {
+    if (legacyPropRe.test(`${r.name} ${r.broker ?? ''}`)) {
+      database.prepare('UPDATE accounts SET account_type = ? WHERE id = ?').run('prop', r.id)
+    }
+  }
+}
+
 function migrateScreenshotsToImages(database: DatabaseSync) {
   if (!columnExists(database, 'trades', 'screenshot_path')) return
   const rows = database
@@ -157,6 +173,7 @@ export function getDb(): DatabaseSync {
   migrateTradesSchema(db)
   migrateMissedTradesSchema(db)
   migrateScreenshotsToImages(db)
+  migrateAccountsSchema(db)
 
   const accountCount = db.prepare('SELECT COUNT(*) as c FROM accounts').get() as { c: number }
   if (accountCount.c === 0) {

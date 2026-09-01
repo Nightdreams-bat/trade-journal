@@ -201,6 +201,7 @@ export function getSummary(filters: SummaryFilters) {
   const totalPnl = monthTrades.reduce((s, t) => s + t.pnl, 0)
   const startingBalance = accountStartingBalance(filters.accountId)
   const returnsPct = startingBalance > 0 ? (totalPnl / startingBalance) * 100 : 0
+  const allTimeReturnsPct = startingBalance > 0 ? (netProfitAllTime / startingBalance) * 100 : 0
   const profitFactor = profitFactorOf(monthTrades)
 
   const allTimeWinRate = winRateOf(allTrades)
@@ -235,7 +236,7 @@ export function getSummary(filters: SummaryFilters) {
     },
     radar: [
       { metric: 'Win Rate', value: round1(allTimeWinRate * 100) },
-      { metric: 'Recovery Factor', value: round1(Math.min(recoveryFactor / 5, 1) * 100) },
+      { metric: 'Recovery Factor', value: round1(Math.max(0, Math.min(recoveryFactor / 5, 1)) * 100) },
       { metric: 'Profit Factor', value: round1(Math.min(allTimeProfitFactor / 3, 1) * 100) },
       { metric: 'Consistency Score', value: round1(consistencyScore) },
       { metric: 'Plan Adherence', value: round1(allTimePlanAdherence * 100) },
@@ -258,6 +259,8 @@ export function getSummary(filters: SummaryFilters) {
     overall: {
       winRate: round1(allTimeWinRate * 100),
       profitFactor: round2(allTimeProfitFactor),
+      totalPnl: round2(netProfitAllTime),
+      returnsPct: round1(allTimeReturnsPct),
       avgWin: round2(allAvgWin),
       avgLoss: round2(allAvgLoss),
       totalTrades: allTrades.length,
@@ -312,6 +315,8 @@ export interface FundedChallengeParams {
   maxOverallDrawdownPct: number
   riskPerTradePct: number
   tradingDaysRemaining: number
+  accountId?: number | null
+  strategyId?: number | null
 }
 
 export interface FundedChallengeResult {
@@ -326,7 +331,20 @@ export interface FundedChallengeResult {
 
 export function simulateFundedChallenge(params: FundedChallengeParams): FundedChallengeResult {
   const db = getDb()
-  const rows = db.prepare('SELECT pnl, r_multiple, risk_per_trade, date FROM trades ORDER BY date ASC').all() as {
+  const clauses: string[] = []
+  const p: (string | number)[] = []
+  if (params.accountId) {
+    clauses.push('account_id = ?')
+    p.push(params.accountId)
+  }
+  if (params.strategyId) {
+    clauses.push('strategy_id = ?')
+    p.push(params.strategyId)
+  }
+  const finalWhere = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
+  const rows = db
+    .prepare(`SELECT pnl, r_multiple, risk_per_trade, date FROM trades ${finalWhere} ORDER BY date ASC`)
+    .all(...p) as {
     pnl: number
     r_multiple: number | null
     risk_per_trade: number | null

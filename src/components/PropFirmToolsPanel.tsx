@@ -10,7 +10,15 @@ function StatBox({ label, value, color }: { label: string; value: string; color?
   )
 }
 
-export function PropFirmToolsPanel({ overall }: { overall: AnalyticsSummary['overall'] }) {
+export function PropFirmToolsPanel({
+  overall,
+  accountId = null,
+  strategyId = null,
+}: {
+  overall: AnalyticsSummary['overall']
+  accountId?: number | null
+  strategyId?: number | null
+}) {
   const [profitTargetPct, setProfitTargetPct] = useState('8')
   const [maxDailyLossPct, setMaxDailyLossPct] = useState('5')
   const [maxOverallDrawdownPct, setMaxOverallDrawdownPct] = useState('10')
@@ -28,6 +36,8 @@ export function PropFirmToolsPanel({ overall }: { overall: AnalyticsSummary['ove
         maxOverallDrawdownPct: parseFloat(maxOverallDrawdownPct) || 0,
         riskPerTradePct: parseFloat(riskPerTradePct) || 0,
         tradingDaysRemaining: parseFloat(tradingDaysRemaining) || 1,
+        accountId,
+        strategyId,
       })
       setResult(res)
     } finally {

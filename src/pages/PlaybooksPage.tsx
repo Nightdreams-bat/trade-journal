@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from 'react'
+import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import type { StrategyPerformance } from '../types'
 import { formatRatio } from '../format'
 import { StrategyDetailModal } from '../components/StrategyDetailModal'
@@ -13,9 +13,12 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
   const [adding, setAdding] = useState(false)
   const [openStrategyId, setOpenStrategyId] = useState<number | null>(null)
 
+  const requestIdRef = useRef(0)
   const load = () => {
+    const requestId = ++requestIdRef.current
     setLoading(true)
     window.api.strategies.getPerformance().then((p) => {
+      if (requestId !== requestIdRef.current) return // a newer request has since superseded this one
       setPerf(p)
       setLoading(false)
     })

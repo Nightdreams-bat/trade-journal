@@ -13,12 +13,16 @@ export function CalendarHeatmap({
   calendar,
   onOpenTrade,
   compact,
+  accountId = null,
+  strategyId = null,
 }: {
   month: string
   onMonthChange: (month: string) => void
   calendar: AnalyticsSummary['calendar']
   onOpenTrade: (trade: Trade) => void
   compact?: boolean
+  accountId?: number | null
+  strategyId?: number | null
 }) {
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const [dayTrades, setDayTrades] = useState<Trade[]>([])
@@ -46,7 +50,7 @@ export function CalendarHeatmap({
     setSelectedDate(dateStr)
     setLoadingDay(true)
     try {
-      const all: Trade[] = await window.api.trades.getAll()
+      const all: Trade[] = await window.api.trades.getAll({ accountId, strategyId })
       setDayTrades(all.filter((t) => t.date === dateStr))
     } finally {
       setLoadingDay(false)
