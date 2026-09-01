@@ -73,7 +73,7 @@ export function UtilityPanel({
         filter: open ? 'blur(0px)' : 'blur(6px)',
       }
 
-  const primary = accounts[0]
+  const primary = (accountId != null ? accounts.find((a) => a.id === accountId) : null) ?? accounts[0]
   const visibleAccounts = accountId != null ? accounts.filter((a) => a.id === accountId) : accounts
   const propAccounts = visibleAccounts.filter((a) => a.account_type === 'prop' && a.starting_balance > 0)
   const zeroBalanceProp = visibleAccounts.filter((a) => a.account_type === 'prop' && a.starting_balance <= 0)
@@ -185,24 +185,36 @@ export function UtilityPanel({
             </section>
 
             {accounts.length > 1 && (
-              <section style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span className="mono-label">All accounts</span>
-                {accounts.map((a) => (
-                  <div
-                    key={a.id}
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      fontSize: 12,
-                      color: 'var(--text-muted)',
-                      padding: '4px 0',
-                      borderBottom: '1px solid var(--border-soft)',
-                    }}
-                  >
-                    <span>{a.name}</span>
-                    <span>{a.currency}</span>
-                  </div>
-                ))}
+              <section style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span className="mono-label">All accounts — tap to switch</span>
+                {accounts.map((a) => {
+                  const isActive = a.id === primary?.id
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setAccountId(a.id)}
+                      aria-pressed={isActive}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        fontSize: 12,
+                        color: isActive ? 'var(--accent-deep)' : 'var(--text-muted)',
+                        padding: '6px 8px',
+                        borderRadius: 'var(--radius-control)',
+                        border: '1px solid',
+                        borderColor: isActive ? 'var(--accent-border)' : 'transparent',
+                        background: isActive ? 'var(--accent-bg)' : 'transparent',
+                        width: '100%',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <span>{a.name}</span>
+                      <span>{a.currency}</span>
+                    </button>
+                  )
+                })}
               </section>
             )}
 
