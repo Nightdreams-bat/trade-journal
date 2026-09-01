@@ -154,25 +154,26 @@ export function UtilityPanel({
                   <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 2 }}>
                     {primary.name} · {primary.currency}
                   </div>
+                  <div className="mono-label" style={{ marginTop: 10 }}>Balance</div>
                   <div
                     style={{
                       fontSize: 24,
                       fontWeight: 'var(--weight-title)',
                       color: 'var(--text-strong)',
-                      marginTop: 6,
+                      marginTop: 2,
                     }}
                   >
-                    {money(primary.starting_balance + (summary?.kpis.totalPnl ?? 0))}
+                    {money(primary.starting_balance + (summary?.overall.totalPnl ?? 0))}
                   </div>
                   <div
                     style={{
                       fontSize: 12,
-                      color: (summary?.kpis.totalPnl ?? 0) >= 0 ? 'var(--green)' : 'var(--red)',
+                      color: (summary?.overall.totalPnl ?? 0) >= 0 ? 'var(--green)' : 'var(--red)',
                       marginTop: 2,
                     }}
                   >
-                    {(summary?.kpis.totalPnl ?? 0) >= 0 ? '+' : ''}
-                    {money(summary?.kpis.totalPnl ?? 0)} this month
+                    {(summary?.overall.totalPnl ?? 0) >= 0 ? '+' : ''}
+                    {money(summary?.overall.totalPnl ?? 0)} all-time
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
                     <span className="mono-chip">{primary.currency}</span>
