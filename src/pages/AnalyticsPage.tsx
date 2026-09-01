@@ -9,6 +9,8 @@ import { CalendarHeatmap } from '../components/CalendarHeatmap'
 import { MonthlyStatsPanel } from '../components/MonthlyStatsPanel'
 import { MonthlyPnlPanel } from '../components/MonthlyPnlPanel'
 import { PropFirmToolsPanel } from '../components/PropFirmToolsPanel'
+import { PropFirmFitPanel } from '../components/PropFirmFitPanel'
+import { LiveRiskPanel } from '../components/LiveRiskPanel'
 import { InsightsPanel } from '../components/InsightsPanel'
 import { GlassRail } from '../components/GlassRail'
 import { FilterBar } from '../components/FilterBar'
@@ -23,7 +25,7 @@ const SECTIONS = [
   { key: 'daily', label: 'Daily / Weekly' },
   { key: 'monthly', label: 'Monthly P&L' },
   { key: 'calendar', label: 'Calendar' },
-  { key: 'propfirm', label: 'Prop Firm Tools' },
+  { key: 'propfirm', label: 'Firm & Risk' },
   { key: 'insights', label: 'Insights' },
 ] as const
 
@@ -65,6 +67,8 @@ export function AnalyticsPage({
       cancelled = true
     }
   }, [month, accountId, strategyId, refreshKey])
+
+  const selectedAccount = accountId != null ? accounts.find((a) => a.id === accountId) ?? null : null
 
   const scrollTo = (key: string) => {
     sectionRefs.current[key]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -176,7 +180,13 @@ export function AnalyticsPage({
 
       <Reveal index={4}>
         <div ref={(el) => { sectionRefs.current.propfirm = el }}>
-          <PropFirmToolsPanel overall={summary.overall} accountId={accountId} strategyId={strategyId} />
+          {selectedAccount?.account_type === 'prop' ? (
+            <PropFirmFitPanel accountId={selectedAccount.id} />
+          ) : selectedAccount?.account_type === 'live' ? (
+            <LiveRiskPanel accountId={selectedAccount.id} overall={summary.overall} />
+          ) : (
+            <PropFirmToolsPanel overall={summary.overall} accountId={accountId} strategyId={strategyId} />
+          )}
         </div>
       </Reveal>
 
