@@ -47,4 +47,5 @@ export {
   ExternalLink,
   FolderOpen,
   RefreshCw,
+  Wallet,
 } from 'lucide-react'

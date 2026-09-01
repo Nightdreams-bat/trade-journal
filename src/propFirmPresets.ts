@@ -39,31 +39,52 @@ export interface PropFirmPreset {
   /** Eval access window in calendar days, or null if no stated max. */
   maxDays: number | null
   payout: PayoutRules
+  /** % of an approved payout the trader keeps (Apex: 100 on Sim Funded PAs; Lucid: 90 flat across LucidPro/Flex/Direct). */
+  payoutSplitPct: number
+  /** Total payouts allowed before the funded account is closed for good, or null if not stated/capped. */
+  maxPayouts: number | null
+  /** $ cap per payout request, indexed by payout number (schedule[0] = 1st payout's cap). Null where no per-request cap is documented. */
+  payoutCapSchedule: number[] | null
   /** Caveat shown in the UI for this specific variant. */
   caveat?: string
 }
 
 type TierTable = Record<PropTier, Omit<PropFirmPreset, 'firm' | 'program'>>
 
+// Payout $ cap per request, indexed by payout number (Apex "Payout Amount Cap Per Request" tables —
+// grows with each successive approved payout, capped at 6 total per PA before it's closed for good).
+const APEX_INTRADAY_CAPS: Record<PropTier, number[]> = {
+  25000: [1000, 1000, 1000, 1000, 1000, 1000],
+  50000: [1500, 2000, 2500, 2500, 3000, 3000],
+  100000: [2000, 2500, 3000, 3000, 4000, 4000],
+  150000: [2500, 3000, 3000, 4000, 4000, 5000],
+}
+const APEX_EOD_CAPS: Record<PropTier, number[]> = {
+  25000: [1000, 1000, 1000, 1000, 1000, 1000],
+  50000: [1500, 1500, 2000, 2500, 2500, 3000],
+  100000: [2000, 2500, 2500, 3000, 4000, 4000],
+  150000: [2500, 3000, 3000, 3000, 4000, 5000],
+}
+
 const APEX_INTRADAY: TierTable = {
-  25000: { profitTarget: 1500, maxDrawdown: 1000, dailyLossLimit: null, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 100, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 26100, minPayoutRequest: 500 } },
-  50000: { profitTarget: 3000, maxDrawdown: 2000, dailyLossLimit: null, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 200, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 52100, minPayoutRequest: 500 } },
-  100000: { profitTarget: 6000, maxDrawdown: 3000, dailyLossLimit: null, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 250, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 103100, minPayoutRequest: 500 } },
-  150000: { profitTarget: 9000, maxDrawdown: 4000, dailyLossLimit: null, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 300, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 154100, minPayoutRequest: 500 } },
+  25000: { profitTarget: 1500, maxDrawdown: 1000, dailyLossLimit: null, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 100, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 26100, minPayoutRequest: 500 }, payoutSplitPct: 100, maxPayouts: 6, payoutCapSchedule: APEX_INTRADAY_CAPS[25000] },
+  50000: { profitTarget: 3000, maxDrawdown: 2000, dailyLossLimit: null, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 200, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 52100, minPayoutRequest: 500 }, payoutSplitPct: 100, maxPayouts: 6, payoutCapSchedule: APEX_INTRADAY_CAPS[50000] },
+  100000: { profitTarget: 6000, maxDrawdown: 3000, dailyLossLimit: null, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 250, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 103100, minPayoutRequest: 500 }, payoutSplitPct: 100, maxPayouts: 6, payoutCapSchedule: APEX_INTRADAY_CAPS[100000] },
+  150000: { profitTarget: 9000, maxDrawdown: 4000, dailyLossLimit: null, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 300, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 154100, minPayoutRequest: 500 }, payoutSplitPct: 100, maxPayouts: 6, payoutCapSchedule: APEX_INTRADAY_CAPS[150000] },
 }
 
 const APEX_EOD: TierTable = {
-  25000: { profitTarget: 1500, maxDrawdown: 1000, dailyLossLimit: 500, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 100, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 26100, minPayoutRequest: 500 } },
-  50000: { profitTarget: 3000, maxDrawdown: 2000, dailyLossLimit: 1000, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 250, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 52100, minPayoutRequest: 500 } },
-  100000: { profitTarget: 6000, maxDrawdown: 3000, dailyLossLimit: 1500, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 300, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 103100, minPayoutRequest: 500 } },
-  150000: { profitTarget: 9000, maxDrawdown: 4000, dailyLossLimit: 2000, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 350, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 154100, minPayoutRequest: 500 } },
+  25000: { profitTarget: 1500, maxDrawdown: 1000, dailyLossLimit: 500, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 100, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 26100, minPayoutRequest: 500 }, payoutSplitPct: 100, maxPayouts: 6, payoutCapSchedule: APEX_EOD_CAPS[25000] },
+  50000: { profitTarget: 3000, maxDrawdown: 2000, dailyLossLimit: 1000, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 250, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 52100, minPayoutRequest: 500 }, payoutSplitPct: 100, maxPayouts: 6, payoutCapSchedule: APEX_EOD_CAPS[50000] },
+  100000: { profitTarget: 6000, maxDrawdown: 3000, dailyLossLimit: 1500, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 300, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 103100, minPayoutRequest: 500 }, payoutSplitPct: 100, maxPayouts: 6, payoutCapSchedule: APEX_EOD_CAPS[100000] },
+  150000: { profitTarget: 9000, maxDrawdown: 4000, dailyLossLimit: 2000, consistencyPct: 50, maxDays: 30, payout: { minDailyProfit: 350, minQualifyingDays: 5, cycleDays: null, minProfitGoalPerCycle: null, safetyNet: 154100, minPayoutRequest: 500 }, payoutSplitPct: 100, maxPayouts: 6, payoutCapSchedule: APEX_EOD_CAPS[150000] },
 }
 
 const LUCID_PRO: TierTable = {
-  25000: { profitTarget: 1250, maxDrawdown: 1000, dailyLossLimit: null, consistencyPct: 40, maxDays: null, payout: { minDailyProfit: null, minQualifyingDays: null, cycleDays: 3, minProfitGoalPerCycle: 250, safetyNet: 26100, minPayoutRequest: 500 } },
-  50000: { profitTarget: 3000, maxDrawdown: 2000, dailyLossLimit: null, consistencyPct: 40, maxDays: null, payout: { minDailyProfit: null, minQualifyingDays: null, cycleDays: 3, minProfitGoalPerCycle: 500, safetyNet: 52100, minPayoutRequest: 500 } },
-  100000: { profitTarget: 6000, maxDrawdown: 3000, dailyLossLimit: null, consistencyPct: 40, maxDays: null, payout: { minDailyProfit: null, minQualifyingDays: null, cycleDays: 3, minProfitGoalPerCycle: 750, safetyNet: 103100, minPayoutRequest: 500 } },
-  150000: { profitTarget: 9000, maxDrawdown: 4500, dailyLossLimit: null, consistencyPct: 40, maxDays: null, payout: { minDailyProfit: null, minQualifyingDays: null, cycleDays: 3, minProfitGoalPerCycle: 1000, safetyNet: 154600, minPayoutRequest: 500 } },
+  25000: { profitTarget: 1250, maxDrawdown: 1000, dailyLossLimit: null, consistencyPct: 40, maxDays: null, payout: { minDailyProfit: null, minQualifyingDays: null, cycleDays: 3, minProfitGoalPerCycle: 250, safetyNet: 26100, minPayoutRequest: 500 }, payoutSplitPct: 90, maxPayouts: null, payoutCapSchedule: null },
+  50000: { profitTarget: 3000, maxDrawdown: 2000, dailyLossLimit: null, consistencyPct: 40, maxDays: null, payout: { minDailyProfit: null, minQualifyingDays: null, cycleDays: 3, minProfitGoalPerCycle: 500, safetyNet: 52100, minPayoutRequest: 500 }, payoutSplitPct: 90, maxPayouts: null, payoutCapSchedule: null },
+  100000: { profitTarget: 6000, maxDrawdown: 3000, dailyLossLimit: null, consistencyPct: 40, maxDays: null, payout: { minDailyProfit: null, minQualifyingDays: null, cycleDays: 3, minProfitGoalPerCycle: 750, safetyNet: 103100, minPayoutRequest: 500 }, payoutSplitPct: 90, maxPayouts: null, payoutCapSchedule: null },
+  150000: { profitTarget: 9000, maxDrawdown: 4500, dailyLossLimit: null, consistencyPct: 40, maxDays: null, payout: { minDailyProfit: null, minQualifyingDays: null, cycleDays: 3, minProfitGoalPerCycle: 1000, safetyNet: 154600, minPayoutRequest: 500 }, payoutSplitPct: 90, maxPayouts: null, payoutCapSchedule: null },
 }
 
 // LucidFlex's own eval profit-target/drawdown numbers weren't independently confirmed —
