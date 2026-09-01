@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Select } from '../components/Select'
+import { FilterBar } from '../components/FilterBar'
 import {
   PROP_FIRM_TIERS,
   PROP_FIRM_VARIANTS,
@@ -10,7 +11,7 @@ import {
   type PropVariantId,
 } from '../propFirmPresets'
 import { normalizedDailyPnls, qualifyingDayStats, bootstrapCycleSuccess } from '../tradingPlan'
-import type { FundedChallengeResult, Strategy, StrategyPerformance, Trade } from '../types'
+import type { Account, FundedChallengeResult, Strategy, StrategyPerformance, Trade } from '../types'
 import { formatRatio } from '../format'
 
 function StatBox({ label, value, color }: { label: string; value: string; color?: string }) {
@@ -24,14 +25,18 @@ function StatBox({ label, value, color }: { label: string; value: string; color?
 
 const VARIANT_IDS = Object.keys(PROP_FIRM_VARIANTS) as PropVariantId[]
 
-export function TradingPlanPage({ strategies }: { strategies: Strategy[] }) {
+export function TradingPlanPage({ strategies, accounts }: { strategies: Strategy[]; accounts: Account[] }) {
   const [variant, setVariant] = useState<PropVariantId>('apex_intraday')
   const [tier, setTier] = useState<PropTier>(50000)
   const [riskPerTradePct, setRiskPerTradePct] = useState('0.5')
+  const [accountId, setAccountId] = useState<number | null>(null)
+  const [strategyId, setStrategyId] = useState<number | null>(null)
   const [performances, setPerformances] = useState<StrategyPerformance[] | null>(null)
   const [tradesByStrategy, setTradesByStrategy] = useState<Record<number, Trade[]>>({})
   const [simResults, setSimResults] = useState<Record<number, FundedChallengeResult>>({})
   const [running, setRunning] = useState(false)
+
+  const visibleStrategies = strategyId != null ? strategies.filter((s) => s.id === strategyId) : strategies
 
   useEffect(() => {
     window.api.strategies.getPerformance().then(setPerformances)
@@ -42,20 +47,23 @@ export function TradingPlanPage({ strategies }: { strategies: Strategy[] }) {
     setTradesByStrategy({})
     setSimResults({})
     Promise.all(
-      strategies.map((s) => window.api.trades.getAll({ strategyId: s.id }).then((t: Trade[]) => [s.id, t] as const)),
+      visibleStrategies.map((s) =>
+        window.api.trades.getAll({ strategyId: s.id, accountId }).then((t: Trade[]) => [s.id, t] as const),
+      ),
     ).then((entries) => {
       if (!cancelled) setTradesByStrategy(Object.fromEntries(entries))
     })
     return () => {
       cancelled = true
     }
-  }, [strategies])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleStrategies.map((s) => s.id).join(','), accountId])
 
   const preset = getPreset(variant, tier)
   const risk = parseFloat(riskPerTradePct) || 0.5
 
   const rows = useMemo(() => {
-    return strategies.map((s) => {
+    return visibleStrategies.map((s) => {
       const perf = performances?.find((p) => p.id === s.id) ?? null
       const trades = tradesByStrategy[s.id] ?? []
       const dailyPnls = normalizedDailyPnls(trades, risk, tier)
@@ -63,14 +71,15 @@ export function TradingPlanPage({ strategies }: { strategies: Strategy[] }) {
       const cycle = bootstrapCycleSuccess(dailyPnls, preset.payout, preset.consistencyPct)
       return { strategy: s, perf, dailyPnls, qual, cycle, sim: simResults[s.id] }
     })
-  }, [strategies, performances, tradesByStrategy, preset, risk, tier, simResults])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleStrategies.map((s) => s.id).join(','), performances, tradesByStrategy, preset, risk, tier, simResults])
 
   const buildPlan = async () => {
     setRunning(true)
     try {
       const sim = presetToSimParams(preset, tier)
       const entries = await Promise.all(
-        strategies.map(async (s) => {
+        visibleStrategies.map(async (s) => {
           const res: FundedChallengeResult = await window.api.analytics.simulateFundedChallenge({
             profitTargetPct: sim.profitTargetPct,
             maxDailyLossPct: sim.maxDailyLossPct,
@@ -78,6 +87,7 @@ export function TradingPlanPage({ strategies }: { strategies: Strategy[] }) {
             riskPerTradePct: risk,
             tradingDaysRemaining: preset.maxDays ?? 60,
             strategyId: s.id,
+            accountId,
           })
           return [s.id, res] as const
         }),
@@ -104,6 +114,17 @@ export function TradingPlanPage({ strategies }: { strategies: Strategy[] }) {
           projects each of your strategies onto it: your real trade history, replayed at the risk % you
           set, against that firm's actual eval and payout rules. It answers "how often will I actually get
           paid" — not just "will I pass."
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <FilterBar
+            accounts={accounts}
+            strategies={strategies}
+            accountId={accountId}
+            strategyId={strategyId}
+            onAccountChange={setAccountId}
+            onStrategyChange={setStrategyId}
+          />
         </div>
 
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-3)', alignItems: 'flex-end' }}>

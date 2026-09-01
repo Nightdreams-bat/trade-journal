@@ -177,7 +177,7 @@ function App() {
                       bumpRefresh={bumpRefresh}
                     />
                   )}
-                  {tab === 'plan' && <TradingPlanPage strategies={strategies} />}
+                  {tab === 'plan' && <TradingPlanPage strategies={strategies} accounts={accounts} />}
                   {tab === 'playbooks' && <PlaybooksPage refreshKey={refreshKey} onStrategiesChanged={loadLookups} />}
                   {tab === 'review' && <ReviewPage jumpToDate={reviewJumpDate} />}
                   {tab === 'trades' && (
