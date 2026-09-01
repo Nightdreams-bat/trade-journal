@@ -3,22 +3,55 @@ import { Modal } from './Modal'
 import { Check, ExternalLink, FolderOpen, RefreshCw } from './icons'
 import type { ObsidianConfig } from '../global'
 
-export function SettingsModal({ onClose }: { onClose: () => void }) {
+export function SettingsModal({
+  onClose,
+  userName,
+  onUserNameChange,
+}: {
+  onClose: () => void
+  userName: string
+  onUserNameChange: (name: string) => void
+}) {
   const obs = window.api?.obsidian
   const [config, setConfig] = useState<ObsidianConfig | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+  const [nameDraft, setNameDraft] = useState(userName)
 
   useEffect(() => {
     if (!obs) return
     obs.getConfig().then(setConfig)
   }, [obs])
 
+  const nameField = (
+    <div>
+      <div style={{ fontWeight: 600, fontSize: 14 }}>Your name</div>
+      <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '4px 0 8px', lineHeight: 1.5 }}>
+        Local display name only, used for the greeting — no account, email, or password.
+      </p>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          className="input"
+          value={nameDraft}
+          onChange={(e) => setNameDraft(e.target.value)}
+          placeholder="e.g. Matei"
+          style={{ flex: 1 }}
+        />
+        <button className="btn btn-primary" disabled={nameDraft.trim() === userName} onClick={() => onUserNameChange(nameDraft)}>
+          Save
+        </button>
+      </div>
+    </div>
+  )
+
   if (!obs) {
     return (
       <Modal title="Settings" onClose={onClose}>
-        <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>
-          Obsidian vault sync is only available in the desktop app.
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {nameField}
+          <div style={{ color: 'var(--text-muted)', fontSize: 13 }}>
+            Obsidian vault sync is only available in the desktop app.
+          </div>
         </div>
       </Modal>
     )
@@ -57,7 +90,9 @@ export function SettingsModal({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="Settings" onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        <div>
+        {nameField}
+
+        <div style={{ borderTop: '1px solid var(--border-soft)', paddingTop: 14 }}>
           <div style={{ fontWeight: 600, fontSize: 14 }}>Obsidian vault sync</div>
           <p style={{ color: 'var(--text-muted)', fontSize: 12, margin: '4px 0 0', lineHeight: 1.5 }}>
             One-way mirror. Trades, missed trades, daily reviews and your strategies /

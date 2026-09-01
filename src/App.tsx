@@ -12,6 +12,7 @@ import { WhatsNewPage } from './pages/WhatsNewPage'
 import { TradeFormModal } from './components/TradeFormModal'
 import { AccountsModal } from './components/AccountsModal'
 import { SettingsModal } from './components/SettingsModal'
+import { WelcomeModal } from './components/WelcomeModal'
 import { AmbientRoom } from './components/AmbientRoom'
 import { SpatialStage } from './components/SpatialStage'
 import { NavRail } from './components/NavRail'
@@ -25,6 +26,7 @@ import { getLastSeenVersion } from './whatsNewSeen'
 import { useThemeMode } from './themeMode'
 import { TABS, type TabKey } from './tabs'
 import { greeting } from './format'
+import { getStoredName, setStoredName, hasSeenNamePrompt, markNamePromptSeen } from './userName'
 import type { Account, Confluence, Strategy } from './types'
 
 type UtilitySection = 'calendar' | 'profile'
@@ -48,6 +50,19 @@ function App() {
   const [reviewJumpDate, setReviewJumpDate] = useState<string | null>(null)
   const [seenVersion, setSeenVersion] = useState<string | null>(getLastSeenVersion)
   const [themeMode, toggleTheme] = useThemeMode()
+  const [userName, setUserName] = useState(getStoredName)
+  const [showWelcome, setShowWelcome] = useState(() => !getStoredName() && !hasSeenNamePrompt())
+
+  const saveUserName = (name: string) => {
+    setStoredName(name)
+    setUserName(name)
+    markNamePromptSeen()
+    setShowWelcome(false)
+  }
+  const dismissWelcome = () => {
+    markNamePromptSeen()
+    setShowWelcome(false)
+  }
 
   const [navOpen, setNavOpen] = useState(false)
   const [utilityOpen, setUtilityOpen] = useState(false)
@@ -113,6 +128,7 @@ function App() {
           : HERO_SHIFTS.none
 
   const accountLabel = accounts[0] ? `${accounts[0].name} · ${accounts[0].currency}` : 'No account yet'
+  const greetingText = userName ? `${greeting()}, ${userName}` : greeting()
 
   // Dim the rest of the scene whenever a side panel is open — the open panel
   // stays lit (it sits above the scrim), everything behind it recedes.
@@ -141,7 +157,7 @@ function App() {
 
         <CenterPanel shift={heroShift}>
           <HeroHeader
-            greeting={greeting()}
+            greeting={greetingText}
             accountLabel={accountLabel}
             showWhatsNewDot={seenVersion !== LATEST_VERSION}
             themeMode={themeMode}
@@ -239,6 +255,7 @@ function App() {
           accounts={accounts}
           strategies={strategies}
           refreshKey={refreshKey}
+          userName={userName}
         />
 
         <Scrim show={scrimShow} onClick={closePanels} />
@@ -263,7 +280,11 @@ function App() {
         />
       )}
 
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showSettings && (
+        <SettingsModal onClose={() => setShowSettings(false)} userName={userName} onUserNameChange={saveUserName} />
+      )}
+
+      {showWelcome && <WelcomeModal onSave={saveUserName} onSkip={dismissWelcome} />}
     </div>
   )
 }

@@ -20,6 +20,7 @@ interface UtilityPanelProps {
   accounts: Account[]
   strategies: Strategy[]
   refreshKey: number
+  userName: string
 }
 
 function money(n: number): string {
@@ -37,6 +38,7 @@ export function UtilityPanel({
   accounts,
   strategies,
   refreshKey,
+  userName,
 }: UtilityPanelProps) {
   const reduced = usePrefersReducedMotion()
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
@@ -147,7 +149,7 @@ export function UtilityPanel({
             <div className="mono-label">Account</div>
             <section>
               <div style={{ fontSize: 16, fontWeight: 'var(--weight-title)', color: 'var(--text-strong)' }}>
-                {greeting()}
+                {userName ? `${greeting()}, ${userName}` : greeting()}
               </div>
               {primary ? (
                 <>
