@@ -14,6 +14,7 @@ import {
   Settings,
   Sparkles,
   Table2,
+  Target,
 } from './icons'
 
 interface NavTab {
@@ -36,6 +37,7 @@ interface NavRailProps {
 const TAB_ICONS: Record<TabKey, ComponentType<{ size?: number; strokeWidth?: number }>> = {
   home: House,
   analytics: LayoutGrid,
+  plan: Target,
   playbooks: BookOpen,
   review: NotebookPen,
   trades: Table2,

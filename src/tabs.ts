@@ -1,6 +1,7 @@
 export const TABS = [
   { key: 'home', label: 'Home' },
   { key: 'analytics', label: 'Analytics' },
+  { key: 'plan', label: 'Trading Plan' },
   { key: 'playbooks', label: 'Playbooks' },
   { key: 'review', label: 'Review' },
   { key: 'trades', label: 'Trades' },

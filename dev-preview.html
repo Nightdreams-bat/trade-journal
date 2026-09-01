@@ -134,7 +134,7 @@
           accounts: { getAll: list(accounts), create: ok, update: ok, delete: ok },
           strategies: {
             getAll: list(strategies), create: ok, update: ok, delete: ok,
-            getPerformance: list(strategies.map((s) => ({ ...s, winRate: 56, profitFactor: 1.8, expectancy: 120, tradeCount: 40, avgWinLoss: 1.6 }))),
+            getPerformance: list(strategies.map((s) => ({ ...s, winRate: 56, profitFactor: 1.8, expectancy: 120, tradeCount: 40, avgRMultiple: 1.6, avgWin: 420, avgLoss: 240, planAdherence: 70, totalPnl: 4800 }))),
             getDetail: async (id) => ({ strategy: strategies.find((s) => s.id === id), trades: [], metrics: summary.overall }),
           },
           confluences: { getAll: list(confluences), create: ok, update: ok, delete: ok },

@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { usePrefersReducedMotion } from './anim'
 import { HomePage } from './pages/HomePage'
 import { AnalyticsPage } from './pages/AnalyticsPage'
+import { TradingPlanPage } from './pages/TradingPlanPage'
 import { PlaybooksPage } from './pages/PlaybooksPage'
 import { ReviewPage } from './pages/ReviewPage'
 import { TradesDbPage } from './pages/TradesDbPage'
@@ -176,6 +177,7 @@ function App() {
                       bumpRefresh={bumpRefresh}
                     />
                   )}
+                  {tab === 'plan' && <TradingPlanPage strategies={strategies} />}
                   {tab === 'playbooks' && <PlaybooksPage refreshKey={refreshKey} onStrategiesChanged={loadLookups} />}
                   {tab === 'review' && <ReviewPage jumpToDate={reviewJumpDate} />}
                   {tab === 'trades' && (
