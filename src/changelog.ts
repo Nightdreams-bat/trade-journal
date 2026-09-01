@@ -34,6 +34,24 @@ export type DemoId = 'whats-new-tab' | 'equity-curve' | 'tag-pills' | 'calendar-
 
 export const RELEASES: Release[] = [
   {
+    version: '0.5.0',
+    date: '2026-09-01',
+    title: 'New app icon, cleaner header',
+    summary: 'A new Trade Journal app icon, and a simpler greeting header with the account/strategy subtitle removed.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'New app icon',
+        detail: 'Replaced the plain candlestick favicon with the full Trade Journal mark — a notebook, green candles, and an upward arrow.',
+      },
+      {
+        kind: 'improved',
+        text: 'Simplified the top-left greeting',
+        detail: 'Dropped the account/strategy subtitle under "Good evening" — just the greeting now, centered in its space.',
+      },
+    ],
+  },
+  {
     version: '0.4.0',
     date: '2026-08-31',
     title: 'visionOS redesign',

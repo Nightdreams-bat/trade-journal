@@ -127,7 +127,6 @@ function App() {
           ? HERO_SHIFTS.nav
           : HERO_SHIFTS.none
 
-  const accountLabel = accounts[0] ? `${accounts[0].name} · ${accounts[0].currency}` : 'No account yet'
   const greetingText = userName ? `${greeting()}, ${userName}` : greeting()
 
   // Dim the rest of the scene whenever a side panel is open — the open panel
@@ -158,7 +157,6 @@ function App() {
         <CenterPanel shift={heroShift}>
           <HeroHeader
             greeting={greetingText}
-            accountLabel={accountLabel}
             showWhatsNewDot={seenVersion !== LATEST_VERSION}
             themeMode={themeMode}
             onToggleTheme={toggleTheme}

@@ -6,7 +6,6 @@ import type { ThemeMode } from '../themeMode'
 
 interface HeroHeaderProps {
   greeting: string
-  accountLabel: string
   showWhatsNewDot: boolean
   themeMode: ThemeMode
   onToggleTheme: () => void
@@ -17,7 +16,6 @@ interface HeroHeaderProps {
 
 export function HeroHeader({
   greeting,
-  accountLabel,
   showWhatsNewDot,
   themeMode,
   onToggleTheme,
@@ -66,11 +64,10 @@ export function HeroHeader({
 
   return (
     <header className="hero-header">
-      <div style={{ minWidth: 0 }}>
+      <div style={{ minWidth: 0, display: 'flex', alignItems: 'center' }}>
         <div style={{ fontSize: 17, fontWeight: 'var(--weight-title)', color: 'var(--text-strong)' }}>
           {greeting}
         </div>
-        <div style={{ fontSize: 12.5, color: 'var(--text-muted)', marginTop: 1 }}>{accountLabel}</div>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
         {iconBtn(
