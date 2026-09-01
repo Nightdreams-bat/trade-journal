@@ -39,7 +39,7 @@ export function CsvImportModal({
     picked.headers.forEach((h, i) => {
       const norm = h.toLowerCase().replace(/[^a-z]/g, '')
       for (const f of FIELDS) {
-        if (norm.includes(f.key.replace('_', ''))) auto[f.key] = i
+        if (norm.includes(f.key.replace(/_/g, ''))) auto[f.key] = i
       }
       if (norm.includes('profit') || norm === 'pl' || norm.includes('pnl')) auto.pnl = i
       if (norm.includes('symbol') || norm.includes('instrument')) auto.pair = i

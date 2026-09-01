@@ -317,6 +317,19 @@ export interface FundedChallengeParams {
   tradingDaysRemaining: number
   accountId?: number | null
   strategyId?: number | null
+  /** How the drawdown ceiling is checked. 'intraday' trails every tick; 'eod' only re-bases at day close. Default 'intraday' (matches the old behavior / a manual, no-firm-picked run). */
+  drawdownMode?: 'intraday' | 'eod'
+  /** How the daily loss limit (if any) is checked. Default 'intraday'. */
+  dailyLossMode?: 'intraday' | 'eod'
+  /**
+   * A firm's payout-stage consistency cap (largest single day's profit ÷ total profit, as a %),
+   * if you want passing paths checked against it too. Not an eval-stage gate for any currently
+   * modeled firm (RULES.md confirms consistency is only enforced at the funded/payout stage for
+   * both Apex and LucidPro) — so it never blocks a 'pass' outcome here. It only feeds
+   * `consistencyBreachRate`, which tells you how often a profit run that clears the eval would
+   * *also* fail to be payout-eligible on day one of being funded. Omit to skip this check.
+   */
+  consistencyPct?: number | null
 }
 
 export interface FundedChallengeResult {
@@ -325,7 +338,30 @@ export interface FundedChallengeResult {
   dailyLossBreachRate: number
   maxDrawdownBreachRate: number
   ranOutOfDaysRate: number
+  /** Probability a path ends in an actual rule violation (daily-loss or drawdown breach) — the "probability of ruin" figure risk analysts benchmark against (industry rule of thumb: keep it under ~5%). */
+  riskOfRuin: number
   medianDaysToPass: number | null
+  p10DaysToPass: number | null
+  p90DaysToPass: number | null
+  /** Real (non-simulated) expectancy per trade from the logged R-multiples. */
+  expectancyR: number
+  expectancyPct: number
+  /** Real (non-simulated) profit factor / win rate from the logged trade history feeding the bootstrap. */
+  historicalProfitFactor: number
+  historicalWinRate: number
+  /** Distribution of profit factor across the simulated paths that actually passed (null if none passed). */
+  simProfitFactor: { p10: number; median: number; p90: number } | null
+  /** Distribution of the worst intra-run drawdown reached across all simulated paths, win or lose. */
+  simMaxDrawdownPct: { median: number; p90: number }
+  medianEndingEquityPct: number
+  /**
+   * Of the paths that passed, the % whose profit was concentrated enough on one day that it
+   * would immediately fail the firm's payout consistency cap the moment they're funded (only
+   * computed when `consistencyPct` was supplied — null otherwise). A high pass rate alongside a
+   * high consistencyBreachRate means "you'll clear the eval, but you won't be able to cash out
+   * until you trade more days" — the pass alone overstates how done you actually are.
+   */
+  consistencyBreachRate: number | null
   insufficientData: boolean
 }
 
@@ -343,90 +379,178 @@ export function simulateFundedChallenge(params: FundedChallengeParams): FundedCh
   }
   const finalWhere = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
   const rows = db
-    .prepare(`SELECT pnl, r_multiple, risk_per_trade, date FROM trades ${finalWhere} ORDER BY date ASC`)
+    .prepare(`SELECT id, pnl, r_multiple, risk_per_trade, date FROM trades ${finalWhere} ORDER BY date ASC, id ASC`)
     .all(...p) as {
+    id: number
     pnl: number
     r_multiple: number | null
     risk_per_trade: number | null
     date: string
   }[]
 
-  const rOutcomes: number[] = []
+  // Group into real historical trading days (preserving each day's actual trade count and
+  // intraday sequence) so the bootstrap resamples whole days as blocks rather than individual
+  // trades in isolation — this keeps win/loss clustering and day-to-day trade-count variance
+  // intact, which a plain i.i.d. resample of single R-multiples throws away.
+  const dayMap = new Map<string, number[]>()
+  const pooled: number[] = []
   for (const r of rows) {
-    if (r.r_multiple !== null && r.r_multiple !== undefined) {
-      rOutcomes.push(r.r_multiple)
-    } else if (r.risk_per_trade) {
-      rOutcomes.push(r.pnl / r.risk_per_trade)
-    }
+    let rOut: number | null = null
+    if (r.r_multiple !== null && r.r_multiple !== undefined) rOut = r.r_multiple
+    else if (r.risk_per_trade) rOut = r.pnl / r.risk_per_trade
+    if (rOut === null) continue
+    pooled.push(rOut)
+    const arr = dayMap.get(r.date)
+    if (arr) arr.push(rOut)
+    else dayMap.set(r.date, [rOut])
   }
 
-  const insufficientData = rOutcomes.length < 10
+  const insufficientData = pooled.length < 10
+  let historicalDays: number[][] = [...dayMap.values()]
   if (insufficientData) {
     // not enough R-multiple / risk-sized history to bootstrap from — fall back to a neutral
-    // placeholder distribution so the tool still returns a (clearly-flagged) estimate
-    rOutcomes.push(1, 1, -1, -1, 2, -1, 1, -1, 1.5, -1)
+    // placeholder distribution (spread across a few synthetic days) so the tool still returns a
+    // (clearly-flagged) estimate
+    const placeholder = [1, 1, -1, -1, 2, -1, 1, -1, 1.5, -1]
+    pooled.push(...placeholder)
+    historicalDays = [[1, 1], [-1, -1], [2, -1], [1, -1], [1.5, -1]]
   }
 
-  const distinctDays = new Set(rows.map((r) => r.date)).size || 1
-  const tradesPerDay = Math.max(1, Math.round(rows.length / distinctDays))
+  const wins = pooled.filter((r) => r > 0)
+  const losses = pooled.filter((r) => r < 0)
+  const grossWinR = wins.reduce((s, r) => s + r, 0)
+  const grossLossR = Math.abs(losses.reduce((s, r) => s + r, 0))
+  const historicalProfitFactor = grossLossR === 0 ? (grossWinR > 0 ? 999 : 0) : grossWinR / grossLossR
+  const historicalWinRate = round1((wins.length / pooled.length) * 100)
+  const expectancyR = pooled.reduce((s, r) => s + r, 0) / pooled.length
+  const expectancyPct = expectancyR * params.riskPerTradePct
 
-  const N = 3000
+  const drawdownMode = params.drawdownMode ?? 'intraday'
+  const dailyLossMode = params.dailyLossMode ?? 'intraday'
+
+  const N = 10000
   const days = Math.max(1, Math.min(Math.round(params.tradingDaysRemaining) || 1, 365))
   let passes = 0
   let dailyLossBreaches = 0
   let maxDrawdownBreaches = 0
   let ranOutOfDays = 0
   const daysToPass: number[] = []
+  const simProfitFactors: number[] = []
+  const simMaxDrawdownPcts: number[] = []
+  const endingEquityPcts: number[] = []
+  let consistencyBreachesAmongPasses = 0
 
   for (let sim = 0; sim < N; sim++) {
     let equityPct = 0
     let peakEquityPct = 0
+    let eodPeakEquityPct = 0
     let outcome: 'pass' | 'dailyLoss' | 'maxDrawdown' | 'ranOut' = 'ranOut'
     let passDay = 0
+    let grossWinPct = 0
+    let grossLossPct = 0
+    let pathMaxDrawdownPct = 0
+    let bestDayPct = 0
 
     dayLoop: for (let d = 1; d <= days; d++) {
+      const dayTrades = historicalDays[Math.floor(Math.random() * historicalDays.length)]
       let dailyPnlPct = 0
-      for (let t = 0; t < tradesPerDay; t++) {
-        const r = rOutcomes[Math.floor(Math.random() * rOutcomes.length)]
+
+      for (const r of dayTrades) {
         const pnlPct = r * params.riskPerTradePct
         equityPct += pnlPct
         dailyPnlPct += pnlPct
+        if (pnlPct > 0) grossWinPct += pnlPct
+        else grossLossPct += -pnlPct
         peakEquityPct = Math.max(peakEquityPct, equityPct)
-        const drawdownPct = peakEquityPct - equityPct
-        if (drawdownPct >= params.maxOverallDrawdownPct) {
-          outcome = 'maxDrawdown'
-          break dayLoop
+
+        if (drawdownMode === 'intraday') {
+          const drawdownPct = peakEquityPct - equityPct
+          pathMaxDrawdownPct = Math.max(pathMaxDrawdownPct, drawdownPct)
+          if (drawdownPct >= params.maxOverallDrawdownPct) {
+            outcome = 'maxDrawdown'
+            break dayLoop
+          }
         }
-        if (-dailyPnlPct >= params.maxDailyLossPct) {
+        if (dailyLossMode === 'intraday' && -dailyPnlPct >= params.maxDailyLossPct) {
           outcome = 'dailyLoss'
           break dayLoop
         }
         if (equityPct >= params.profitTargetPct) {
           outcome = 'pass'
           passDay = d
+          // The day (and the path) ends here — this trade's running total is that day's real close, not a peak to beat.
+          bestDayPct = Math.max(bestDayPct, dailyPnlPct)
           break dayLoop
         }
+      }
+      // The day traded to completion without an early stop — dailyPnlPct is now that day's closing P&L.
+      bestDayPct = Math.max(bestDayPct, dailyPnlPct)
+
+      if (drawdownMode === 'eod') {
+        eodPeakEquityPct = Math.max(eodPeakEquityPct, equityPct)
+        const eodDrawdownPct = eodPeakEquityPct - equityPct
+        pathMaxDrawdownPct = Math.max(pathMaxDrawdownPct, eodDrawdownPct)
+        if (eodDrawdownPct >= params.maxOverallDrawdownPct) {
+          outcome = 'maxDrawdown'
+          break dayLoop
+        }
+      }
+      if (dailyLossMode === 'eod' && -dailyPnlPct >= params.maxDailyLossPct) {
+        outcome = 'dailyLoss'
+        break dayLoop
       }
     }
 
     if (outcome === 'pass') {
       passes++
       daysToPass.push(passDay)
+      simProfitFactors.push(grossLossPct === 0 ? (grossWinPct > 0 ? 999 : 0) : grossWinPct / grossLossPct)
+      if (params.consistencyPct != null && equityPct > 0 && (bestDayPct / equityPct) * 100 > params.consistencyPct) {
+        consistencyBreachesAmongPasses++
+      }
     } else if (outcome === 'dailyLoss') dailyLossBreaches++
     else if (outcome === 'maxDrawdown') maxDrawdownBreaches++
     else ranOutOfDays++
+
+    simMaxDrawdownPcts.push(pathMaxDrawdownPct)
+    endingEquityPcts.push(equityPct)
   }
 
   daysToPass.sort((a, b) => a - b)
-  const medianDaysToPass = daysToPass.length ? daysToPass[Math.floor(daysToPass.length / 2)] : null
+  simProfitFactors.sort((a, b) => a - b)
+  simMaxDrawdownPcts.sort((a, b) => a - b)
+  endingEquityPcts.sort((a, b) => a - b)
+
+  const percentileOf = (sorted: number[], pct: number) =>
+    sorted.length ? sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * pct))] : null
 
   return {
-    sampleSize: rOutcomes.length,
+    sampleSize: pooled.length,
     passRate: round1((passes / N) * 100),
     dailyLossBreachRate: round1((dailyLossBreaches / N) * 100),
     maxDrawdownBreachRate: round1((maxDrawdownBreaches / N) * 100),
     ranOutOfDaysRate: round1((ranOutOfDays / N) * 100),
-    medianDaysToPass,
+    riskOfRuin: round1(((dailyLossBreaches + maxDrawdownBreaches) / N) * 100),
+    medianDaysToPass: percentileOf(daysToPass, 0.5),
+    p10DaysToPass: percentileOf(daysToPass, 0.1),
+    p90DaysToPass: percentileOf(daysToPass, 0.9),
+    expectancyR: round2(expectancyR),
+    expectancyPct: round2(expectancyPct),
+    historicalProfitFactor: round2(historicalProfitFactor),
+    historicalWinRate,
+    simProfitFactor: simProfitFactors.length
+      ? {
+          p10: round2(percentileOf(simProfitFactors, 0.1)!),
+          median: round2(percentileOf(simProfitFactors, 0.5)!),
+          p90: round2(percentileOf(simProfitFactors, 0.9)!),
+        }
+      : null,
+    simMaxDrawdownPct: {
+      median: round2(percentileOf(simMaxDrawdownPcts, 0.5) ?? 0),
+      p90: round2(percentileOf(simMaxDrawdownPcts, 0.9) ?? 0),
+    },
+    medianEndingEquityPct: round2(percentileOf(endingEquityPcts, 0.5) ?? 0),
+    consistencyBreachRate: params.consistencyPct != null && passes > 0 ? round1((consistencyBreachesAmongPasses / passes) * 100) : null,
     insufficientData,
   }
 }

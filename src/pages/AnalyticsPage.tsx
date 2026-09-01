@@ -179,13 +179,20 @@ export function AnalyticsPage({
       </Reveal>
 
       <Reveal index={4}>
-        <div ref={(el) => { sectionRefs.current.propfirm = el }}>
+        <div ref={(el) => { sectionRefs.current.propfirm = el }} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
           {selectedAccount?.account_type === 'prop' ? (
-            <PropFirmFitPanel accountId={selectedAccount.id} />
+            <>
+              <PropFirmFitPanel accountId={selectedAccount.id} strategyId={strategyId} />
+              <PropFirmToolsPanel overall={summary.overall} accountId={accountId} strategyId={strategyId} />
+            </>
           ) : selectedAccount?.account_type === 'live' ? (
             <LiveRiskPanel accountId={selectedAccount.id} overall={summary.overall} />
           ) : (
-            <PropFirmToolsPanel overall={summary.overall} accountId={accountId} strategyId={strategyId} />
+            <>
+              <PropFirmFitPanel accountId={accountId} strategyId={strategyId} />
+              <LiveRiskPanel accountId={accountId} overall={summary.overall} />
+              <PropFirmToolsPanel overall={summary.overall} accountId={accountId} strategyId={strategyId} />
+            </>
           )}
         </div>
       </Reveal>

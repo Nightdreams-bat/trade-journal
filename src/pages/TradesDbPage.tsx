@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FilterBar } from '../components/FilterBar'
 import { TradeFormModal } from '../components/TradeFormModal'
 import { CsvImportModal } from '../components/CsvImportModal'
 import { TradeImageGallery } from '../components/TradeImageGallery'
 import { Upload, Download, Plus, Table2, LayoutGrid } from '../components/icons'
+import { Stagger, Reveal } from '../anim'
 import type { Account, Confluence, Strategy, Trade } from '../types'
 
 type SortKey = 'date' | 'pnl' | 'pair'
@@ -39,7 +40,7 @@ export function TradesDbPage({
   const accountName = (id: number | null) => accounts.find((a) => a.id === id)?.name ?? '—'
 
   const requestIdRef = useRef(0)
-  const load = () => {
+  const load = useCallback(() => {
     const requestId = ++requestIdRef.current
     setLoading(true)
     window.api.trades.getAll({ accountId, strategyId, search: search || undefined }).then((t) => {
@@ -47,9 +48,12 @@ export function TradesDbPage({
       setTrades(t)
       setLoading(false)
     })
-  }
+  }, [accountId, strategyId, search])
 
-  useEffect(load, [accountId, strategyId, refreshKey])
+  useEffect(() => {
+    const timer = setTimeout(load, search ? 250 : 0)
+    return () => clearTimeout(timer)
+  }, [load, refreshKey, search])
 
   const sorted = useMemo(() => {
     const copy = [...trades]
@@ -77,8 +81,8 @@ export function TradesDbPage({
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+    <Stagger style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <Reveal style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             className="input"
@@ -120,12 +124,12 @@ export function TradesDbPage({
           <button className="btn" onClick={exportCsv}><Download size={16} style={{ marginRight: 4 }} />Export CSV</button>
           <button className="btn btn-primary" onClick={() => setEditingTrade(null)}><Plus size={16} style={{ marginRight: 4 }} />New Trade</button>
         </div>
-      </div>
+      </Reveal>
 
       {view === 'gallery' ? (
-        <TradeImageGallery trades={trades} accounts={accounts} onOpenTrade={setEditingTrade} />
+        <Reveal><TradeImageGallery trades={trades} accounts={accounts} onOpenTrade={setEditingTrade} refreshKey={refreshKey} /></Reveal>
       ) : (
-      <div className="card" style={{ overflowX: 'auto', maxHeight: 640, overflowY: 'auto' }}>
+      <Reveal className="card" style={{ overflowX: 'auto', maxHeight: 640, overflowY: 'auto' }}>
         {loading ? (
           <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading trades…</div>
         ) : sorted.length === 0 ? (
@@ -170,7 +174,7 @@ export function TradesDbPage({
             </tbody>
           </table>
         )}
-      </div>
+      </Reveal>
       )}
 
       {editingTrade !== undefined && (
@@ -202,6 +206,6 @@ export function TradesDbPage({
           }}
         />
       )}
-    </div>
+    </Stagger>
   )
 }

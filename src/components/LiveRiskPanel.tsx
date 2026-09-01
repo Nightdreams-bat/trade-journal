@@ -36,7 +36,7 @@ function simulateRuin(rOutcomes: number[], riskPct: number, numTrades: number, r
   return { ruinProbPct: (ruinCount / paths) * 100, medianReturnPct: median }
 }
 
-export function LiveRiskPanel({ accountId, overall }: { accountId: number; overall: AnalyticsSummary['overall'] }) {
+export function LiveRiskPanel({ accountId, overall }: { accountId: number | null; overall: AnalyticsSummary['overall'] }) {
   const [trades, setTrades] = useState<Trade[] | null>(null)
   const [numTrades, setNumTrades] = useState('100')
   const [ruinThresholdPct, setRuinThresholdPct] = useState('50')

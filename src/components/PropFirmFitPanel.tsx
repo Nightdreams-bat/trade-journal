@@ -22,7 +22,7 @@ function StatBox({ label, value, color }: { label: string; value: string; color?
 
 const VARIANT_IDS = Object.keys(PROP_FIRM_VARIANTS) as PropVariantId[]
 
-export function PropFirmFitPanel({ accountId }: { accountId: number }) {
+export function PropFirmFitPanel({ accountId, strategyId = null }: { accountId: number | null; strategyId?: number | null }) {
   const [tier, setTier] = useState<PropTier>(50000)
   const [riskPerTradePct, setRiskPerTradePct] = useState('1')
   const [tradingDaysBudget, setTradingDaysBudget] = useState('30')
@@ -34,13 +34,13 @@ export function PropFirmFitPanel({ accountId }: { accountId: number }) {
     let cancelled = false
     setTrades(null)
     setResults({})
-    window.api.trades.getAll({ accountId }).then((t: Trade[]) => {
+    window.api.trades.getAll({ accountId, strategyId }).then((t: Trade[]) => {
       if (!cancelled) setTrades(t)
     })
     return () => {
       cancelled = true
     }
-  }, [accountId])
+  }, [accountId, strategyId])
 
   const consistency = useMemo(() => {
     if (!trades || trades.length === 0) return null
@@ -68,6 +68,10 @@ export function PropFirmFitPanel({ accountId }: { accountId: number }) {
             riskPerTradePct: risk,
             tradingDaysRemaining: preset.maxDays ? Math.min(days, preset.maxDays) : days,
             accountId,
+            strategyId,
+            drawdownMode: sim.drawdownMode,
+            dailyLossMode: sim.dailyLossMode,
+            consistencyPct: sim.consistencyPct,
           })
           return [id, res] as const
         }),
@@ -83,9 +87,13 @@ export function PropFirmFitPanel({ accountId }: { accountId: number }) {
       <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 12 }}>
         Prop Firm Fit — simulates this account's own trade history against Apex's and Lucid's real
         published evaluation rules, side by side, so you can see which fits your edge before you pay
-        for an eval. All numbers below assume a continuously-trailing drawdown check (matches Apex
-        Intraday exactly; an approximation for EOD-drawdown programs, which only check at day's close —
-        treat EOD results as a conservative estimate). Not a guarantee.
+        for an eval. Each program's drawdown and daily-loss checks are modeled the way that firm
+        actually enforces them (Apex Intraday checks continuously; Apex EOD and both Lucid programs
+        only re-base at the day's close), block-bootstrapped from your real trading days.
+        "Payout-Ready on Pass" checks the same simulated runs against that firm's payout-stage
+        consistency cap — a high pass rate with a low payout-ready number means you'd clear the
+        eval but still be blocked from your first payout until you trade more days. Not a
+        guarantee.
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-3)', alignItems: 'flex-end', marginBottom: 14 }}>
@@ -144,9 +152,22 @@ export function PropFirmFitPanel({ accountId }: { accountId: number }) {
               {res ? (
                 <>
                   <StatBox label="Pass Prob." value={`${res.passRate}%`} color="var(--green)" />
-                  <StatBox label="DD Breach" value={`${res.maxDrawdownBreachRate}%`} color="var(--red)" />
+                  <StatBox label="Risk of Ruin" value={`${res.riskOfRuin}%`} color="var(--red)" />
                   <StatBox label="DLL Breach" value={`${res.dailyLossBreachRate}%`} color={preset.dailyLossLimit != null ? 'var(--red)' : undefined} />
-                  <StatBox label="Median Days" value={res.medianDaysToPass !== null ? String(res.medianDaysToPass) : '—'} />
+                  <StatBox
+                    label="Median Days"
+                    value={
+                      res.medianDaysToPass !== null
+                        ? `${res.medianDaysToPass}${res.p10DaysToPass !== null && res.p90DaysToPass !== null ? ` (${res.p10DaysToPass}–${res.p90DaysToPass})` : ''}`
+                        : '—'
+                    }
+                  />
+                  <StatBox label="Sim. Profit Factor" value={res.simProfitFactor ? res.simProfitFactor.median.toFixed(2) : '—'} />
+                  <StatBox
+                    label="Payout-Ready on Pass"
+                    value={res.consistencyBreachRate !== null ? `${Math.round(100 - res.consistencyBreachRate)}%` : '—'}
+                    color={res.consistencyBreachRate !== null && res.consistencyBreachRate > 30 ? 'var(--red)' : undefined}
+                  />
                 </>
               ) : (
                 <div style={{ fontSize: 11.5, color: 'var(--text-dim)' }}>Run the comparison to see results.</div>

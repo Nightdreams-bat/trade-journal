@@ -59,10 +59,15 @@ export function importTrades(rows: string[][], mapping: ColumnMapping, accountId
   let count = 0
   for (const row of rows) {
     const date = row[mapping.date]?.trim()
-    const pnlRaw = row[mapping.pnl]?.replace(/[^0-9.\-]/g, '')
-    if (!date || pnlRaw === undefined || pnlRaw === '') continue
-    const pnl = parseFloat(pnlRaw)
+    const pnlCell = row[mapping.pnl]?.trim()
+    if (!date || pnlCell === undefined || pnlCell === '') continue
+    // Accounting-style negatives, e.g. "(123.45)" for a loss, as exported by many broker statements.
+    const isParenNegative = /^\(.*\)$/.test(pnlCell)
+    const pnlRaw = pnlCell.replace(/[^0-9.-]/g, '')
+    if (pnlRaw === '') continue
+    let pnl = parseFloat(pnlRaw)
     if (Number.isNaN(pnl)) continue
+    if (isParenNegative) pnl = -Math.abs(pnl)
     stmt.run(
       'Imported trade',
       normalizeDate(date),

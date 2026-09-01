@@ -99,6 +99,7 @@ export function Select({
     }
     if (e.key === 'Escape') {
       e.preventDefault()
+      e.stopPropagation()
       setOpen(false)
     } else if (e.key === 'ArrowDown') {
       e.preventDefault()

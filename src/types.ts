@@ -150,6 +150,9 @@ export interface FundedChallengeParams {
   tradingDaysRemaining: number
   accountId?: number | null
   strategyId?: number | null
+  drawdownMode?: 'intraday' | 'eod'
+  dailyLossMode?: 'intraday' | 'eod'
+  consistencyPct?: number | null
 }
 
 export interface FundedChallengeResult {
@@ -158,7 +161,18 @@ export interface FundedChallengeResult {
   dailyLossBreachRate: number
   maxDrawdownBreachRate: number
   ranOutOfDaysRate: number
+  riskOfRuin: number
   medianDaysToPass: number | null
+  p10DaysToPass: number | null
+  p90DaysToPass: number | null
+  expectancyR: number
+  expectancyPct: number
+  historicalProfitFactor: number
+  historicalWinRate: number
+  simProfitFactor: { p10: number; median: number; p90: number } | null
+  simMaxDrawdownPct: { median: number; p90: number }
+  medianEndingEquityPct: number
+  consistencyBreachRate: number | null
   insufficientData: boolean
 }
 

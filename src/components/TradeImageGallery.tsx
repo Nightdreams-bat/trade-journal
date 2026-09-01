@@ -22,10 +22,12 @@ export function TradeImageGallery({
   trades,
   accounts,
   onOpenTrade,
+  refreshKey,
 }: {
   trades: Trade[]
   accounts: Account[]
   onOpenTrade: (trade: Trade) => void
+  refreshKey?: number
 }) {
   const [images, setImages] = useState<GalleryImage[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,7 +44,7 @@ export function TradeImageGallery({
     })
   }
 
-  useEffect(load, [])
+  useEffect(load, [refreshKey])
 
   const accountNameById = useMemo(() => {
     const m = new Map<number | null, string>()

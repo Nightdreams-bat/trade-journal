@@ -65,7 +65,10 @@ export function ConfluenceSelector({
                 onChange={(e) => setEditDraft(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') saveEdit()
-                  if (e.key === 'Escape') setEditingId(null)
+                  if (e.key === 'Escape') {
+                    e.stopPropagation()
+                    setEditingId(null)
+                  }
                 }}
                 style={{ width: 130, padding: '2px 6px', fontSize: 11.5 }}
               />

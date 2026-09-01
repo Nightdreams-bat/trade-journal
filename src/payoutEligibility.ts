@@ -21,7 +21,7 @@ export interface EligibilityResult {
   profitSinceLastPayout: number
   bestDaySinceLastPayout: number
   consistencyRatioPct: number | null
-  consistencyOk: boolean
+  consistencyOk: boolean | null
   qualifyingDaysCount: number | null
   qualifyingDaysNeeded: number | null
   qualifyingOk: boolean | null
@@ -78,7 +78,7 @@ export function computeEligibility(
   const bestDaySinceLastPayout = windowEntries.length ? Math.max(0, ...windowEntries.map((e) => e.pnl)) : 0
 
   const consistencyRatioPct = profitSinceLastPayout > 0 ? (bestDaySinceLastPayout / profitSinceLastPayout) * 100 : null
-  const consistencyOk = consistencyRatioPct != null && consistencyRatioPct <= preset.consistencyPct
+  const consistencyOk = consistencyRatioPct == null ? null : consistencyRatioPct <= preset.consistencyPct
 
   let qualifyingDaysCount: number | null = null
   let qualifyingDaysNeeded: number | null = null

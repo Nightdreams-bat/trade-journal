@@ -45,11 +45,23 @@ export interface PropFirmPreset {
   maxPayouts: number | null
   /** $ cap per payout request, indexed by payout number (schedule[0] = 1st payout's cap). Null where no per-request cap is documented. */
   payoutCapSchedule: number[] | null
+  /**
+   * How the max-drawdown ceiling is evaluated: 'intraday' trails every tick (Apex Intraday);
+   * 'eod' only re-bases once per day at the close (Apex EOD, both Lucid programs — RULES.md §2).
+   */
+  drawdownMode: 'intraday' | 'eod'
+  /**
+   * How the daily loss limit (if any) is checked: 'intraday' liquidates/pauses the instant it's
+   * hit mid-session (Apex EOD, confirmed "still enforced intraday" in RULES.md §2); 'eod' only
+   * matters once a firm's DLL is enabled (Lucid's is optional and off by default here, so this is
+   * moot for the current Lucid presets — kept 'eod' as the closest-fit assumption, not confirmed).
+   */
+  dailyLossMode: 'intraday' | 'eod'
   /** Caveat shown in the UI for this specific variant. */
   caveat?: string
 }
 
-type TierTable = Record<PropTier, Omit<PropFirmPreset, 'firm' | 'program'>>
+type TierTable = Record<PropTier, Omit<PropFirmPreset, 'firm' | 'program' | 'drawdownMode' | 'dailyLossMode'>>
 
 // Payout $ cap per request, indexed by payout number (Apex "Payout Amount Cap Per Request" tables —
 // grows with each successive approved payout, capped at 6 total per PA before it's closed for good).
@@ -99,21 +111,26 @@ const LUCID_FLEX: TierTable = {
   150000: { ...LUCID_PRO[150000], consistencyPct: 50, payout: { ...LUCID_FLEX_PAYOUT, safetyNet: LUCID_PRO[150000].payout.safetyNet } },
 }
 
-export const PROP_FIRM_VARIANTS: Record<PropVariantId, { firm: 'Apex' | 'Lucid'; program: string; table: TierTable; caveat?: string }> = {
-  apex_intraday: { firm: 'Apex', program: 'Intraday Trail', table: APEX_INTRADAY },
-  apex_eod: { firm: 'Apex', program: 'EOD Trail', table: APEX_EOD },
-  lucid_pro: { firm: 'Lucid', program: 'LucidPro', table: LUCID_PRO },
+export const PROP_FIRM_VARIANTS: Record<
+  PropVariantId,
+  { firm: 'Apex' | 'Lucid'; program: string; table: TierTable; drawdownMode: 'intraday' | 'eod'; dailyLossMode: 'intraday' | 'eod'; caveat?: string }
+> = {
+  apex_intraday: { firm: 'Apex', program: 'Intraday Trail', table: APEX_INTRADAY, drawdownMode: 'intraday', dailyLossMode: 'intraday' },
+  apex_eod: { firm: 'Apex', program: 'EOD Trail', table: APEX_EOD, drawdownMode: 'eod', dailyLossMode: 'intraday' },
+  lucid_pro: { firm: 'Lucid', program: 'LucidPro', table: LUCID_PRO, drawdownMode: 'eod', dailyLossMode: 'eod' },
   lucid_flex: {
     firm: 'Lucid',
     program: 'LucidFlex',
     table: LUCID_FLEX,
+    drawdownMode: 'eod',
+    dailyLossMode: 'eod',
     caveat: 'Eval profit target/drawdown approximated from LucidPro (not independently confirmed for LucidFlex). LucidFlex actually drops the consistency cap entirely once funded (shown here only as a stand-in) and instead requires 5 profitable trading days per cycle — cycle length and minimum payout size for LucidFlex were not confirmed in research, treat those as rough estimates.',
   },
 }
 
 export function getPreset(variant: PropVariantId, tier: PropTier): PropFirmPreset {
   const v = PROP_FIRM_VARIANTS[variant]
-  return { firm: v.firm, program: v.program, caveat: v.caveat, ...v.table[tier] }
+  return { firm: v.firm, program: v.program, caveat: v.caveat, drawdownMode: v.drawdownMode, dailyLossMode: v.dailyLossMode, ...v.table[tier] }
 }
 
 export function presetToSimParams(preset: PropFirmPreset, tier: PropTier) {
@@ -122,9 +139,13 @@ export function presetToSimParams(preset: PropFirmPreset, tier: PropTier) {
     maxOverallDrawdownPct: (preset.maxDrawdown / tier) * 100,
     // No firm DLL → effectively disable the daily-loss check in the simulator.
     maxDailyLossPct: preset.dailyLossLimit != null ? (preset.dailyLossLimit / tier) * 100 : 1000,
+    drawdownMode: preset.drawdownMode,
+    dailyLossMode: preset.dailyLossMode,
+    consistencyPct: preset.consistencyPct,
   }
 }
 
-export function money(n: number): string {
+export function money(n: number | null | undefined): string {
+  if (n == null) return '—'
   return `$${n.toLocaleString('en-US')}`
 }

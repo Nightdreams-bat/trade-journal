@@ -34,7 +34,87 @@ export type DemoId = 'whats-new-tab' | 'equity-curve' | 'tag-pills' | 'calendar-
 
 export const RELEASES: Release[] = [
   {
-    version: '0.5.0',
+    version: '0.10.0',
+    date: '2026-09-01',
+    title: 'Smarter prop-firm simulations, strategy edge stats, and bug fixes',
+    summary: "The eval/risk simulator now models each firm's real drawdown and daily-loss timing and resamples whole trading days, and the Trading Plan tab surfaces Kelly sizing, SQN, streaks, and per-confluence edge for every strategy.",
+    changes: [
+      {
+        kind: 'improved',
+        text: 'Prop-firm eval simulator now block-bootstraps by real trading day',
+        detail:
+          "Resamples whole historical days (preserving each day's actual trade count and win/loss clustering) instead of individual R-multiples in isolation, across 10,000 simulated paths instead of 3,000. Drawdown and daily-loss checks are modeled the way each firm actually enforces them — continuous for Apex Intraday, end-of-day re-basing for Apex EOD and both Lucid programs.",
+      },
+      {
+        kind: 'new',
+        text: 'Risk of Ruin and Payout-Ready on Pass stats',
+        detail:
+          "The simulator now reports risk of ruin (probability of an outright rule breach), P10–P90 days-to-pass, historical and simulated profit factor, worst drawdown reached, and — when a consistency cap is supplied — what share of passing runs would still be blocked from their first payout by that firm's consistency rule.",
+      },
+      {
+        kind: 'new',
+        text: 'Prop Firm Fit panel now runs for every account type',
+        detail: 'Previously only shown for prop accounts; now available for prop, live, and unset account types, alongside Live Account Risk where it applies.',
+      },
+      {
+        kind: 'new',
+        text: 'Trading Plan tab: Kelly sizing, SQN, streaks, and edge-by-confluence per strategy',
+        detail:
+          "Each strategy card now shows a Kelly-suggested risk %, a System Quality Number (edge consistency, not just average R) with an early-data flag under 20 trades, current and max win/loss streaks, and a ranked breakdown of dollar expectancy per confluence tag so you can see which parts of a strategy actually carry its edge.",
+      },
+      {
+        kind: 'fixed',
+        text: 'CSV import mishandled accounting-style negative numbers',
+        detail: 'P&L values written as "(123.45)" — how many broker statements show a loss — now import as -123.45 instead of being parsed as positive.',
+      },
+      {
+        kind: 'fixed',
+        text: "Escape key inside the confluence editor or a dropdown could close more than intended",
+        detail: 'Escape now stops propagating once it closes the confluence rename field or a Select dropdown, instead of also bubbling up to close a parent modal.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Repeated "Log Today" clicks from Home no longer skip the jump to today’s date',
+        detail: "Clicking through to the Daily Review for today's date now always re-applies the jump, even when the tab was already sitting on that same date.",
+      },
+      {
+        kind: 'fixed',
+        text: 'Best/Worst Day P&L on the monthly stats panel showed raw negative numbers without a minus sign',
+        detail: 'Negative day totals now render as "-$X" and color red instead of an unsigned green figure.',
+      },
+      {
+        kind: 'improved',
+        text: 'Trades and Missed Trades search is now debounced',
+        detail: "Typing in the search box no longer re-queries on every keystroke — search waits 250ms after you stop typing, while account/strategy filter changes and new trades still refresh instantly.",
+      },
+      {
+        kind: 'improved',
+        text: 'Trade image gallery refreshes after adding or editing a trade',
+        detail: "The gallery view on the Trades tab previously only loaded once; it now picks up new or edited screenshots without needing a tab switch.",
+      },
+    ],
+  },
+  {
+    version: '0.9.0',
+    date: '2026-09-01',
+    title: 'Payout Calculator',
+    summary: "A new tab that checks exactly how much you can request in a payout right now, against Apex's and Lucid's real published rules.",
+    changes: [
+      {
+        kind: 'new',
+        text: 'Added the Payout Calculator tab',
+        detail:
+          "Pick a linked account or type in a manual day-by-day ledger, and see your current balance, profit since last payout, best single day, consistency ratio, qualifying-day progress, and the maximum you can request right now — checked against Apex Intraday/EOD and Lucid Pro/Flex's actual payout rules, including Apex's per-request payout-cap schedule.",
+      },
+      {
+        kind: 'new',
+        text: 'Payout log',
+        detail: "Tracks payouts you've already withdrawn, so future eligibility checks account for them.",
+      },
+    ],
+  },
+  {
+    version: '0.8.0',
     date: '2026-09-01',
     title: 'New app icon, cleaner header',
     summary: 'A new Trade Journal app icon, and a simpler greeting header with the account/strategy subtitle removed.',
@@ -48,6 +128,101 @@ export const RELEASES: Release[] = [
         kind: 'improved',
         text: 'Simplified the top-left greeting',
         detail: 'Dropped the account/strategy subtitle under "Good evening" — just the greeting now, centered in its space.',
+      },
+    ],
+  },
+  {
+    version: '0.7.0',
+    date: '2026-09-01',
+    title: 'Profile upgrades & a friendlier greeting',
+    summary: 'The Profile panel now switches between accounts and shows your true all-time balance, and the app asks what to call you on first launch.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'Ask for a display name on first launch',
+        detail:
+          'A one-time welcome prompt asks what the journal should call you — just a local name, not an account. Skippable, and editable or clearable later from Settings. Used in both the header and Profile panel greeting.',
+      },
+      {
+        kind: 'new',
+        text: 'Switch accounts right from the Profile panel',
+        detail: 'Each account in the list is now a button — click one to switch the balance, P&L, currency, and broker chip shown on the profile card.',
+      },
+      {
+        kind: 'improved',
+        text: 'Profile card shows all-time balance, not month-to-date',
+        detail: 'The main balance figure and its sub-line now come from all-time P&L instead of resetting in meaning every month, with a new "Balance" label above the figure.',
+      },
+    ],
+  },
+  {
+    version: '0.6.0',
+    date: '2026-09-01',
+    title: 'Trading Plan tab and per-account-type risk analysis',
+    summary: "New tools that project your real strategies onto a firm's actual eval and payout rules, plus a Prop Firm Fit / Live Account Risk panel tailored to each account type.",
+    changes: [
+      {
+        kind: 'new',
+        text: 'Trading Plan tab',
+        detail:
+          "Pick a firm/program/tier and every strategy you've logged gets projected onto it using its real trade history — an eval pass-probability run plus a plain-English payout-cadence sentence (qualifying-day rate for Apex, 3-day-cycle odds for Lucid Pro).",
+      },
+      {
+        kind: 'new',
+        text: 'Account and strategy filters on the Trading Plan page',
+        detail: "Narrow the plan to one account and/or one strategy instead of always pooling every account a strategy has traded on.",
+      },
+      {
+        kind: 'new',
+        text: 'Firm & Risk panel per account type',
+        detail:
+          "Prop accounts get their trade history run through Apex's and Lucid's real eval rules (profit target, drawdown, daily loss limit) side by side, plus a consistency-ratio check against each firm's payout-stage cap. Live accounts get a risk-of-ruin simulation across a range of risk-per-trade sizes instead, next to the existing Kelly sizing.",
+      },
+    ],
+  },
+  {
+    version: '0.5.0',
+    date: '2026-09-01',
+    title: 'Analytics deep-dive, trade gallery & Obsidian vault sync',
+    summary: 'A deeper Analytics tab, account types with month-by-month navigation, a trade image gallery, and a proper Obsidian vault sync.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'Analytics deep-dive',
+        detail:
+          'Month-by-month P&L, a calendar heatmap, the prop-firm Monte Carlo simulator, and Kelly sizing all moved into a fuller Analytics tab, with all-time P&L/returns on the overview and the recovery-factor radar clamped so it never goes negative.',
+      },
+      {
+        kind: 'new',
+        text: 'Account types',
+        detail:
+          'Accounts are now tagged live or prop, editable inline, with legacy prop accounts auto-tagged on migration. The utility panel calendar gained month navigation, an all-time vs. monthly stats toggle, and account/strategy filters.',
+      },
+      {
+        kind: 'new',
+        text: 'Trade image gallery',
+        detail: 'Browse trade screenshots filtered by account and sorted by date or account.',
+      },
+      {
+        kind: 'new',
+        text: 'Obsidian vault sync',
+        detail:
+          'One-way local sync mirrors trades, missed trades, daily reviews, strategies, accounts, and confluences into an Obsidian vault — enable/disable toggle, default-or-custom vault path, registers the vault in Obsidian\'s own vault switcher, Open-in-Obsidian and Show-folder actions, and a dedicated Settings modal. Everything nests under a single "Trading Journal" folder in the vault instead of scattering at the root.',
+      },
+      {
+        kind: 'fixed',
+        text: 'CSV import date shifting a day for UTC+ users',
+        detail: 'Dates were converted through UTC instead of reading local date components.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Trades table checkbox cells breaking native table layout',
+        detail: 'A checkbox cell used display:inline-flex on a <td>, which broke the row layout.',
+      },
+      {
+        kind: 'fixed',
+        text: 'Playbooks performance stats could show stale data',
+        detail: 'Guarded the performance load against out-of-order responses when switching strategies quickly.',
       },
     ],
   },

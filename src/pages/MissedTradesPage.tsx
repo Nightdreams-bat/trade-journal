@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MissedTradeFormModal } from '../components/MissedTradeFormModal'
 import { Select } from '../components/Select'
 import { Plus } from '../components/icons'
+import { Stagger, Reveal, CountUpValue } from '../anim'
 import type { Confluence, MissedTrade, Strategy } from '../types'
 
 type SortKey = 'date' | 'would_be_pnl' | 'pair'
@@ -30,7 +31,7 @@ export function MissedTradesPage({
   const strategyName = (id: number | null) => strategies.find((s) => s.id === id)?.name ?? '—'
 
   const requestIdRef = useRef(0)
-  const load = () => {
+  const load = useCallback(() => {
     const requestId = ++requestIdRef.current
     setLoading(true)
     window.api.missedTrades.getAll({ strategyId, search: search || undefined }).then((r) => {
@@ -38,9 +39,12 @@ export function MissedTradesPage({
       setRows(r)
       setLoading(false)
     })
-  }
+  }, [strategyId, search])
 
-  useEffect(load, [strategyId, refreshKey])
+  useEffect(() => {
+    const timer = setTimeout(load, search ? 250 : 0)
+    return () => clearTimeout(timer)
+  }, [load, refreshKey, search])
 
   const sorted = useMemo(() => {
     const copy = [...rows]
@@ -65,8 +69,8 @@ export function MissedTradesPage({
   const totalMissedPnl = rows.reduce((s, r) => s + (r.would_be_pnl ?? 0), 0)
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+    <Stagger style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <Reveal style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
             className="input"
@@ -89,14 +93,14 @@ export function MissedTradesPage({
           <div style={{ color: 'var(--text-muted)', fontSize: 12.5 }}>
             Missed opportunity cost:{' '}
             <span className={totalMissedPnl >= 0 ? 'pnl-positive' : 'pnl-negative'} style={{ fontWeight: 600 }}>
-              ${totalMissedPnl.toFixed(0)}
+              <CountUpValue value={`$${totalMissedPnl.toFixed(0)}`} />
             </span>
           </div>
         </div>
         <button className="btn btn-primary" onClick={() => setEditing(null)}><Plus size={16} style={{ marginRight: 4 }} />Log Missed Trade</button>
-      </div>
+      </Reveal>
 
-      <div className="card" style={{ overflowX: 'auto', maxHeight: 640, overflowY: 'auto' }}>
+      <Reveal className="card" style={{ overflowX: 'auto', maxHeight: 640, overflowY: 'auto' }}>
         {loading ? (
           <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading…</div>
         ) : sorted.length === 0 ? (
@@ -131,7 +135,7 @@ export function MissedTradesPage({
             </tbody>
           </table>
         )}
-      </div>
+      </Reveal>
 
       {editing !== undefined && (
         <MissedTradeFormModal
@@ -146,6 +150,6 @@ export function MissedTradesPage({
           }}
         />
       )}
-    </div>
+    </Stagger>
   )
 }

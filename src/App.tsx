@@ -48,7 +48,7 @@ function App() {
   const [showNewTrade, setShowNewTrade] = useState(false)
   const [showAccounts, setShowAccounts] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [reviewJumpDate, setReviewJumpDate] = useState<string | null>(null)
+  const [reviewJumpDate, setReviewJumpDate] = useState<{ date: string; token: number } | null>(null)
   const [seenVersion, setSeenVersion] = useState<string | null>(getLastSeenVersion)
   const [themeMode, toggleTheme] = useThemeMode()
   const [userName, setUserName] = useState(getStoredName)
@@ -113,7 +113,7 @@ function App() {
   }
 
   const openDailyReview = () => {
-    setReviewJumpDate(new Date().toISOString().slice(0, 10))
+    setReviewJumpDate((prev) => ({ date: new Date().toISOString().slice(0, 10), token: (prev?.token ?? 0) + 1 }))
     setTab('review')
     closePanels()
   }
@@ -192,7 +192,7 @@ function App() {
                       bumpRefresh={bumpRefresh}
                     />
                   )}
-                  {tab === 'plan' && <TradingPlanPage strategies={strategies} accounts={accounts} />}
+                  {tab === 'plan' && <TradingPlanPage strategies={strategies} accounts={accounts} confluences={confluences} />}
                   {tab === 'payout' && <PayoutCalculatorPage accounts={accounts} />}
                   {tab === 'playbooks' && <PlaybooksPage refreshKey={refreshKey} onStrategiesChanged={loadLookups} />}
                   {tab === 'review' && <ReviewPage jumpToDate={reviewJumpDate} />}

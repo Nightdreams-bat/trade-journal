@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { Select } from '../components/Select'
+import { Stagger, Reveal } from '../anim'
 import type { DailyReview } from '../types'
 
 const EMOTIONS = ['Calm', 'Confident', 'Anxious', 'Frustrated', 'Excited', 'Tired', 'FOMO']
 
-export function ReviewPage({ jumpToDate }: { jumpToDate?: string | null }) {
+export function ReviewPage({ jumpToDate }: { jumpToDate?: { date: string; token: number } | null }) {
   const [reviews, setReviews] = useState<DailyReview[]>([])
-  const [date, setDate] = useState(jumpToDate ?? format(new Date(), 'yyyy-MM-dd'))
+  const [date, setDate] = useState(jumpToDate?.date ?? format(new Date(), 'yyyy-MM-dd'))
   const [notes, setNotes] = useState('')
   const [emotion, setEmotion] = useState(EMOTIONS[0])
   const [lessons, setLessons] = useState('')
@@ -24,8 +25,9 @@ export function ReviewPage({ jumpToDate }: { jumpToDate?: string | null }) {
   useEffect(load, [])
 
   useEffect(() => {
-    if (jumpToDate) setDate(jumpToDate)
-  }, [jumpToDate])
+    if (jumpToDate) setDate(jumpToDate.date)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- fires once per click via the changing `token`, not `date`
+  }, [jumpToDate?.token])
 
   useEffect(() => {
     const existing = reviews.find((r) => r.date === date)
@@ -47,8 +49,8 @@ export function ReviewPage({ jumpToDate }: { jumpToDate?: string | null }) {
   if (loading) return <div style={{ padding: 'var(--sp-5)', color: 'var(--text-muted)' }}>Loading reviews…</div>
 
   return (
-    <div style={{ display: 'flex', gap: 'var(--sp-4)', alignItems: 'flex-start' }}>
-      <div className="card" style={{ padding: 'var(--sp-4)', flex: 2 }}>
+    <Stagger style={{ display: 'flex', gap: 'var(--sp-4)', alignItems: 'flex-start' }}>
+      <Reveal className="card" style={{ padding: 'var(--sp-4)', flex: 2 }}>
         <div style={{ display: 'flex', gap: 'var(--sp-3)', marginBottom: 14 }}>
           <label className="field" style={{ flex: 1 }}>Date
             <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -69,9 +71,9 @@ export function ReviewPage({ jumpToDate }: { jumpToDate?: string | null }) {
           <textarea className="input" rows={4} value={lessons} onChange={(e) => setLessons(e.target.value)} placeholder="What will you do differently next time?" />
         </label>
         <button className="btn btn-primary" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save Review'}</button>
-      </div>
+      </Reveal>
 
-      <div className="card" style={{ padding: 'var(--sp-4)', flex: 1, maxHeight: 560, overflowY: 'auto' }}>
+      <Reveal className="card" style={{ padding: 'var(--sp-4)', flex: 1, maxHeight: 560, overflowY: 'auto' }}>
         <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 10 }}>Past Reviews</div>
         {reviews.length === 0 && <div style={{ color: 'var(--text-dim)', fontSize: 12 }}>No reviews yet.</div>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -95,7 +97,7 @@ export function ReviewPage({ jumpToDate }: { jumpToDate?: string | null }) {
             </div>
           ))}
         </div>
-      </div>
-    </div>
+      </Reveal>
+    </Stagger>
   )
 }

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Select } from '../components/Select'
 import { Plus, X } from '../components/icons'
+import { Stagger, Reveal, CountUpValue } from '../anim'
 import { PROP_FIRM_TIERS, PROP_FIRM_VARIANTS, getPreset, money, type PropTier, type PropVariantId } from '../propFirmPresets'
 import { computeEligibility, type DailyLedgerRow } from '../payoutEligibility'
 import { loadPayoutCalcState, savePayoutCalcState, makeId, type PayoutCalcState } from '../payoutCalcStorage'
@@ -16,7 +17,9 @@ function Stat({ label, value, color }: { label: string; value: string; color?: s
   return (
     <div style={{ minWidth: 108 }}>
       <div style={{ color: 'var(--text-muted)', fontSize: 10.5, marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: 15, fontWeight: 600, color: color ?? 'var(--text)' }}>{value}</div>
+      <div style={{ fontSize: 15, fontWeight: 600, color: color ?? 'var(--text)' }}>
+        <CountUpValue value={value} />
+      </div>
     </div>
   )
 }
@@ -109,8 +112,8 @@ export function PayoutCalculatorPage({ accounts }: { accounts: Account[] }) {
   const sortedPayoutLog = [...state.payoutLog].sort((a, b) => a.date.localeCompare(b.date))
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
-      <div className="card" style={{ padding: 'var(--sp-4)' }}>
+    <Stagger style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+      <Reveal className="card" style={{ padding: 'var(--sp-4)' }}>
         <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 12 }}>
           Payout Calculator — checks a funded account's eligibility for its next payout against Apex's and Lucid's
           actual current rules (verified against each firm's own site, 2026-09-01): safety net, consistency cap,
@@ -171,9 +174,9 @@ export function PayoutCalculatorPage({ accounts }: { accounts: Account[] }) {
           </label>
         </div>
         {preset.caveat && <div style={{ fontSize: 10.5, color: 'var(--text-dim)', marginTop: 10 }}>{preset.caveat}</div>}
-      </div>
+      </Reveal>
 
-      <div className="card" style={{ padding: 'var(--sp-4)' }}>
+      <Reveal className="card" style={{ padding: 'var(--sp-4)' }}>
         <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>
           {preset.firm} — {preset.program} · {money(state.tier)} rules
         </div>
@@ -206,14 +209,20 @@ export function PayoutCalculatorPage({ accounts }: { accounts: Account[] }) {
             No per-request payout cap documented for this program — limited by balance above the safety net only.
           </div>
         )}
-      </div>
+      </Reveal>
 
-      <div className="card" style={{ padding: 'var(--sp-4)' }}>
+      <Reveal className="card" style={{ padding: 'var(--sp-4)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Eligibility for payout #{result.nextPayoutNumber}</div>
             <div style={{ fontSize: 20, fontWeight: 700, color: result.eligible ? 'var(--green)' : 'var(--red)' }}>
-              {result.eligible ? `Eligible — request up to ${money(Math.round(result.maxRequestableNow))}` : 'Not yet eligible'}
+              {result.eligible ? (
+                <>
+                  Eligible — request up to <CountUpValue value={money(Math.round(result.maxRequestableNow))} />
+                </>
+              ) : (
+                'Not yet eligible'
+              )}
             </div>
           </div>
           <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap' }}>
@@ -264,9 +273,9 @@ export function PayoutCalculatorPage({ accounts }: { accounts: Account[] }) {
           <Badge ok={result.minPayoutMet} text={`Min payout ${result.minPayoutMet ? 'met' : 'not met'}`} />
           {result.payoutsRemaining != null && <Badge ok={result.payoutsRemaining > 0} text={`Payouts left ${result.payoutsRemaining}`} />}
         </div>
-      </div>
+      </Reveal>
 
-      <div className="card" style={{ padding: 'var(--sp-4)' }}>
+      <Reveal className="card" style={{ padding: 'var(--sp-4)' }}>
         <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>Payout Log</div>
         <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           <label className="field" style={{ minWidth: 140 }}>
@@ -312,9 +321,9 @@ export function PayoutCalculatorPage({ accounts }: { accounts: Account[] }) {
             </tbody>
           </table>
         )}
-      </div>
+      </Reveal>
 
-      <div className="card" style={{ padding: 'var(--sp-4)' }}>
+      <Reveal className="card" style={{ padding: 'var(--sp-4)' }}>
         <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 10 }}>
           Daily P&amp;L Ledger {state.mode === 'account' ? '(from linked account trades)' : '(manual)'}
         </div>
@@ -375,7 +384,7 @@ export function PayoutCalculatorPage({ accounts }: { accounts: Account[] }) {
             </table>
           </div>
         )}
-      </div>
-    </div>
+      </Reveal>
+    </Stagger>
   )
 }
