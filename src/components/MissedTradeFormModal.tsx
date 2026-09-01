@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { Modal } from './Modal'
+import { ConfirmDialog } from './ConfirmDialog'
 import { Select } from './Select'
 import { TagInput } from './TagInput'
 import { ImageGallery } from './ImageGallery'
@@ -34,6 +35,7 @@ export function MissedTradeFormModal({
   const [confluenceIds, setConfluenceIds] = useState<number[]>(missedTrade?.confluence_ids ?? [])
   const [notes, setNotes] = useState(missedTrade?.notes ?? '')
   const [saving, setSaving] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   const save = async () => {
     setSaving(true)
@@ -64,7 +66,6 @@ export function MissedTradeFormModal({
 
   const del = async () => {
     if (!saved) return
-    if (!confirm('Delete this missed trade?')) return
     await window.api.missedTrades.delete(saved.id)
     onSaved()
     onClose()
@@ -127,7 +128,7 @@ export function MissedTradeFormModal({
         )}
 
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <div>{saved && <button className="btn btn-danger" onClick={del}>Delete</button>}</div>
+          <div>{saved && <button className="btn btn-danger" onClick={() => setConfirmingDelete(true)}>Delete</button>}</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button className="btn" onClick={onClose}>{saved ? 'Done' : 'Cancel'}</button>
             <button className="btn btn-primary" onClick={save} disabled={saving}>
@@ -136,6 +137,18 @@ export function MissedTradeFormModal({
           </div>
         </div>
       </div>
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="Delete missed trade?"
+          message="This missed trade and its notes will be permanently removed. This cannot be undone."
+          onConfirm={() => {
+            setConfirmingDelete(false)
+            del()
+          }}
+          onCancel={() => setConfirmingDelete(false)}
+        />
+      )}
     </Modal>
   )
 }

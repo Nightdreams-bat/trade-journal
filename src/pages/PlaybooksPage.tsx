@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { StrategyPerformance } from '../types'
 import { formatRatio } from '../format'
 import { StrategyDetailModal } from '../components/StrategyDetailModal'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { Stagger, Reveal } from '../anim'
 import { X } from '../components/icons'
 
@@ -12,6 +13,7 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
   const [newDesc, setNewDesc] = useState('')
   const [adding, setAdding] = useState(false)
   const [openStrategyId, setOpenStrategyId] = useState<number | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   const requestIdRef = useRef(0)
   const load = () => {
@@ -40,9 +42,7 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
     }
   }
 
-  const removeStrategy = async (e: MouseEvent, id: number) => {
-    e.stopPropagation()
-    if (!confirm('Delete this playbook/strategy? Trades tagged with it will be untagged, not deleted.')) return
+  const removeStrategy = async (id: number) => {
     await window.api.strategies.delete(id)
     onStrategiesChanged()
     load()
@@ -74,7 +74,16 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div style={{ fontWeight: 600, fontSize: 14 }}>{s.name}</div>
-                <button className="btn btn-danger" style={{ padding: '3px 6px', fontSize: 11 }} onClick={(e) => removeStrategy(e, s.id)}><X size={14} /></button>
+                <button
+                  className="btn btn-danger"
+                  style={{ padding: '3px 6px', fontSize: 11 }}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setDeletingId(s.id)
+                  }}
+                >
+                  <X size={14} />
+                </button>
               </div>
               <div style={{ color: 'var(--text-dim)', fontSize: 11, marginBottom: 8 }}>{s.tradeCount} trades</div>
               {s.description && (
@@ -128,6 +137,19 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
             load()
             onStrategiesChanged()
           }}
+        />
+      )}
+
+      {deletingId !== null && (
+        <ConfirmDialog
+          title="Delete playbook?"
+          message="Trades tagged with it will be untagged, not deleted. This cannot be undone."
+          onConfirm={() => {
+            const id = deletingId
+            setDeletingId(null)
+            removeStrategy(id)
+          }}
+          onCancel={() => setDeletingId(null)}
         />
       )}
     </div>

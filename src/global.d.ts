@@ -61,6 +61,17 @@ declare global {
             name: string | null
           }[]
         >
+        getAllForMissedTrades: () => Promise<
+          {
+            id: number
+            dataUrl: string
+            missedTradeId: number
+            date: string
+            pair: string | null
+            wouldBePnl: number | null
+            direction: string | null
+          }[]
+        >
       }
       reviews: {
         getAll: () => Promise<any[]>

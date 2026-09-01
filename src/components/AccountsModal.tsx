@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Modal } from './Modal'
+import { ConfirmDialog } from './ConfirmDialog'
 import { Select } from './Select'
 import { X, Pencil } from './icons'
 import { ACCOUNT_TYPES, ACCOUNT_TYPE_LABELS, type Account, type AccountType } from '../types'
@@ -77,6 +78,7 @@ export function AccountsModal({
   const [editBalance, setEditBalance] = useState('')
   const [editCurrency, setEditCurrency] = useState('USD')
   const [editType, setEditType] = useState<AccountType>('live')
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   const add = async () => {
     if (!name.trim()) return
@@ -119,7 +121,6 @@ export function AccountsModal({
   }
 
   const remove = async (id: number) => {
-    if (!confirm('Delete this account? Trades linked to it will be unassigned, not deleted.')) return
     await window.api.accounts.delete(id)
     onChanged()
   }
@@ -187,7 +188,7 @@ export function AccountsModal({
                 <button className="btn" style={{ padding: '3px 6px', fontSize: 11 }} onClick={() => startEdit(a)}>
                   <Pencil size={14} />
                 </button>
-                <button className="btn btn-danger" style={{ padding: '3px 6px', fontSize: 11 }} onClick={() => remove(a.id)}>
+                <button className="btn btn-danger" style={{ padding: '3px 6px', fontSize: 11 }} onClick={() => setDeletingId(a.id)}>
                   <X size={14} />
                 </button>
               </div>
@@ -212,6 +213,19 @@ export function AccountsModal({
         />
       </div>
       <button className="btn btn-primary" onClick={add} disabled={!name.trim()}>Add Account</button>
+
+      {deletingId !== null && (
+        <ConfirmDialog
+          title="Delete account?"
+          message="Trades linked to it will be unassigned, not deleted. This cannot be undone."
+          onConfirm={() => {
+            const id = deletingId
+            setDeletingId(null)
+            remove(id)
+          }}
+          onCancel={() => setDeletingId(null)}
+        />
+      )}
     </Modal>
   )
 }

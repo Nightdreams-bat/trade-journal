@@ -430,6 +430,42 @@ export function registerIpcHandlers() {
       })
   })
 
+  ipcMain.handle('images:getAllForMissedTrades', () => {
+    const rows = db
+      .prepare(
+        `SELECT ei.id as id, ei.path as path, m.id as missed_trade_id, m.date as date, m.pair as pair,
+                m.would_be_pnl as would_be_pnl, m.direction as direction
+         FROM entity_images ei
+         JOIN missed_trades m ON m.id = ei.entity_id
+         WHERE ei.entity_type = 'missed_trade'
+         ORDER BY m.date DESC, ei.id DESC`,
+      )
+      .all() as {
+      id: number
+      path: string
+      missed_trade_id: number
+      date: string
+      pair: string | null
+      would_be_pnl: number | null
+      direction: string | null
+    }[]
+    return rows
+      .filter((r) => fs.existsSync(r.path))
+      .map((r) => {
+        const buf = fs.readFileSync(r.path)
+        const ext = path.extname(r.path).slice(1) || 'png'
+        return {
+          id: r.id,
+          dataUrl: `data:image/${ext};base64,${buf.toString('base64')}`,
+          missedTradeId: r.missed_trade_id,
+          date: r.date,
+          pair: r.pair,
+          wouldBePnl: r.would_be_pnl,
+          direction: r.direction,
+        }
+      })
+  })
+
   ipcMain.handle('images:remove', (_e, imageId: number) => {
     const row = db.prepare('SELECT path, entity_type, entity_id FROM entity_images WHERE id = ?').get(imageId) as
       | { path: string; entity_type: EntityType; entity_id: number }

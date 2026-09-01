@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MissedTradeFormModal } from '../components/MissedTradeFormModal'
+import { MissedTradeImageGallery } from '../components/MissedTradeImageGallery'
 import { Select } from '../components/Select'
-import { Plus } from '../components/icons'
+import { Plus, Table2, LayoutGrid } from '../components/icons'
 import { Stagger, Reveal, CountUpValue } from '../anim'
 import type { Confluence, MissedTrade, Strategy } from '../types'
 
 type SortKey = 'date' | 'would_be_pnl' | 'pair'
+type ViewMode = 'table' | 'gallery'
 
 export function MissedTradesPage({
   strategies,
@@ -27,6 +29,7 @@ export function MissedTradesPage({
   const [sortKey, setSortKey] = useState<SortKey>('date')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [editing, setEditing] = useState<MissedTrade | null | undefined>(undefined)
+  const [view, setView] = useState<ViewMode>('table')
 
   const strategyName = (id: number | null) => strategies.find((s) => s.id === id)?.name ?? '—'
 
@@ -97,9 +100,32 @@ export function MissedTradesPage({
             </span>
           </div>
         </div>
-        <button className="btn btn-primary" onClick={() => setEditing(null)}><Plus size={16} style={{ marginRight: 4 }} />Log Missed Trade</button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 2, background: 'var(--bg-elevated)', borderRadius: 'var(--radius-control)', padding: 2 }}>
+            <button
+              className="btn"
+              title="Table view"
+              onClick={() => setView('table')}
+              style={{ padding: '6px 10px', background: view === 'table' ? 'var(--card)' : 'transparent', border: 'none' }}
+            >
+              <Table2 size={16} />
+            </button>
+            <button
+              className="btn"
+              title="Gallery view"
+              onClick={() => setView('gallery')}
+              style={{ padding: '6px 10px', background: view === 'gallery' ? 'var(--card)' : 'transparent', border: 'none' }}
+            >
+              <LayoutGrid size={16} />
+            </button>
+          </div>
+          <button className="btn btn-primary" onClick={() => setEditing(null)}><Plus size={16} style={{ marginRight: 4 }} />Log Missed Trade</button>
+        </div>
       </Reveal>
 
+      {view === 'gallery' ? (
+        <Reveal><MissedTradeImageGallery missedTrades={rows} strategies={strategies} onOpenTrade={setEditing} refreshKey={refreshKey} /></Reveal>
+      ) : (
       <Reveal className="card" style={{ overflowX: 'auto', maxHeight: 640, overflowY: 'auto' }}>
         {loading ? (
           <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading…</div>
@@ -136,6 +162,7 @@ export function MissedTradesPage({
           </table>
         )}
       </Reveal>
+      )}
 
       {editing !== undefined && (
         <MissedTradeFormModal

@@ -40,6 +40,7 @@ contextBridge.exposeInMainWorld('api', {
     get: (entityType: 'trade' | 'missed_trade', entityId: number) => invoke('images:get', entityType, entityId),
     remove: (imageId: number) => invoke('images:remove', imageId),
     getAllForTrades: () => invoke('images:getAllForTrades'),
+    getAllForMissedTrades: () => invoke('images:getAllForMissedTrades'),
   },
   reviews: {
     getAll: () => invoke('reviews:getAll'),

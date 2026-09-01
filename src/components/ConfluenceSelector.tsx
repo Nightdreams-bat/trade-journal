@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ConfirmDialog } from './ConfirmDialog'
 import { Check, Edit, X } from './icons'
 import type { Confluence } from '../types'
 
@@ -16,6 +17,7 @@ export function ConfluenceSelector({
   const [draft, setDraft] = useState('')
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editDraft, setEditDraft] = useState('')
+  const [deletingId, setDeletingId] = useState<number | null>(null)
 
   const toggle = (id: number) => {
     if (selectedIds.includes(id)) onChange(selectedIds.filter((x) => x !== id))
@@ -45,7 +47,6 @@ export function ConfluenceSelector({
   }
 
   const removeConfluence = async (id: number) => {
-    if (!confirm('Delete this confluence? It will be removed from every trade that uses it.')) return
     await window.api.confluences.delete(id)
     onChange(selectedIds.filter((x) => x !== id))
     onConfluencesChanged()
@@ -88,7 +89,7 @@ export function ConfluenceSelector({
             >
               <span onClick={() => toggle(c.id)}>{selectedIds.includes(c.id) ? <Check size={12} style={{ marginRight: 4 }} /> : ''}{c.name}</span>
               <span style={{ opacity: 0.6, cursor: 'pointer', fontSize: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => startEdit(c)} title="Rename"><Edit size={12} /></span>
-              <span style={{ opacity: 0.6, cursor: 'pointer', fontSize: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => removeConfluence(c.id)} title="Delete"><X size={12} /></span>
+              <span style={{ opacity: 0.6, cursor: 'pointer', fontSize: 10, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setDeletingId(c.id)} title="Delete"><X size={12} /></span>
             </span>
           )
         )}
@@ -111,6 +112,19 @@ export function ConfluenceSelector({
         />
         <button className="btn" onClick={addConfluence} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>+ Add</button>
       </div>
+
+      {deletingId !== null && (
+        <ConfirmDialog
+          title="Delete confluence?"
+          message="It will be removed from every trade that uses it. This cannot be undone."
+          onConfirm={() => {
+            const id = deletingId
+            setDeletingId(null)
+            removeConfluence(id)
+          }}
+          onCancel={() => setDeletingId(null)}
+        />
+      )}
     </div>
   )
 }
