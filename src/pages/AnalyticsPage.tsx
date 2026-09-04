@@ -3,6 +3,10 @@ import { format } from 'date-fns'
 import { KpiCard } from '../components/KpiCard'
 import { PerformanceRadar } from '../components/PerformanceRadar'
 import { EquityCurveChart } from '../components/EquityCurveChart'
+import { UnderwaterChart } from '../components/UnderwaterChart'
+import { DrawdownPanel } from '../components/DrawdownPanel'
+import { DrawdownEpisodesTable } from '../components/DrawdownEpisodesTable'
+import { MarketContextEdgePanel } from '../components/MarketContextEdgePanel'
 import { DailyBarChart } from '../components/DailyBarChart'
 import { DayOfWeekPanel } from '../components/DayOfWeekPanel'
 import { CalendarHeatmap } from '../components/CalendarHeatmap'
@@ -22,7 +26,9 @@ import type { Account, AnalyticsSummary, Confluence, Strategy, Trade } from '../
 const SECTIONS = [
   { key: 'overview', label: 'Overview' },
   { key: 'equity', label: 'Equity & Radar' },
+  { key: 'drawdown', label: 'Drawdown' },
   { key: 'daily', label: 'Daily / Weekly' },
+  { key: 'context', label: 'Market Context' },
   { key: 'monthly', label: 'Monthly P&L' },
   { key: 'calendar', label: 'Calendar' },
   { key: 'propfirm', label: 'Firm & Risk' },
@@ -51,6 +57,9 @@ export function AnalyticsPage({
   const [summary, setSummary] = useState<AnalyticsSummary | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [openTrade, setOpenTrade] = useState<Trade | null>(null)
+  // Market-context edge is computed in the renderer from the trades themselves, the same way
+  // TradingPlanPage does it — the summary payload carries aggregates, not per-trade confluences.
+  const [trades, setTrades] = useState<Trade[]>([])
 
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
@@ -67,6 +76,16 @@ export function AnalyticsPage({
       cancelled = true
     }
   }, [month, accountId, strategyId, refreshKey])
+
+  useEffect(() => {
+    let cancelled = false
+    window.api.trades.getAll({ accountId, strategyId }).then((t: Trade[]) => {
+      if (!cancelled) setTrades(t)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [accountId, strategyId, refreshKey])
 
   const selectedAccount = accountId != null ? accounts.find((a) => a.id === accountId) ?? null : null
 
@@ -150,19 +169,35 @@ export function AnalyticsPage({
       </Reveal>
 
       <Reveal index={1}>
+        <div ref={(el) => { sectionRefs.current.drawdown = el }} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
+          <div style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap' }}>
+            <UnderwaterChart detail={summary.drawdownDetail} />
+            <DrawdownPanel detail={summary.drawdownDetail} />
+          </div>
+          <DrawdownEpisodesTable detail={summary.drawdownDetail} />
+        </div>
+      </Reveal>
+
+      <Reveal index={2}>
         <div ref={(el) => { sectionRefs.current.daily = el }} style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap' }}>
           <DailyBarChart data={summary.dailyBars} />
           <DayOfWeekPanel data={summary.dayOfWeek} />
         </div>
       </Reveal>
 
-      <Reveal index={2}>
+      <Reveal index={3}>
+        <div ref={(el) => { sectionRefs.current.context = el }}>
+          <MarketContextEdgePanel trades={trades} confluences={confluences} />
+        </div>
+      </Reveal>
+
+      <Reveal index={4}>
         <div ref={(el) => { sectionRefs.current.monthly = el }}>
           <MonthlyPnlPanel accountId={accountId} strategyId={strategyId} refreshKey={refreshKey} />
         </div>
       </Reveal>
 
-      <Reveal index={3}>
+      <Reveal index={5}>
         <div ref={(el) => { sectionRefs.current.calendar = el }} style={{ display: 'flex', gap: 'var(--sp-4)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 420 }}>
             <CalendarHeatmap
@@ -178,7 +213,7 @@ export function AnalyticsPage({
         </div>
       </Reveal>
 
-      <Reveal index={4}>
+      <Reveal index={6}>
         <div ref={(el) => { sectionRefs.current.propfirm = el }} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-4)' }}>
           {selectedAccount?.account_type === 'prop' ? (
             <>
@@ -197,7 +232,7 @@ export function AnalyticsPage({
         </div>
       </Reveal>
 
-      <Reveal index={5}>
+      <Reveal index={7}>
         <div ref={(el) => { sectionRefs.current.insights = el }}>
           <InsightsPanel insights={summary.insights} />
         </div>

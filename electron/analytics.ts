@@ -1,4 +1,5 @@
 import { getDb } from './db'
+import { drawdownAnalysis, type DrawdownAnalysis, type DrawdownPoint } from './drawdown'
 
 export interface SummaryFilters {
   accountId?: number | null
@@ -188,10 +189,33 @@ function buildInsights(allTrades: TradeRow[], dayOfWeek: ReturnType<typeof dayOf
   return insights.slice(0, 5)
 }
 
+export type DrawdownDetail = DrawdownAnalysis & {
+  /**
+   * The same account with the strategy filter lifted, so the underwater chart can answer "did this
+   * strategy protect capital better than the rest of my book?". An offline stand-in for the market
+   * benchmark a hosted tool would use. Null unless a strategy filter is active.
+   */
+  benchmarkSeries: DrawdownPoint[] | null
+}
+
+function drawdownAnalysisFor(trades: TradeRow[], filters: SummaryFilters): DrawdownDetail {
+  const startingBalance = accountStartingBalance(filters.accountId)
+  const analysis = drawdownAnalysis(trades, startingBalance)
+
+  let benchmarkSeries: DrawdownPoint[] | null = null
+  if (filters.strategyId) {
+    const bookTrades = fetchTrades({ ...filters, strategyId: null }, false)
+    benchmarkSeries = drawdownAnalysis(bookTrades, startingBalance).series
+  }
+
+  return { ...analysis, benchmarkSeries }
+}
+
 export function getSummary(filters: SummaryFilters) {
   const monthTrades = fetchTrades(filters, true)
   const allTrades = fetchTrades(filters, false)
 
+  const drawdownDetail = drawdownAnalysisFor(allTrades, filters)
   const equityCurve = equityCurveOf(allTrades)
   const { series: drawdownSeries, maxDrawdown } = drawdownOf(equityCurve)
   const netProfitAllTime = allTrades.reduce((s, t) => s + t.pnl, 0)
@@ -243,6 +267,7 @@ export function getSummary(filters: SummaryFilters) {
     ],
     equityCurve,
     drawdown: { series: drawdownSeries, maxDrawdown: round2(maxDrawdown) },
+    drawdownDetail,
     dailyBars: dailyBarsOf(monthTrades),
     dayOfWeek,
     calendar: calendarOf(monthTrades),
@@ -636,6 +661,7 @@ export interface StrategyDetail {
   stats: ReturnType<typeof strategyStats>
   equityCurve: { date: string; cumulativePnl: number }[]
   drawdown: { series: { date: string; drawdown: number }[]; maxDrawdown: number }
+  drawdownDetail: DrawdownDetail
   dayOfWeek: ReturnType<typeof dayOfWeekBreakdownOf>
   trades: { id: number; date: string; name: string; pair: string | null; pnl: number; followed_plan: boolean }[]
 }
@@ -655,6 +681,7 @@ export function getStrategyDetail(strategyId: number): StrategyDetail | null {
 
   const equityCurve = equityCurveOf(trades)
   const { series: drawdownSeries, maxDrawdown } = drawdownOf(equityCurve)
+  const drawdownDetail = drawdownAnalysisFor(trades, { accountId: null, strategyId, month: '' })
 
   return {
     id: strategy.id,
@@ -663,6 +690,7 @@ export function getStrategyDetail(strategyId: number): StrategyDetail | null {
     stats: strategyStats(trades),
     equityCurve,
     drawdown: { series: drawdownSeries, maxDrawdown: round2(maxDrawdown) },
+    drawdownDetail,
     dayOfWeek: dayOfWeekBreakdownOf(trades),
     trades: trades
       .slice(-50)

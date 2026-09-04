@@ -85,6 +85,64 @@ export interface StrategyPerformance {
   avgLoss: number
 }
 
+export interface DrawdownPoint {
+  date: string
+  equity: number
+  drawdownAbs: number
+  drawdownPct: number
+}
+
+export interface DrawdownEpisode {
+  peakDate: string
+  troughDate: string
+  recoveryDate: string | null
+  depthAbs: number
+  depthPct: number
+  durationDays: number
+  recoveryDays: number | null
+  ongoing: boolean
+}
+
+/**
+ * High-water-mark drawdown, mirroring `electron/drawdown.ts`. Every drawdown figure is negative or
+ * zero; percentages are percentage points. When `percentAvailable` is false the account has no
+ * starting balance, so only the `*Abs` dollar figures are meaningful and every ratio is null.
+ */
+export interface DrawdownDetail {
+  percentAvailable: boolean
+  series: DrawdownPoint[]
+  maxDrawdownAbs: number
+  maxDrawdownPct: number
+  peakDate: string | null
+  troughDate: string | null
+  recoveryDate: string | null
+  episodes: DrawdownEpisode[]
+  avgDepthPct: number
+  avgDurationDays: number
+  avgRecoveryDays: number
+  depthPercentiles: { p50: number; p75: number; p90: number; p95: number }
+  episodesOver: { pct5: number; pct10: number; pct20: number }
+  currentDrawdown: {
+    inDrawdown: boolean
+    depthAbs: number
+    depthPct: number
+    daysInDrawdown: number
+    peakDate: string | null
+  }
+  timeUnderwaterPct: number
+  tradingDays: number
+  calendarDays: number
+  annualisedReturnPct: number | null
+  painIndex: number | null
+  ulcerIndex: number | null
+  calmar: number | null
+  sterling: number | null
+  burke: number | null
+  martin: number | null
+  /** The same account with the strategy filter lifted — null unless a strategy filter is active. */
+  benchmarkSeries: DrawdownPoint[] | null
+}
+
 export interface StrategyDetail {
   id: number
   name: string
@@ -102,6 +160,7 @@ export interface StrategyDetail {
   }
   equityCurve: { date: string; cumulativePnl: number }[]
   drawdown: { series: { date: string; drawdown: number }[]; maxDrawdown: number }
+  drawdownDetail: DrawdownDetail
   dayOfWeek: { day: string; trades: number; pnl: number; winRate: number; avgWin: number; avgLoss: number; best: number }[]
   trades: { id: number; date: string; name: string; pair: string | null; pnl: number; followed_plan: boolean }[]
 }
@@ -111,6 +170,7 @@ export interface AnalyticsSummary {
   radar: { metric: string; value: number }[]
   equityCurve: { date: string; cumulativePnl: number }[]
   drawdown: { series: { date: string; drawdown: number }[]; maxDrawdown: number }
+  drawdownDetail: DrawdownDetail
   dailyBars: { day: string; pnl: number }[]
   dayOfWeek: { day: string; trades: number; pnl: number; winRate: number; avgWin: number; avgLoss: number; best: number }[]
   calendar: Record<string, { pnl: number; count: number }>

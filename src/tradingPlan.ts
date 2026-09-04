@@ -1,5 +1,6 @@
 import type { Confluence, Trade } from './types'
 import type { PayoutRules } from './propFirmPresets'
+import { MARKET_CONTEXT_PACK, groupOf, type MarketContextGroup } from './marketContext'
 
 function rMultipleOf(t: Trade): number | null {
   return t.r_multiple != null ? t.r_multiple : t.risk_per_trade ? t.pnl / t.risk_per_trade : null
@@ -173,4 +174,38 @@ export function confluenceEdgeBreakdown(trades: Trade[], confluences: Confluence
     rows.push({ id, name, count: ts.length, winRate: Math.round((wins / ts.length) * 1000) / 10, expectancy: Math.round(expectancy * 100) / 100 })
   }
   return rows.sort((a, b) => b.expectancy - a.expectancy)
+}
+
+export interface MarketContextEdge {
+  group: MarketContextGroup
+  /** The pack tags actually used on these trades, ranked by expectancy. */
+  tags: (ConfluenceEdge & { credible: boolean })[]
+}
+
+/**
+ * Below this a win rate is an anecdote, not an edge — a tag with two trades on it can read 100%.
+ * Deliberately looser than `MIN_SAMPLE` (20): market-context tags fragment the sample across many
+ * buckets, so demanding 20 per condition would hide everything, but they still get flagged.
+ */
+export const MIN_CONTEXT_SAMPLE = 8
+
+/**
+ * `confluenceEdgeBreakdown` restricted to the market-context pack and bucketed by condition group,
+ * so the ranking compares like with like — gap shapes against gap shapes, not against a user's own
+ * setup criteria. Groups with no tagged trades are dropped.
+ */
+export function marketContextEdge(trades: Trade[], confluences: Confluence[]): MarketContextEdge[] {
+  const all = confluenceEdgeBreakdown(trades, confluences)
+  const byGroup = new Map<MarketContextGroup, (ConfluenceEdge & { credible: boolean })[]>()
+
+  for (const row of all) {
+    const group = groupOf(row.name)
+    if (!group) continue
+    if (!byGroup.has(group)) byGroup.set(group, [])
+    byGroup.get(group)!.push({ ...row, credible: row.count >= MIN_CONTEXT_SAMPLE })
+  }
+
+  return MARKET_CONTEXT_PACK.map((g) => ({ group: g.group, tags: byGroup.get(g.group) ?? [] })).filter(
+    (g) => g.tags.length > 0
+  )
 }

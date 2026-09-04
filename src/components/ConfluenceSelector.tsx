@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ConfirmDialog } from './ConfirmDialog'
 import { Check, Edit, X } from './icons'
+import { MARKET_CONTEXT_NAMES } from '../marketContext'
 import type { Confluence } from '../types'
 
 export function ConfluenceSelector({
@@ -18,6 +19,10 @@ export function ConfluenceSelector({
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editDraft, setEditDraft] = useState('')
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [seeding, setSeeding] = useState(false)
+
+  const existingNames = new Set(confluences.map((c) => c.name.trim().toLowerCase()))
+  const missingContext = MARKET_CONTEXT_NAMES.filter((n) => !existingNames.has(n.toLowerCase()))
 
   const toggle = (id: number) => {
     if (selectedIds.includes(id)) onChange(selectedIds.filter((x) => x !== id))
@@ -31,6 +36,21 @@ export function ConfluenceSelector({
     setDraft('')
     onConfluencesChanged()
     if (created?.id) onChange([...selectedIds, created.id])
+  }
+
+  /**
+   * Seeds the market-context pack. `confluences:create` is already idempotent (it returns the
+   * existing row on a name match), but it does a SELECT-then-INSERT, so these run one at a time
+   * rather than through Promise.all — concurrent calls could race the UNIQUE constraint on name.
+   */
+  const addMarketContextPack = async () => {
+    setSeeding(true)
+    try {
+      for (const name of missingContext) await window.api.confluences.create({ name })
+      onConfluencesChanged()
+    } finally {
+      setSeeding(false)
+    }
   }
 
   const startEdit = (c: Confluence) => {
@@ -112,6 +132,27 @@ export function ConfluenceSelector({
         />
         <button className="btn" onClick={addConfluence} style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 4 }}>+ Add</button>
       </div>
+
+      {missingContext.length > 0 && (
+        <button
+          type="button"
+          onClick={addMarketContextPack}
+          disabled={seeding}
+          title="Gap shape, relative volume, VWAP posture, event risk and regime — conditions to slice your edge by"
+          style={{
+            marginTop: 8,
+            padding: 0,
+            border: 'none',
+            background: 'none',
+            color: 'var(--accent)',
+            fontSize: 11.5,
+            cursor: seeding ? 'default' : 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          {seeding ? 'Adding…' : `+ Add market-context pack (${missingContext.length})`}
+        </button>
+      )}
 
       {deletingId !== null && (
         <ConfirmDialog
