@@ -6,6 +6,7 @@ export const TABS = [
   { key: 'playbooks', label: 'Playbooks' },
   { key: 'review', label: 'Review' },
   { key: 'trades', label: 'Trades' },
+  { key: 'backtest', label: 'Backtest' },
   { key: 'missed', label: 'Missed' },
   { key: 'whatsnew', label: "What's New" },
 ] as const

@@ -23,6 +23,7 @@ export {
   Table2,
   Crosshair,
   Sparkles,
+  FlaskConical,
   // widgets / actions
   TrendingUp,
   TrendingDown,

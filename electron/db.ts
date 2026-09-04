@@ -34,6 +34,15 @@ function migrateMissedTradesSchema(database: DatabaseSync) {
   }
 }
 
+// 'source' distinguishes trades Matei logged himself ('manual', the default) from
+// trades an AI trading agent produced in shadow/backtest mode ('agent') — same shape,
+// same table, just filtered into separate tabs (Trades vs Backtest) in the UI.
+function migrateTradesSourceColumn(database: DatabaseSync) {
+  if (!columnExists(database, 'trades', 'source')) {
+    database.exec("ALTER TABLE trades ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'")
+  }
+}
+
 function migrateAccountsSchema(database: DatabaseSync) {
   if (columnExists(database, 'accounts', 'account_type')) return
   database.exec("ALTER TABLE accounts ADD COLUMN account_type TEXT NOT NULL DEFAULT 'live'")
@@ -116,6 +125,7 @@ export function getDb(): DatabaseSync {
       positive_tags TEXT NOT NULL DEFAULT '[]',
       negative_tags TEXT NOT NULL DEFAULT '[]',
       notes TEXT,
+      source TEXT NOT NULL DEFAULT 'manual',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -172,6 +182,7 @@ export function getDb(): DatabaseSync {
 
   migrateTradesSchema(db)
   migrateMissedTradesSchema(db)
+  migrateTradesSourceColumn(db)
   migrateScreenshotsToImages(db)
   migrateAccountsSchema(db)
 

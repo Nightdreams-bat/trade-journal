@@ -8,6 +8,7 @@ import {
   CandlestickChart,
   CalendarDays,
   Crosshair,
+  FlaskConical,
   House,
   LayoutGrid,
   NotebookPen,
@@ -43,6 +44,7 @@ const TAB_ICONS: Record<TabKey, ComponentType<{ size?: number; strokeWidth?: num
   playbooks: BookOpen,
   review: NotebookPen,
   trades: Table2,
+  backtest: FlaskConical,
   missed: Crosshair,
   whatsnew: Sparkles,
 }

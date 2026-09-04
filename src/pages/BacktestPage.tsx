@@ -1,16 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { FilterBar } from '../components/FilterBar'
 import { TradeFormModal } from '../components/TradeFormModal'
-import { CsvImportModal } from '../components/CsvImportModal'
 import { TradeImageGallery } from '../components/TradeImageGallery'
-import { Upload, Download, Plus, Table2, LayoutGrid } from '../components/icons'
+import { Plus, Table2, LayoutGrid } from '../components/icons'
 import { Stagger, Reveal } from '../anim'
 import type { Account, Confluence, Strategy, Trade } from '../types'
 
+// Same shape as TradesDbPage, filtered to source='agent' — trades an AI trading agent
+// produced in shadow/backtest mode, kept visually and structurally separate from
+// Matei's own real trades (the Trades tab) while sharing the same trades table, the
+// same per-strategy analytics, and the same trade form/image gallery.
 type SortKey = 'date' | 'pnl' | 'pair'
 type ViewMode = 'table' | 'gallery'
 
-export function TradesDbPage({
+export function BacktestPage({
   accounts,
   strategies,
   confluences,
@@ -33,7 +36,6 @@ export function TradesDbPage({
   const [sortKey, setSortKey] = useState<SortKey>('date')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [editingTrade, setEditingTrade] = useState<Trade | null | undefined>(undefined)
-  const [showImport, setShowImport] = useState(false)
   const [view, setView] = useState<ViewMode>('table')
 
   const strategyName = (id: number | null) => strategies.find((s) => s.id === id)?.name ?? '—'
@@ -43,7 +45,7 @@ export function TradesDbPage({
   const load = useCallback(() => {
     const requestId = ++requestIdRef.current
     setLoading(true)
-    window.api.trades.getAll({ accountId, strategyId, search: search || undefined, source: 'manual' }).then((t) => {
+    window.api.trades.getAll({ accountId, strategyId, search: search || undefined, source: 'agent' }).then((t) => {
       if (requestId !== requestIdRef.current) return // a newer filter/search request has since superseded this one
       setTrades(t)
       setLoading(false)
@@ -75,18 +77,13 @@ export function TradesDbPage({
     }
   }
 
-  const exportCsv = async () => {
-    const path = await window.api.csv.export()
-    if (path) alert(`Exported to ${path}`)
-  }
-
   return (
     <Stagger style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       <Reveal style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <input
             className="input"
-            placeholder="Search trades…"
+            placeholder="Search backtest trades…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && load()}
@@ -120,9 +117,7 @@ export function TradesDbPage({
               <LayoutGrid size={16} />
             </button>
           </div>
-          <button className="btn" onClick={() => setShowImport(true)}><Upload size={16} style={{ marginRight: 4 }} />Import CSV</button>
-          <button className="btn" onClick={exportCsv}><Download size={16} style={{ marginRight: 4 }} />Export CSV</button>
-          <button className="btn btn-primary" onClick={() => setEditingTrade(null)}><Plus size={16} style={{ marginRight: 4 }} />New Trade</button>
+          <button className="btn btn-primary" onClick={() => setEditingTrade(null)}><Plus size={16} style={{ marginRight: 4 }} />New Backtest Trade</button>
         </div>
       </Reveal>
 
@@ -131,9 +126,13 @@ export function TradesDbPage({
       ) : (
       <Reveal className="card" style={{ overflowX: 'auto', maxHeight: 640, overflowY: 'auto' }}>
         {loading ? (
-          <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading trades…</div>
+          <div style={{ padding: 20, color: 'var(--text-muted)' }}>Loading backtest trades…</div>
         ) : sorted.length === 0 ? (
-          <div style={{ padding: 20, color: 'var(--text-muted)' }}>No trades yet. Click "+ New Trade" to log your first one.</div>
+          <div style={{ padding: 20, color: 'var(--text-muted)' }}>
+            No backtest trades yet. This tab fills up once an AI trading agent runs in
+            shadow mode and logs its calls here — separate from your real trades in the
+            Trades tab, but comparable strategy-by-strategy.
+          </div>
         ) : (
           <table className="data-table">
             <thead>
@@ -147,7 +146,7 @@ export function TradesDbPage({
                 <th>Followed</th>
                 <th>BE</th>
                 <th>Entry Win</th>
-                <th>Model</th>
+                <th>Agency / Strategy</th>
                 <th>Positive Tags</th>
                 <th>Negative Tags</th>
                 <th>Account</th>
@@ -184,23 +183,13 @@ export function TradesDbPage({
           strategies={strategies}
           confluences={confluences}
           onConfluencesChanged={onConfluencesChanged}
+          defaultSource="agent"
           onClose={() => setEditingTrade(undefined)}
           onSaved={() => {
             load()
             bumpRefresh()
           }}
           onDeleted={() => {
-            load()
-            bumpRefresh()
-          }}
-        />
-      )}
-
-      {showImport && (
-        <CsvImportModal
-          accounts={accounts}
-          onClose={() => setShowImport(false)}
-          onImported={() => {
             load()
             bumpRefresh()
           }}

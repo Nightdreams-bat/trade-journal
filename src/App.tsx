@@ -8,6 +8,7 @@ import { PayoutCalculatorPage } from './pages/PayoutCalculatorPage'
 import { PlaybooksPage } from './pages/PlaybooksPage'
 import { ReviewPage } from './pages/ReviewPage'
 import { TradesDbPage } from './pages/TradesDbPage'
+import { BacktestPage } from './pages/BacktestPage'
 import { MissedTradesPage } from './pages/MissedTradesPage'
 import { WhatsNewPage } from './pages/WhatsNewPage'
 import { TradeFormModal } from './components/TradeFormModal'
@@ -198,6 +199,16 @@ function App() {
                   {tab === 'review' && <ReviewPage jumpToDate={reviewJumpDate} />}
                   {tab === 'trades' && (
                     <TradesDbPage
+                      accounts={accounts}
+                      strategies={strategies}
+                      confluences={confluences}
+                      onConfluencesChanged={loadLookups}
+                      refreshKey={refreshKey}
+                      bumpRefresh={bumpRefresh}
+                    />
+                  )}
+                  {tab === 'backtest' && (
+                    <BacktestPage
                       accounts={accounts}
                       strategies={strategies}
                       confluences={confluences}

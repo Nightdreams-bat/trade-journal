@@ -18,6 +18,7 @@ export function TradeFormModal({
   onClose,
   onSaved,
   onDeleted,
+  defaultSource = 'manual',
 }: {
   trade?: Trade
   accounts: Account[]
@@ -27,6 +28,10 @@ export function TradeFormModal({
   onClose: () => void
   onSaved: () => void
   onDeleted?: () => void
+  /** Source tag for a brand-new trade created from this modal ('manual' from the Trades
+   *  tab, 'agent' from the Backtest tab). Ignored when editing an existing trade — its
+   *  own source is preserved. */
+  defaultSource?: 'manual' | 'agent'
 }) {
   const [savedTrade, setSavedTrade] = useState<Trade | undefined>(trade)
   const [name, setName] = useState(trade?.name ?? '')
@@ -69,6 +74,7 @@ export function TradeFormModal({
       negative_tags: negativeTags,
       confluence_ids: confluenceIds,
       notes,
+      source: trade?.source ?? defaultSource,
     }
     try {
       if (savedTrade) {
@@ -94,7 +100,11 @@ export function TradeFormModal({
   const grid: CSSProperties = { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-3)' }
 
   return (
-    <Modal title={savedTrade ? 'Edit Trade' : 'New Trade'} onClose={onClose} wide>
+    <Modal
+      title={savedTrade ? 'Edit Trade' : defaultSource === 'agent' ? 'New Backtest Trade' : 'New Trade'}
+      onClose={onClose}
+      wide
+    >
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
         <div style={grid}>
           <label className="field">Name

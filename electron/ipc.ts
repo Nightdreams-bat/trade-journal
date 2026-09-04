@@ -22,6 +22,7 @@ interface TradeFilters {
   accountId?: number | null
   strategyId?: number | null
   search?: string
+  source?: 'manual' | 'agent'
 }
 
 interface MissedTradeFilters {
@@ -203,6 +204,10 @@ export function registerIpcHandlers() {
       const like = `%${filters.search}%`
       params.push(like, like, like)
     }
+    if (filters.source) {
+      clauses.push('source = ?')
+      params.push(filters.source)
+    }
     const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
     const rows = db.prepare(`SELECT * FROM trades ${where} ORDER BY date DESC, id DESC`).all(...params) as Record<
       string,
@@ -216,9 +221,9 @@ export function registerIpcHandlers() {
     const info = db
       .prepare(
         `INSERT INTO trades (name, date, pair, session, direction, risk_per_trade, pnl, r_multiple,
-          followed_plan, break_even, entry_win, strategy_id, account_id, positive_tags, negative_tags, notes)
+          followed_plan, break_even, entry_win, strategy_id, account_id, positive_tags, negative_tags, notes, source)
          VALUES (@name, @date, @pair, @session, @direction, @risk_per_trade, @pnl, @r_multiple,
-          @followed_plan, @break_even, @entry_win, @strategy_id, @account_id, @positive_tags, @negative_tags, @notes)`
+          @followed_plan, @break_even, @entry_win, @strategy_id, @account_id, @positive_tags, @negative_tags, @notes, @source)`
       )
       .run({
         name: (payload.name as string) ?? '',
@@ -237,6 +242,7 @@ export function registerIpcHandlers() {
         positive_tags: tagsToJson(payload.positive_tags),
         negative_tags: tagsToJson(payload.negative_tags),
         notes: (payload.notes as string) ?? null,
+        source: (payload.source as string) === 'agent' ? 'agent' : 'manual',
       })
     const id = info.lastInsertRowid as number
     setEntityConfluences(db, 'trade', id, payload.confluence_ids)
@@ -250,7 +256,8 @@ export function registerIpcHandlers() {
       `UPDATE trades SET name=@name, date=@date, pair=@pair, session=@session, direction=@direction,
         risk_per_trade=@risk_per_trade, pnl=@pnl, r_multiple=@r_multiple,
         followed_plan=@followed_plan, break_even=@break_even, entry_win=@entry_win, strategy_id=@strategy_id,
-        account_id=@account_id, positive_tags=@positive_tags, negative_tags=@negative_tags, notes=@notes
+        account_id=@account_id, positive_tags=@positive_tags, negative_tags=@negative_tags, notes=@notes,
+        source=@source
        WHERE id=@id`
     ).run({
       id,
@@ -270,6 +277,7 @@ export function registerIpcHandlers() {
       positive_tags: tagsToJson(payload.positive_tags),
       negative_tags: tagsToJson(payload.negative_tags),
       notes: (payload.notes as string) ?? null,
+      source: (payload.source as string) === 'agent' ? 'agent' : 'manual',
     })
     setEntityConfluences(db, 'trade', id, payload.confluence_ids)
     void obsidian.syncTrade(id)

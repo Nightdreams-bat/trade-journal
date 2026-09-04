@@ -194,3 +194,162 @@ criterion box.
 4. Strategy rule-set + adherence tracking.
 5. Strategy comparison view.
 6. MFE/MAE capture + scatter.
+
+---
+
+## PART 3 — AI trading agents (NQ/MNQ analysis + eventual execution)
+
+Research notes from scanning GitHub for multi-agent LLM trading frameworks (Sep 2026).
+Goal per Matei: agents that read NQ/MNQ futures charts, get taught his own strategy and
+thinking, and — once proven — help him pass a prop-firm evaluation. Not yet built; this
+is the plan, not shipped code.
+
+### Candidates evaluated
+
+| Repo | Stars | Architecture | Verdict |
+|---|---|---|---|
+| **TauricResearch/TradingAgents** (MIT) | ~79k / 15.4k forks | 5-stage pipeline: 4 parallel analysts (fundamentals, sentiment, news, technical) → bull/bear researcher debate → trader → risk-management committee → fund-manager approval. Config-driven LLM choice per agent, adjustable debate rounds, persistent memory across runs, CLI + Python API (`TradingAgentsGraph`). | **Chosen as the base.** Far more mature/extensible than anything else in the space; the persistent-memory + per-agent-prompt design is exactly the mechanism for "teach it my approach" — it's prompt/config driven, not a black-box trained model. |
+| Y-Research-SBU/QuantAgent (aka QuantHarness — same repo/team, near-identical stars) | ~2.8k / ~610 forks | 4 agents: Indicator, Pattern, Trend, Risk → Decision agent. Operates purely on OHLC price data, no news/sentiment. Zero-shot-tested specifically against Nasdaq futures + BTC on 4-hour bars, beat rule-based and neural baselines. | Not adopted wholesale (too small/unsupported vs TradingAgents), but its **analyst decomposition is the better fit for pure price-action futures trading** than TradingAgents' stock-flavored default analysts (fundamentals/Reddit sentiment don't apply to NQ). |
+
+### The gap: TradingAgents ships stock-shaped, not futures-shaped
+
+Default analyst team assumes equities (company fundamentals, Reddit/news sentiment).
+It also has **no built-in broker execution** — it outputs a reasoned decision, it doesn't
+place an order. Two things to build before this is useful for NQ/MNQ:
+
+1. **Swap the analyst team** — replace fundamentals/sentiment analysts with
+   QuantAgent-style price-action analysts (indicator, chart-pattern, trend/channel),
+   keep or drop the news analyst depending on whether Matei wants macro-news awareness.
+2. **Bridge decision → execution** — TradingAgents' final Fund Manager output needs to
+   go somewhere. Two real options for the futures/prop side: **Tradovate API** (most
+   prop firms run on Tradovate or Rithmic) or NinjaTrader's Partner API. Start with
+   *no live execution* — log the agent's call as a shadow/paper entry.
+
+### Where it plugs into this app
+
+- Agent's proposed trade (symbol, direction, entry, stop, target, reasoning) gets
+  written into the existing `trades` table (`electron/db.ts`) as a new trade **tagged
+  as agent-originated** (needs a `source: 'manual' | 'agent'` column) rather than a
+  separate system — so it shows up in the same journal, same per-strategy stats, same
+  prop-firm simulator as Matei's own trades, and the two can be compared head-to-head.
+- Agent's memory gets seeded from Matei's own logged trades + strategy rule sets
+  (PART 2's `rules: string[]` work) so it's learning from his actual journal, not a
+  generic prompt.
+- Risk-manager agent's limits get wired to the same per-firm presets from PART 1
+  (Apex/Topstep/etc. daily-loss %, trailing drawdown, consistency rule) so it can never
+  propose a trade that would blow the eval, before execution is ever turned on.
+
+### Phased build (matches [[Prop Trading]]'s journal-phase → prop-firm-phase timeline)
+
+1. **Stand up TradingAgents locally**, point it at NQ/MNQ price data, strip/replace the
+   stock-flavored analysts for price-action ones. No journal or execution wiring yet —
+   just confirm it produces sane, explainable calls on futures data.
+2. **Wire in Matei's playbook** — turn his three existing journaled strategies into the
+   agent prompts + memory seed. Add the `source` column and start writing every agent
+   call into the journal as a shadow trade, right next to his real trades.
+3. **Validate in shadow mode** for enough logged trades to trust the edge stats (same
+   credibility-blended EV gate as PART 1 gap #5) — compare agent shadow performance
+   against Matei's own, strategy by strategy.
+4. **Bridge to Tradovate** for real order placement, gated hard behind the risk-manager
+   agent + prop-firm preset limits, starting on a prop-firm evaluation account, not live
+   capital.
+
+### Sources
+- github.com/TauricResearch/TradingAgents
+- github.com/Y-Research-SBU/QuantAgent (= QuantHarness)
+- arxiv.org/abs/2412.20138 (TradingAgents paper), arxiv.org/abs/2509.09995 (QuantAgent paper)
+
+### Phase 1 progress (2026-09-02)
+
+Setup work done, blocked only on an Anthropic API key (Matei's collaborator holds it,
+not available this session):
+
+- Cloned `TauricResearch/TradingAgents` into `C:\Users\Lenovo\my-agent\TradingAgents`,
+  isolated venv at `TradingAgents\.venv`.
+- Confirmed Yahoo Finance (the framework's default, free, keyless data vendor) serves
+  live NQ=F and MNQ=F futures data fine via `yfinance` — no paid data vendor needed to
+  get this running.
+- Turns out no code surgery is needed to drop the stock-flavored analysts — the
+  framework already takes a `selected_analysts` list. `run_nq_agent.py` (new, repo
+  root) configures `selected_analysts=("market", "news")`, dropping
+  fundamentals/social/sentiment (equity-only) and keeping market (pure price/indicator
+  analyst — the QuantAgent-equivalent piece) plus news (macro like Fed/CPI, which
+  genuinely moves NQ). LLM split: Haiku for the frequent calls, Sonnet only for the
+  trader/risk/research reasoning, to keep run cost down.
+- Wrote `TradingAgents/pine/nq_agent_view.pine` — a TradingView Pine Script v5
+  indicator plotting the same signal set the market analyst can choose from (50/200
+  SMA, 10 EMA, MACD, RSI w/ 70·30 zones, Bollinger Bands, ATR) so Matei sees the same
+  read on his actual TradingView chart that the agent is reasoning over. Paste into
+  TradingView's Pine Editor to use.
+- Full dependency install (`pip install -e .`) running.
+
+**Still open, needs the key:** first real `run_nq_agent.py` call to confirm the agent
+produces sane output on NQ. **Still open, needs a decision before touching it:** wiring
+agent decisions into this app's `trades` table (`electron/db.ts`) — that's a schema
+change to the live journal database, flagged for an explicit go-ahead before editing,
+not done yet.
+
+### Three agencies, not one (2026-09-02)
+
+Matei wants three separate, isolated agent instances — one per existing strategy —
+each with its own memory so they never blend into each other:
+
+- `TradingAgents/profiles/orb/strategy.md` — 15-min ORB, **London + NY sessions
+  merged into one agency** (was two separate accounts in the journal). Seeded from
+  existing vault research (StudyVault "Max Way ORB" strategy + its trading plan +
+  Pine Script) rather than re-taught from scratch — has open questions for Matei to
+  confirm (exact stop/target numbers) before first run.
+- `TradingAgents/profiles/high-rr/strategy.md` — "High R:R - Supply/Demand Zone
+  Reversal (NQ)." No prior vault research existed for this one; extracted by reading
+  Matei's own trade screenshots in `TradeJournal/Attachments` (trades t68, t12) and
+  confirmed with him directly: mark a supply/demand zone as an area (not a line) on
+  the 5-min chart, enter on rejection when price fails to continue through it, tight
+  stop beyond the zone, target at the opposite zone — this is what produces the large
+  R multiples (4R and 10R confirmed in his own logged trades).
+- `TradingAgents/profiles/jj-simon-fair-pricing/strategy.md` — fully pre-researched in
+  the vault already (strategy writeup, prop-firm sizing plan, and a working Pine
+  Script v6 indicator), most ready-to-go of the three.
+- `TradingAgents/profiles/_shared/base-doctrine.md` — house style all three agencies
+  share on top of their own rules: top-down analysis (daily → 1-4h → entry timeframe
+  bias) and break-of-structure reading, before applying the strategy-specific entry.
+  Overlaps naturally with ORB's structural-confirmation step and JJ Simon's "A+"
+  trigger, which are themselves BOS applications.
+
+Not wired into the actual agent prompts/config in code yet — these are the seed docs;
+turning them into the `TradingAgentsGraph` config per agency is the next build step
+once the API key is available.
+
+### Backtest tab — shipped (2026-09-02)
+
+Built the actual app-side landing spot for agent trades, ahead of the agents
+themselves being wired up (so it's ready the moment they are):
+
+- `trades` table gained a `source TEXT NOT NULL DEFAULT 'manual'` column
+  (`electron/db.ts`, migration + fresh-install schema) — `'manual'` = Matei's own
+  logged trades, `'agent'` = an AI trading agent's shadow/backtest call. Same table,
+  same shape (pair, direction, pnl, r_multiple, strategy, screenshots, confluences),
+  just filtered apart — reused the existing trade record instead of standing up a
+  parallel table, so strategy analytics and comparisons work across both for free.
+- `electron/ipc.ts`: `trades:getAll` takes an optional `source` filter;
+  `trades:create`/`trades:update` persist it (defaults to `'manual'` if omitted).
+- `TradeFormModal` takes a new `defaultSource` prop so a trade created from the
+  Backtest tab is tagged `'agent'` without touching the Trades tab's behavior; editing
+  an existing trade always preserves its own `source`.
+- New `src/pages/BacktestPage.tsx` — same table/gallery UI as `TradesDbPage.tsx`,
+  filtered to `source: 'agent'`. New "Backtest" nav tab (`FlaskConical` icon) between
+  Trades and Missed.
+- Three new accounts created directly in the live DB (app was already open — added
+  via a short-lived `node:sqlite` connection with `busy_timeout` set, not by touching
+  the app's own runtime state, to avoid a lock conflict): **15-min ORB (Backtest)**,
+  **High RR (Backtest)**, **JJ Simon (Backtest)**, `account_type: 'backtest'` (a value
+  the app's `ACCOUNT_TYPES` already supported). Kept fully separate from the real
+  accounts (15Min ORB NY, 15Min ORB London, High RR) so agent shadow trades never mix
+  into real account balances/stats.
+- `npx tsc -b` passes clean after all of the above.
+
+Not done yet: nothing writes to this table automatically — that happens once an
+agency's `TradingAgentsGraph` run is wired to call `trades:create` with the matching
+backtest account + strategy + `source: 'agent'`, which depends on the API key (see
+above). Obsidian vault sync (`electron/obsidian.ts`) wasn't extended to mirror
+backtest trades into the vault — worth doing once the volume of agent trades is high
+enough to want them reviewable there too, not before.

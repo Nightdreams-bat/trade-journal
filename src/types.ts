@@ -47,6 +47,7 @@ export interface Trade {
   notes: string | null
   created_at: string
   confluence_ids: number[]
+  source: 'manual' | 'agent'
 }
 
 export interface MissedTrade {
