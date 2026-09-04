@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Modal } from './Modal'
 import { EquityCurveChart } from './EquityCurveChart'
+import { UnderwaterChart } from './UnderwaterChart'
+import { DrawdownPanel } from './DrawdownPanel'
 import { DayOfWeekPanel } from './DayOfWeekPanel'
 import { formatRatio } from '../format'
 import { Edit } from './icons'
@@ -110,6 +112,11 @@ export function StrategyDetailModal({
               Not enough trades yet for an equity curve
             </div>
           )}
+        </div>
+
+        <div style={{ display: 'flex', gap: 'var(--sp-4)', flexWrap: 'wrap' }}>
+          <UnderwaterChart detail={detail.drawdownDetail} />
+          <DrawdownPanel detail={detail.drawdownDetail} />
         </div>
 
         <DayOfWeekPanel data={detail.dayOfWeek} />

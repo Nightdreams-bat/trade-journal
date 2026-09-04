@@ -34,6 +34,89 @@ export type DemoId = 'whats-new-tab' | 'equity-curve' | 'tag-pills' | 'calendar-
 
 export const RELEASES: Release[] = [
   {
+    version: '1.2.0',
+    date: '2026-09-04',
+    title: 'Drawdown analysis and edge by market context',
+    summary:
+      'Analytics gains a full drawdown section — an underwater curve, every drawdown episode you have been through, and the risk-adjusted ratios built on them — plus a starter set of market-condition tags to slice your edge by.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'Underwater curve and drawdown panel on Analytics',
+        detail:
+          'Drawdown is now measured against your account\'s high-water mark rather than as a raw dollar figure from zero, so it answers the question a funded account actually turns on. The panel shows whether you are in a drawdown right now and for how long, your worst drawdown in both percent and dollars with its peak and trough dates, average depth, average time to the trough, average time to recover, and what share of days you have spent underwater.',
+      },
+      {
+        kind: 'new',
+        text: 'Drawdown episode history',
+        detail:
+          'Every drawdown the account has been through, worst first — peak, trough, depth, days to the trough, and days to recover, with the ones you have not recovered from marked as ongoing.',
+      },
+      {
+        kind: 'new',
+        text: 'Calmar, Ulcer, Martin, Pain, Burke and Sterling',
+        detail:
+          'The risk-adjusted ratios that are built on drawdown rather than on volatility. They stay blank until there are at least 60 days and 20 trading days of history, because annualising a return over a shorter span produces confident-looking noise. Sterling additionally needs two years.',
+      },
+      {
+        kind: 'new',
+        text: 'Strategy drawdowns compared against your whole book',
+        detail:
+          'With a strategy filter active, the underwater curve overlays the same account with the filter lifted, so you can see whether a strategy protected capital better or worse than the rest of your trading.',
+      },
+      {
+        kind: 'new',
+        text: 'Market-context tags and an edge-by-context panel',
+        detail:
+          'A starter pack of confluences describing conditions the market hands you — gap shape, relative volume, VWAP posture, event risk and regime — addable in one click from the Confluences field on any trade. Analytics then ranks them by what each condition was worth per trade, grouped so like is compared with like. Tags with fewer than 8 trades behind them are dimmed rather than presented as an edge.',
+      },
+      {
+        kind: 'improved',
+        text: 'Home now shows drawdown state and max drawdown as a percentage',
+        detail:
+          'The dashboard says at a glance whether you are at new highs or how deep and how long you have been underwater, and the Max drawdown tile reads as a percentage of your high-water mark when the account has a starting balance set.',
+      },
+      {
+        kind: 'improved',
+        text: 'Playbook detail now includes drawdown',
+        detail: 'Opening a playbook shows that strategy\'s own underwater curve and drawdown stats alongside its equity curve.',
+      },
+    ],
+  },
+  {
+    version: '1.1.1',
+    date: '2026-09-02',
+    title: 'Backtest tab',
+    summary: 'Backtested and agent-generated trades get their own tab, kept separate from the ones you actually took.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'Backtest tab for reviewing strategies against past setups',
+        detail:
+          'Trades now carry a source, and anything logged as a backtest lands on its own tab with the same table, gallery, filters and forms as Trades — so a strategy can be tested against history without mixing those results into your live record.',
+      },
+    ],
+  },
+  {
+    version: '1.1.0',
+    date: '2026-09-02',
+    title: 'Missed-trade gallery and safer deletes',
+    summary: 'Missed trades get a screenshot gallery, and deleting anything now asks first in a proper dialog.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'Gallery view for missed trades',
+        detail:
+          'Browse missed-trade screenshots as a grid instead of a table, filter by search and by whether the trade would have won or lost, sort by date or account, and click any image to zoom it or open the record behind it.',
+      },
+      {
+        kind: 'improved',
+        text: 'Delete confirmations are now styled dialogs',
+        detail: 'Deleting a trade, strategy, account or confluence asks in an in-app dialog that says what will be affected, replacing the browser confirm box.',
+      },
+    ],
+  },
+  {
     version: '0.10.0',
     date: '2026-09-01',
     title: 'Smarter prop-firm simulations, strategy edge stats, and bug fixes',

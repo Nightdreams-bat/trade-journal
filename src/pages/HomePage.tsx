@@ -212,6 +212,7 @@ export function HomePage({
   const returnsPct = statsMode === 'month' ? summary!.kpis.returnsPct : summary!.overall.returnsPct
   const profitFactor = statsMode === 'month' ? summary!.kpis.profitFactor : summary!.overall.profitFactor
   const returnsUp = returnsPct >= 0
+  const dd = summary!.drawdownDetail
   const stats: { label: string; value: string; color?: string; arrow?: string }[] = [
     { label: 'Win rate', value: `${winRate}%` },
     {
@@ -221,8 +222,17 @@ export function HomePage({
       arrow: returnsUp ? '▲' : '▼',
     },
     { label: 'Profit factor', value: formatRatio(profitFactor) },
-    { label: 'Max drawdown', value: money(summary!.drawdown.maxDrawdown) },
+    {
+      label: 'Max drawdown',
+      // Percent of the high-water mark is the figure that decides whether an account survives;
+      // fall back to dollars when the account has no starting balance to measure against.
+      value: dd.percentAvailable
+        ? `${Math.abs(dd.maxDrawdownPct).toFixed(1)}%`
+        : money(summary!.drawdown.maxDrawdown),
+    },
   ]
+
+  const current = dd.currentDrawdown
 
   return (
     <div className="hero-content">
@@ -300,7 +310,20 @@ export function HomePage({
           </div>
 
           <div className="analytics-footer">
-            <span style={{ fontSize: 11.5, color: 'var(--text-dim)' }}>
+            <span style={{ fontSize: 11.5, color: 'var(--text-dim)', display: 'inline-flex', alignItems: 'center', gap: 7 }}>
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: 999,
+                  flexShrink: 0,
+                  background: current.inDrawdown ? 'var(--red)' : 'var(--green)',
+                }}
+              />
+              {current.inDrawdown
+                ? `In drawdown — ${dd.percentAvailable ? `${current.depthPct.toFixed(1)}%` : money(current.depthAbs)} for ${current.daysInDrawdown} day${current.daysInDrawdown === 1 ? '' : 's'}`
+                : 'At new highs'}
+              <span style={{ opacity: 0.6 }}>·</span>
               {summary!.overall.totalTrades} trades all-time
             </span>
             <button

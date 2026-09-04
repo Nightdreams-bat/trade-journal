@@ -58,6 +58,88 @@
         })
         const maxDrawdown = Math.min(...ddSeries.map((d) => d.drawdown))
 
+        // Mirrors electron/drawdown.ts closely enough to exercise the drawdown UI in the browser.
+        const START_BALANCE = 100000
+        const ddDetail = (() => {
+          const series = []
+          const episodes = []
+          let hwm = START_BALANCE
+          let hwmDate = null
+          let open = null
+          const dayCount = (a, b) => Math.round((new Date(b + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000)
+          for (const p of equityCurve) {
+            const equity = START_BALANCE + p.cumulativePnl
+            if (equity >= hwm) {
+              if (open) {
+                episodes.push({
+                  peakDate: open.peakDate, troughDate: open.troughDate, recoveryDate: p.date,
+                  depthAbs: +open.depthAbs.toFixed(2), depthPct: +open.depthPct.toFixed(2),
+                  durationDays: dayCount(open.peakDate, open.troughDate),
+                  recoveryDays: dayCount(open.troughDate, p.date), ongoing: false,
+                })
+                open = null
+              }
+              hwm = equity
+              hwmDate = p.date
+              series.push({ date: p.date, equity: +equity.toFixed(2), drawdownAbs: 0, drawdownPct: 0 })
+              continue
+            }
+            const abs = equity - hwm
+            const pct = (abs / hwm) * 100
+            if (!open) open = { peakDate: hwmDate ?? equityCurve[0].date, troughDate: p.date, depthAbs: abs, depthPct: pct }
+            else if (abs < open.depthAbs) { open.troughDate = p.date; open.depthAbs = abs; open.depthPct = pct }
+            series.push({ date: p.date, equity: +equity.toFixed(2), drawdownAbs: +abs.toFixed(2), drawdownPct: +pct.toFixed(2) })
+          }
+          if (open) {
+            episodes.push({
+              peakDate: open.peakDate, troughDate: open.troughDate, recoveryDate: null,
+              depthAbs: +open.depthAbs.toFixed(2), depthPct: +open.depthPct.toFixed(2),
+              durationDays: dayCount(open.peakDate, open.troughDate), recoveryDays: null, ongoing: true,
+            })
+          }
+          const worst = episodes.reduce((a, b) => (!a || b.depthAbs < a.depthAbs ? b : a), null)
+          const recovered = episodes.filter((e) => e.recoveryDays != null)
+          const mean = (xs) => (xs.length ? xs.reduce((s, v) => s + v, 0) / xs.length : 0)
+          const ddPcts = series.map((p) => Math.abs(p.drawdownPct))
+          const ulcer = Math.sqrt(mean(ddPcts.map((v) => v * v)))
+          const annualised = 14.2 // demo history is too short to annualise honestly; a plausible stand-in
+          const depths = episodes.map((e) => Math.abs(e.depthPct)).sort((a, b) => a - b)
+          const q = (f) => (depths.length ? -+depths[Math.min(depths.length - 1, Math.floor((depths.length - 1) * f))].toFixed(2) : 0)
+          return {
+            percentAvailable: true,
+            series,
+            maxDrawdownAbs: worst ? worst.depthAbs : 0,
+            maxDrawdownPct: worst ? worst.depthPct : 0,
+            peakDate: worst ? worst.peakDate : null,
+            troughDate: worst ? worst.troughDate : null,
+            recoveryDate: worst ? worst.recoveryDate : null,
+            episodes,
+            avgDepthPct: +mean(episodes.map((e) => e.depthPct)).toFixed(2),
+            avgDurationDays: +mean(episodes.map((e) => e.durationDays)).toFixed(1),
+            avgRecoveryDays: +mean(recovered.map((e) => e.recoveryDays)).toFixed(1),
+            depthPercentiles: { p50: q(0.5), p75: q(0.75), p90: q(0.9), p95: q(0.95) },
+            episodesOver: {
+              pct5: episodes.filter((e) => Math.abs(e.depthPct) >= 5).length,
+              pct10: episodes.filter((e) => Math.abs(e.depthPct) >= 10).length,
+              pct20: episodes.filter((e) => Math.abs(e.depthPct) >= 20).length,
+            },
+            currentDrawdown: open
+              ? { inDrawdown: true, depthAbs: +open.depthAbs.toFixed(2), depthPct: +open.depthPct.toFixed(2), daysInDrawdown: dayCount(open.peakDate, equityCurve[equityCurve.length - 1].date), peakDate: open.peakDate }
+              : { inDrawdown: false, depthAbs: 0, depthPct: 0, daysInDrawdown: 0, peakDate: null },
+            timeUnderwaterPct: +((series.filter((p) => p.drawdownAbs < 0).length / series.length) * 100).toFixed(1),
+            tradingDays: series.length,
+            calendarDays: 61,
+            annualisedReturnPct: annualised,
+            painIndex: +mean(ddPcts).toFixed(2),
+            ulcerIndex: +ulcer.toFixed(2),
+            calmar: worst ? +(annualised / Math.abs(worst.depthPct)).toFixed(2) : null,
+            sterling: null,
+            burke: +(annualised / Math.sqrt(episodes.reduce((s, e) => s + e.depthPct * e.depthPct, 0))).toFixed(2),
+            martin: +(annualised / ulcer).toFixed(2),
+            benchmarkSeries: null,
+          }
+        })()
+
         const summary = {
           kpis: { winRate: 58, totalPnl: cum, returnsPct: 8.3, profitFactor: 1.94 },
           radar: [
@@ -70,6 +152,7 @@
           ],
           equityCurve,
           drawdown: { series: ddSeries, maxDrawdown },
+          drawdownDetail: ddDetail,
           dailyBars,
           dayOfWeek: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((d, i) => ({
             day: d, trades: 12 - i, pnl: [1240, -320, 880, 210, 1510][i], winRate: [61, 44, 58, 52, 67][i],
@@ -97,8 +180,13 @@
         ]
         const confluences = [
           { id: 1, name: 'FVG' }, { id: 2, name: 'OB' }, { id: 3, name: 'Liquidity sweep' },
+          // a slice of the market-context pack, so the Market Context panel has something to rank
+          { id: 4, name: 'Gap up' }, { id: 5, name: 'Gap continuation' },
+          { id: 6, name: 'Relative volume high' }, { id: 7, name: 'Volume climax' },
+          { id: 8, name: 'Above VWAP' }, { id: 9, name: 'VWAP reclaim' },
+          { id: 10, name: 'High-impact news window' }, { id: 11, name: 'Trending' }, { id: 12, name: 'Choppy' },
         ]
-        const mkTrade = (id, back, pair, direction, pnl, r, followed) => ({
+        const mkTrade = (id, back, pair, direction, pnl, r, followed, ctx) => ({
           id,
           name: pair + ' ' + direction,
           date: iso(daysAgo(back)),
@@ -117,16 +205,28 @@
           negative_tags: followed ? [] : ['early entry'],
           notes: null,
           created_at: new Date().toISOString(),
-          confluence_ids: [1, 2],
+          confluence_ids: ctx ? [1, 2].concat(ctx) : [1, 2],
         })
-        const trades = [
-          mkTrade(1, 1, 'EURUSD', 'Long', 640, 2.1, true),
-          mkTrade(2, 2, 'GBPUSD', 'Short', -220, -1, false),
-          mkTrade(3, 4, 'XAUUSD', 'Long', 1180, 3.4, true),
-          mkTrade(4, 6, 'NAS100', 'Short', 410, 1.6, true),
-          mkTrade(5, 9, 'US30', 'Long', -180, -0.8, false),
-          mkTrade(6, 12, 'BTCUSD', 'Long', 920, 2.7, true),
+        const PAIRS = ['EURUSD', 'GBPUSD', 'XAUUSD', 'NAS100', 'US30', 'BTCUSD']
+        // Deterministic spread across the market-context tags so some clear the 8-trade
+        // credibility gate and some deliberately do not.
+        const CTX_MIX = [
+          [4, 6, 8, 11], [5, 6, 9, 11], [4, 7, 8, 12], [6, 8, 11],
+          [5, 7, 9, 12], [4, 6, 9, 11], [10, 7, 12], [6, 8, 11],
         ]
+        const trades = Array.from({ length: 32 }, (_, i) => {
+          const win = i % 3 !== 1
+          return mkTrade(
+            i + 1,
+            i + 1,
+            PAIRS[i % PAIRS.length],
+            i % 2 ? 'Short' : 'Long',
+            win ? 220 + (i % 7) * 130 : -180 - (i % 4) * 60,
+            win ? 1.2 + (i % 5) * 0.4 : -0.9,
+            win || i % 5 === 0,
+            CTX_MIX[i % CTX_MIX.length],
+          )
+        })
 
         const ok = async () => true
         const list = (v) => async () => v
@@ -135,7 +235,16 @@
           strategies: {
             getAll: list(strategies), create: ok, update: ok, delete: ok,
             getPerformance: list(strategies.map((s) => ({ ...s, winRate: 56, profitFactor: 1.8, expectancy: 120, tradeCount: 40, avgRMultiple: 1.6, avgWin: 420, avgLoss: 240, planAdherence: 70, totalPnl: 4800 }))),
-            getDetail: async (id) => ({ strategy: strategies.find((s) => s.id === id), trades: [], metrics: summary.overall }),
+            getDetail: async (id) => {
+              const s = strategies.find((x) => x.id === id)
+              return {
+                id, name: s.name, description: s.description,
+                stats: { tradeCount: 40, winRate: 56, profitFactor: 1.8, expectancy: 120, totalPnl: 4800, avgRMultiple: 1.6, planAdherence: 70, avgWin: 420, avgLoss: 240 },
+                equityCurve, drawdown: { series: ddSeries, maxDrawdown }, drawdownDetail: ddDetail,
+                dayOfWeek: summary.dayOfWeek,
+                trades: trades.map((t) => ({ id: t.id, date: t.date, name: t.name, pair: t.pair, pnl: t.pnl, followed_plan: t.followed_plan })),
+              }
+            },
           },
           confluences: { getAll: list(confluences), create: ok, update: ok, delete: ok },
           trades: { getAll: list(trades), create: ok, update: ok, delete: ok },
