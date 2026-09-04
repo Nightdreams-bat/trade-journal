@@ -2,7 +2,7 @@ import type { ComponentType } from 'react'
 import { motion } from 'motion/react'
 import { usePrefersReducedMotion } from '../anim'
 import { PANEL, PANEL_OUT, HOVER } from '../anim/tokens'
-import type { TabKey } from '../tabs'
+import { tabsNewSince, type TabKey } from '../tabs'
 import {
   BookOpen,
   CandlestickChart,
@@ -31,6 +31,8 @@ interface NavRailProps {
   active: string
   onSelect: (key: string) => void
   showWhatsNewDot: boolean
+  /** Last release read in What's New — tabs added after it get a "New" badge. */
+  seenVersion: string | null
   onAccounts: () => void
   onDailyReview: () => void
   onToggleTheme?: () => void
@@ -57,11 +59,13 @@ export function NavRail({
   active,
   onSelect,
   showWhatsNewDot,
+  seenVersion,
   onAccounts,
   onDailyReview,
   onToggleTheme,
 }: NavRailProps) {
   const reduced = usePrefersReducedMotion()
+  const newTabKeys = new Set(tabsNewSince(seenVersion).map((t) => t.key))
 
   const animate = reduced
     ? { opacity: open ? 1 : 0 }
@@ -186,6 +190,15 @@ export function NavRail({
               <Icon size={16} strokeWidth={1.75} />
               <span style={{ position: 'relative' }}>
                 {t.label}
+                {newTabKeys.has(t.key) && (
+                  <span
+                    className="nav-new-badge"
+                    aria-label={`${t.label} is new in this release`}
+                    style={{ marginLeft: 7 }}
+                  >
+                    New
+                  </span>
+                )}
                 {t.key === 'whatsnew' && showWhatsNewDot && (
                   <span
                     aria-label="new updates"

@@ -38,7 +38,7 @@ export const RELEASES: Release[] = [
     date: '2026-09-04',
     title: 'Economic calendar',
     summary:
-      'A News tab showing ForexFactory’s weekly calendar and its red folders, plus an optional entry time on trades so a trade can be placed against the news running around it.',
+      'A News tab showing ForexFactory’s weekly calendar and its red folders, plus an optional entry time on trades so a trade can be placed against the news running around it — and the app now tells you when a release has added a tab.',
     changes: [
       {
         kind: 'new',
@@ -63,6 +63,18 @@ export const RELEASES: Release[] = [
         text: 'The calendar keeps working offline',
         detail:
           'Trade Journal is offline by default and the calendar ships turned off; switching it on in Settings is what allows the app to make its one outbound request. Every event is then cached in your local database, so the News tab works with no connection — only refreshing needs one, and the last sync time is always on screen so a stale calendar never looks like a live one. Only the current week is published, so your archive builds up from the first sync onward.',
+      },
+      {
+        kind: 'new',
+        text: 'New tabs now announce themselves',
+        detail:
+          'A tab added by a release you have not read about yet carries a "New" badge in the navigation, and a one-time card appears at the bottom of the screen explaining what it does, with a button that takes you straight there. Dismiss it, or open What\'s New, and it does not come back. A fresh install never sees it — nothing is new when everything is.',
+      },
+      {
+        kind: 'improved',
+        text: 'New app icon',
+        detail:
+          'The dark candlestick mark is replaced by a soft cream glass tile — the journal, its rising candles and the arrow through them, on a light rounded square.',
       },
     ],
   },
@@ -470,3 +482,14 @@ export const RELEASES: Release[] = [
 ]
 
 export const LATEST_VERSION = RELEASES[0]?.version ?? '0.0.0'
+
+/** Numeric semver-ish compare. Returns >0 if a is newer than b, <0 if older, 0 if equal. */
+export function compareVersions(a: string, b: string): number {
+  const pa = a.split('.').map((n) => parseInt(n, 10) || 0)
+  const pb = b.split('.').map((n) => parseInt(n, 10) || 0)
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const diff = (pa[i] ?? 0) - (pb[i] ?? 0)
+    if (diff !== 0) return diff
+  }
+  return 0
+}

@@ -24,8 +24,13 @@ import { CenterPanel, type HeroShift } from './components/CenterPanel'
 import { HeroHeader } from './components/HeroHeader'
 import { EdgeHandle } from './components/EdgeHandle'
 import { Scrim } from './components/Scrim'
+import { NewFeatureToast } from './components/NewFeatureToast'
 import { LATEST_VERSION } from './changelog'
-import { getLastSeenVersion } from './whatsNewSeen'
+import {
+  getLastSeenVersion,
+  getDismissedFeatureVersion,
+  setDismissedFeatureVersion,
+} from './whatsNewSeen'
 import { useThemeMode } from './themeMode'
 import { TABS, type TabKey } from './tabs'
 import { greeting } from './format'
@@ -52,6 +57,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [reviewJumpDate, setReviewJumpDate] = useState<{ date: string; token: number } | null>(null)
   const [seenVersion, setSeenVersion] = useState<string | null>(getLastSeenVersion)
+  const [dismissedFeature, setDismissedFeature] = useState<string | null>(getDismissedFeatureVersion)
   const [themeMode, toggleTheme] = useThemeMode()
   const [userName, setUserName] = useState(getStoredName)
   const [showWelcome, setShowWelcome] = useState(() => !getStoredName() && !hasSeenNamePrompt())
@@ -114,6 +120,11 @@ function App() {
     if (k === 'whatsnew') setSeenVersion(LATEST_VERSION)
   }
 
+  const dismissFeature = (version: string) => {
+    setDismissedFeatureVersion(version)
+    setDismissedFeature(version)
+  }
+
   const openDailyReview = () => {
     setReviewJumpDate((prev) => ({ date: new Date().toISOString().slice(0, 10), token: (prev?.token ?? 0) + 1 }))
     setTab('review')
@@ -151,6 +162,7 @@ function App() {
             if (isNarrow) closePanels()
           }}
           showWhatsNewDot={seenVersion !== LATEST_VERSION}
+          seenVersion={seenVersion}
           onAccounts={() => setShowAccounts(true)}
           onDailyReview={openDailyReview}
         />
@@ -298,6 +310,18 @@ function App() {
       )}
 
       {showWelcome && <WelcomeModal onSave={saveUserName} onSkip={dismissWelcome} />}
+
+      {!showWelcome && (
+        <NewFeatureToast
+          seenVersion={seenVersion}
+          dismissedVersion={dismissedFeature}
+          onOpen={(k) => {
+            goTab(k)
+            closePanels()
+          }}
+          onDismiss={dismissFeature}
+        />
+      )}
     </div>
   )
 }

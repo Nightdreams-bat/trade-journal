@@ -18,3 +18,22 @@ export function setLastSeenVersion(version: string): void {
     // private mode / storage disabled — the dot just won't persist
   }
 }
+
+// Release whose new-feature announcement the user has dismissed.
+const TOAST_KEY = 'tj:featureToast:dismissedVersion'
+
+export function getDismissedFeatureVersion(): string | null {
+  try {
+    return localStorage.getItem(TOAST_KEY)
+  } catch {
+    return null
+  }
+}
+
+export function setDismissedFeatureVersion(version: string): void {
+  try {
+    localStorage.setItem(TOAST_KEY, version)
+  } catch {
+    // non-fatal — the announcement just comes back next launch
+  }
+}
