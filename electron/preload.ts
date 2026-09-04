@@ -56,6 +56,13 @@ contextBridge.exposeInMainWorld('api', {
     import: (args: unknown) => invoke('csv:import', args),
     export: () => invoke('csv:export'),
   },
+  calendar: {
+    getConfig: () => invoke('calendar:getConfig'),
+    setEnabled: (enabled: boolean) => invoke('calendar:setEnabled', enabled),
+    setSyncOnLaunch: (value: boolean) => invoke('calendar:setSyncOnLaunch', value),
+    sync: () => invoke('calendar:sync'),
+    getEvents: (range?: { from?: string; to?: string }) => invoke('calendar:getEvents', range),
+  },
   obsidian: {
     getConfig: () => invoke('obsidian:getConfig'),
     setEnabled: (enabled: boolean) => invoke('obsidian:setEnabled', enabled),

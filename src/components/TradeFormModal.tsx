@@ -6,6 +6,7 @@ import { Select } from './Select'
 import { TagInput } from './TagInput'
 import { ImageGallery } from './ImageGallery'
 import { ConfluenceSelector } from './ConfluenceSelector'
+import { NewsNearEntry } from './NewsNearEntry'
 import type { Account, Confluence, Strategy, Trade } from '../types'
 import { DIRECTIONS, SESSIONS } from '../types'
 
@@ -36,6 +37,7 @@ export function TradeFormModal({
   const [savedTrade, setSavedTrade] = useState<Trade | undefined>(trade)
   const [name, setName] = useState(trade?.name ?? '')
   const [date, setDate] = useState(trade?.date ?? format(new Date(), 'yyyy-MM-dd'))
+  const [entryTime, setEntryTime] = useState(trade?.entry_time ?? '')
   const [pair, setPair] = useState(trade?.pair ?? '')
   const [session, setSession] = useState(trade?.session ?? SESSIONS[1])
   const [direction, setDirection] = useState(trade?.direction ?? DIRECTIONS[0])
@@ -59,6 +61,7 @@ export function TradeFormModal({
     const payload = {
       name,
       date,
+      entry_time: entryTime || null,
       pair,
       session,
       direction,
@@ -127,6 +130,13 @@ export function TradeFormModal({
               options={SESSIONS.map((s) => ({ value: s, label: s }))}
             />
           </label>
+        </div>
+
+        <div style={grid}>
+          <label className="field">Entry time <span style={{ color: 'var(--text-dim)', fontWeight: 400 }}>(optional)</span>
+            <input className="input" type="time" value={entryTime} onChange={(e) => setEntryTime(e.target.value)} />
+          </label>
+          <NewsNearEntry date={date} entryTime={entryTime} pair={pair} />
         </div>
 
         <div style={grid}>

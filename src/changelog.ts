@@ -34,6 +34,39 @@ export type DemoId = 'whats-new-tab' | 'equity-curve' | 'tag-pills' | 'calendar-
 
 export const RELEASES: Release[] = [
   {
+    version: '1.3.0',
+    date: '2026-09-04',
+    title: 'Economic calendar',
+    summary:
+      'A News tab showing ForexFactory’s weekly calendar and its red folders, plus an optional entry time on trades so a trade can be placed against the news running around it.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'News tab with this week’s economic calendar',
+        detail:
+          'Events grouped by day with their impact marked, filters for red folders only and for a single currency, forecast and previous values, and times converted into your own timezone.',
+      },
+      {
+        kind: 'new',
+        text: 'Today’s red folders on the dashboard',
+        detail:
+          'The next high-impact events of the day with a live countdown, so you see what is coming before you take a trade rather than afterwards. Hidden entirely if you leave the calendar switched off.',
+      },
+      {
+        kind: 'new',
+        text: 'Optional entry time on trades',
+        detail:
+          'Record the time you entered and the trade form shows which high-impact events were within half an hour of it. Leave it blank and nothing changes — every trade already logged still works, matched at day level instead.',
+      },
+      {
+        kind: 'new',
+        text: 'The calendar keeps working offline',
+        detail:
+          'Trade Journal is offline by default and the calendar ships turned off; switching it on in Settings is what allows the app to make its one outbound request. Every event is then cached in your local database, so the News tab works with no connection — only refreshing needs one, and the last sync time is always on screen so a stale calendar never looks like a live one. Only the current week is published, so your archive builds up from the first sync onward.',
+      },
+    ],
+  },
+  {
     version: '1.2.0',
     date: '2026-09-04',
     title: 'Drawdown analysis and edge by market context',

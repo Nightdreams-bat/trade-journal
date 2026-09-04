@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { registerIpcHandlers } from './ipc'
+import * as calendar from './calendar'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -42,6 +43,15 @@ function createWindow() {
 app.whenReady().then(() => {
   registerIpcHandlers()
   createWindow()
+
+  // Refresh the economic calendar in the background, but only when the user has both enabled the
+  // feature and asked for it on launch. `sync()` checks `isEnabled()` itself and never throws, so
+  // a missing network here is silent and the app opens exactly as fast as it did before.
+  if (calendar.shouldSyncOnLaunch()) {
+    void calendar.sync().then((r) => {
+      if (!r.ok) console.log('[calendar] launch sync skipped:', r.error)
+    })
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

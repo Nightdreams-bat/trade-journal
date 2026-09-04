@@ -5,6 +5,7 @@ export const TABS = [
   { key: 'payout', label: 'Payout Calculator' },
   { key: 'playbooks', label: 'Playbooks' },
   { key: 'review', label: 'Review' },
+  { key: 'news', label: 'News' },
   { key: 'trades', label: 'Trades' },
   { key: 'backtest', label: 'Backtest' },
   { key: 'missed', label: 'Missed' },

@@ -1,5 +1,7 @@
 export {}
 
+import type { CalendarConfig, CalendarEvent, CalendarSyncResult } from './types'
+
 export interface ObsidianConfig {
   enabled: boolean
   vaultPath: string
@@ -86,6 +88,15 @@ declare global {
         openForImport: () => Promise<{ filePath: string; headers: string[]; sampleRows: string[][]; totalRows: number } | null>
         import: (args: any) => Promise<number>
         export: () => Promise<string | null>
+      }
+      // Optional for the same reason as `obsidian`: the browser dev-preview harness stubs
+      // `window.api` and desktop-only integrations may be absent.
+      calendar?: {
+        getConfig: () => Promise<CalendarConfig>
+        setEnabled: (enabled: boolean) => Promise<CalendarConfig>
+        setSyncOnLaunch: (value: boolean) => Promise<CalendarConfig>
+        sync: () => Promise<CalendarSyncResult>
+        getEvents: (range?: { from?: string; to?: string }) => Promise<CalendarEvent[]>
       }
       obsidian?: {
         getConfig: () => Promise<ObsidianConfig>

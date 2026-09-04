@@ -31,6 +31,8 @@ export interface Trade {
   id: number
   name: string
   date: string
+  /** Local 'HH:MM'. Optional — null on every trade logged before entry times existed. */
+  entry_time: string | null
   pair: string | null
   session: string | null
   direction: string | null
@@ -239,3 +241,42 @@ export interface FundedChallengeResult {
 
 export const SESSIONS = ['Asia', 'London', 'New York', 'London/NY Overlap'] as const
 export const DIRECTIONS = ['Long', 'Short'] as const
+
+// ---------------------------------------------------------------------------
+// economic calendar
+// ---------------------------------------------------------------------------
+
+/** ForexFactory's impact rating. 'High' is the red folder. */
+export type Impact = 'High' | 'Medium' | 'Low' | 'Holiday'
+
+export interface CalendarEvent {
+  id: number
+  title: string
+  /** Currency code ('USD', 'EUR', …) or 'All' for global events. */
+  country: string
+  /** ISO 8601 with the source's UTC offset, e.g. '2026-09-01T10:00:00-04:00'. */
+  starts_at: string
+  /** Calendar day of `starts_at` in the source's offset, for joining against `trades.date`. */
+  date: string
+  impact: Impact
+  forecast: string | null
+  previous: string | null
+  /** 1 for bank holidays, which have no meaningful clock time. */
+  all_day: number
+}
+
+export interface CalendarConfig {
+  enabled: boolean
+  syncOnLaunch: boolean
+  lastSync: string | null
+  lastError: string | null
+  eventCount: number
+  sourceUrl: string
+}
+
+export interface CalendarSyncResult {
+  ok: boolean
+  inserted: number
+  updated: number
+  error?: string
+}

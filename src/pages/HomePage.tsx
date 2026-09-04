@@ -10,6 +10,7 @@ import { useColors } from '../themeMode'
 import { useChartTheme, CHART_ANIM } from '../charts/chartTheme'
 import { formatRatio } from '../format'
 import { ArrowRight, Sparkles } from '../components/icons'
+import { TodayNewsStrip } from '../components/TodayNewsStrip'
 import type { Account, AnalyticsSummary, Confluence, Strategy, Trade } from '../types'
 
 interface HomePageProps {
@@ -379,6 +380,10 @@ export function HomePage({
             >
               See all insights <ArrowRight size={12} strokeWidth={2} />
             </button>
+
+            {/* Renders nothing unless the economic calendar is switched on, so the card keeps its
+                existing shape for anyone who leaves the feature off. */}
+            <TodayNewsStrip />
           </div>
         </Reveal>
 

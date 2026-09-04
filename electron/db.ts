@@ -43,6 +43,15 @@ function migrateTradesSourceColumn(database: DatabaseSync) {
   }
 }
 
+// Optional local entry time ('HH:MM') so a trade can be placed against the economic calendar to the
+// minute. Nullable on purpose: every trade logged before this column existed keeps working, and news
+// matching simply falls back to whole-day resolution for them.
+function migrateTradesEntryTime(database: DatabaseSync) {
+  if (!columnExists(database, 'trades', 'entry_time')) {
+    database.exec('ALTER TABLE trades ADD COLUMN entry_time TEXT')
+  }
+}
+
 function migrateAccountsSchema(database: DatabaseSync) {
   if (columnExists(database, 'accounts', 'account_type')) return
   database.exec("ALTER TABLE accounts ADD COLUMN account_type TEXT NOT NULL DEFAULT 'live'")
@@ -177,6 +186,25 @@ export function getDb(): DatabaseSync {
       value TEXT NOT NULL
     );
 
+    -- Economic calendar events, cached from ForexFactory's published weekly export.
+    -- The feed only ever publishes the current week, so this table IS the history: every sync
+    -- upserts on event_key, which is why re-syncing a week refreshes forecast/previous in place
+    -- instead of duplicating rows, and why the archive grows from the first sync onward.
+    CREATE TABLE IF NOT EXISTS calendar_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_key TEXT NOT NULL UNIQUE,
+      title TEXT NOT NULL,
+      country TEXT NOT NULL,
+      starts_at TEXT NOT NULL,
+      date TEXT NOT NULL,
+      impact TEXT NOT NULL,
+      forecast TEXT,
+      previous TEXT,
+      all_day INTEGER NOT NULL DEFAULT 0,
+      fetched_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_calendar_events_date ON calendar_events(date);
+
     DROP TABLE IF EXISTS milestones;
   `)
 
@@ -185,6 +213,7 @@ export function getDb(): DatabaseSync {
   migrateTradesSourceColumn(db)
   migrateScreenshotsToImages(db)
   migrateAccountsSchema(db)
+  migrateTradesEntryTime(db)
 
   const accountCount = db.prepare('SELECT COUNT(*) as c FROM accounts').get() as { c: number }
   if (accountCount.c === 0) {

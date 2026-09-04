@@ -265,6 +265,55 @@
             }),
           },
           csv: { openForImport: async () => null, import: async () => 0, export: async () => null },
+          // Economic calendar. Enabled by default here so the News tab and the Home strip actually
+          // render in the harness; in the real app it ships off. Fixture covers a red folder, a
+          // medium, a low, an 'All' country and a Holiday (the only all-day case).
+          calendar: (() => {
+            const at = (dayOffset, h, m) => {
+              const d = new Date(today)
+              d.setDate(d.getDate() + dayOffset)
+              d.setHours(h, m, 0, 0)
+              // Emit a real offset so the renderer converts rather than reprinting wall clock.
+              const off = -d.getTimezoneOffset()
+              const sign = off >= 0 ? '+' : '-'
+              const p = (n) => String(Math.floor(Math.abs(n))).padStart(2, '0')
+              return `${iso(d)}T${p(h)}:${p(m)}:00${sign}${p(off / 60)}:${p(off % 60)}`
+            }
+            const mk = (id, dayOffset, h, m, country, impact, title, forecast, previous, allDay = 0) => ({
+              id, title, country, impact, forecast, previous, all_day: allDay,
+              starts_at: at(dayOffset, h, m),
+              date: at(dayOffset, h, m).slice(0, 10),
+            })
+            const events = [
+              mk(1, 0, 15, 30, 'USD', 'High', 'Non-Farm Employment Change', '185K', '142K'),
+              mk(2, 0, 17, 0, 'USD', 'High', 'ISM Manufacturing PMI', '55.2', '55.6'),
+              mk(3, 0, 11, 0, 'EUR', 'Medium', 'Core CPI Flash Estimate y/y', '2.4%', '2.6%'),
+              mk(4, 0, 9, 30, 'GBP', 'Low', 'Final Manufacturing PMI', null, '48.9'),
+              mk(5, 0, 14, 15, 'All', 'Low', 'G20 Meetings', null, null),
+              mk(6, -1, 3, 0, 'GBP', 'Holiday', 'Bank Holiday', null, null, 1),
+              mk(7, -1, 16, 0, 'CAD', 'High', 'BOC Rate Statement', null, null),
+              mk(8, -2, 10, 30, 'JPY', 'Medium', 'Prelim Industrial Production m/m', '-0.7%', '1.3%'),
+            ]
+            let config = {
+              enabled: true, syncOnLaunch: false,
+              lastSync: new Date().toISOString(), lastError: null,
+              eventCount: events.length,
+              sourceUrl: 'https://nfs.faireconomy.media/ff_calendar_thisweek.json',
+            }
+            return {
+              getConfig: async () => config,
+              setEnabled: async (enabled) => { config = { ...config, enabled }; return config },
+              setSyncOnLaunch: async (v) => { config = { ...config, syncOnLaunch: v }; return config },
+              sync: async () => {
+                config = { ...config, lastSync: new Date().toISOString(), lastError: null }
+                return { ok: true, inserted: 0, updated: events.length }
+              },
+              getEvents: async (range) =>
+                events.filter(
+                  (e) => (!range?.from || e.date >= range.from) && (!range?.to || e.date <= range.to)
+                ),
+            }
+          })(),
           obsidian: (() => {
             let config = {
               enabled: false, vaultPath: '', resolvedPath: '', defaultPath: 'C:\\Users\\demo\\Documents\\TradeJournal Vault',

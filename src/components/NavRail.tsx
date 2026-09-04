@@ -43,6 +43,7 @@ const TAB_ICONS: Record<TabKey, ComponentType<{ size?: number; strokeWidth?: num
   payout: Wallet,
   playbooks: BookOpen,
   review: NotebookPen,
+  news: CalendarDays,
   trades: Table2,
   backtest: FlaskConical,
   missed: Crosshair,

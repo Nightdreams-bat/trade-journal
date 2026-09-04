@@ -4,6 +4,7 @@ import path from 'node:path'
 import { app } from 'electron'
 import { getDb } from './db'
 import * as obsidian from './obsidian'
+import * as calendar from './calendar'
 import {
   getSummary,
   getStrategyPerformance,
@@ -33,6 +34,18 @@ interface MissedTradeFilters {
 function tagsToJson(tags: unknown): string {
   if (Array.isArray(tags)) return JSON.stringify(tags)
   return '[]'
+}
+
+/**
+ * Entry time is optional and free-form from a `<input type="time">`, which yields 'HH:MM' or
+ * 'HH:MM:SS'. Anything else is stored as null rather than half-parsed, so news matching can trust
+ * that a non-null value is comparable.
+ */
+function normalizeEntryTime(value: unknown): string | null {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  const match = /^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/.exec(trimmed)
+  return match ? `${match[1]}:${match[2]}` : null
 }
 
 function rowToTrade(row: Record<string, unknown>) {
@@ -220,14 +233,15 @@ export function registerIpcHandlers() {
   ipcMain.handle('trades:create', (_e, payload: Record<string, unknown>) => {
     const info = db
       .prepare(
-        `INSERT INTO trades (name, date, pair, session, direction, risk_per_trade, pnl, r_multiple,
+        `INSERT INTO trades (name, date, entry_time, pair, session, direction, risk_per_trade, pnl, r_multiple,
           followed_plan, break_even, entry_win, strategy_id, account_id, positive_tags, negative_tags, notes, source)
-         VALUES (@name, @date, @pair, @session, @direction, @risk_per_trade, @pnl, @r_multiple,
+         VALUES (@name, @date, @entry_time, @pair, @session, @direction, @risk_per_trade, @pnl, @r_multiple,
           @followed_plan, @break_even, @entry_win, @strategy_id, @account_id, @positive_tags, @negative_tags, @notes, @source)`
       )
       .run({
         name: (payload.name as string) ?? '',
         date: payload.date as string,
+        entry_time: normalizeEntryTime(payload.entry_time),
         pair: (payload.pair as string) ?? null,
         session: (payload.session as string) ?? null,
         direction: (payload.direction as string) ?? null,
@@ -253,7 +267,7 @@ export function registerIpcHandlers() {
 
   ipcMain.handle('trades:update', (_e, id: number, payload: Record<string, unknown>) => {
     db.prepare(
-      `UPDATE trades SET name=@name, date=@date, pair=@pair, session=@session, direction=@direction,
+      `UPDATE trades SET name=@name, date=@date, entry_time=@entry_time, pair=@pair, session=@session, direction=@direction,
         risk_per_trade=@risk_per_trade, pnl=@pnl, r_multiple=@r_multiple,
         followed_plan=@followed_plan, break_even=@break_even, entry_win=@entry_win, strategy_id=@strategy_id,
         account_id=@account_id, positive_tags=@positive_tags, negative_tags=@negative_tags, notes=@notes,
@@ -263,6 +277,7 @@ export function registerIpcHandlers() {
       id,
       name: (payload.name as string) ?? '',
       date: payload.date as string,
+      entry_time: normalizeEntryTime(payload.entry_time),
       pair: (payload.pair as string) ?? null,
       session: (payload.session as string) ?? null,
       direction: (payload.direction as string) ?? null,
@@ -549,6 +564,19 @@ export function registerIpcHandlers() {
     fs.writeFileSync(result.filePath, tradesToCsv(), 'utf-8')
     return result.filePath
   })
+
+  // ---------- economic calendar ----------
+  ipcMain.handle('calendar:getConfig', () => calendar.getConfig())
+
+  ipcMain.handle('calendar:setEnabled', (_e, enabled: boolean) => calendar.setEnabled(!!enabled))
+
+  ipcMain.handle('calendar:setSyncOnLaunch', (_e, value: boolean) => calendar.setSyncOnLaunch(!!value))
+
+  ipcMain.handle('calendar:sync', () => calendar.sync())
+
+  ipcMain.handle('calendar:getEvents', (_e, range?: { from?: string; to?: string }) =>
+    calendar.getEvents(range)
+  )
 
   // ---------- obsidian vault sync ----------
   ipcMain.handle('obsidian:getConfig', () => obsidian.getConfig())

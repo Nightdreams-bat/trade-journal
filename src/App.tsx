@@ -7,6 +7,7 @@ import { TradingPlanPage } from './pages/TradingPlanPage'
 import { PayoutCalculatorPage } from './pages/PayoutCalculatorPage'
 import { PlaybooksPage } from './pages/PlaybooksPage'
 import { ReviewPage } from './pages/ReviewPage'
+import { NewsPage } from './pages/NewsPage'
 import { TradesDbPage } from './pages/TradesDbPage'
 import { BacktestPage } from './pages/BacktestPage'
 import { MissedTradesPage } from './pages/MissedTradesPage'
@@ -197,6 +198,7 @@ function App() {
                   {tab === 'payout' && <PayoutCalculatorPage accounts={accounts} />}
                   {tab === 'playbooks' && <PlaybooksPage refreshKey={refreshKey} onStrategiesChanged={loadLookups} />}
                   {tab === 'review' && <ReviewPage jumpToDate={reviewJumpDate} />}
+                  {tab === 'news' && <NewsPage />}
                   {tab === 'trades' && (
                     <TradesDbPage
                       accounts={accounts}
