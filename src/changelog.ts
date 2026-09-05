@@ -34,6 +34,46 @@ export type DemoId = 'whats-new-tab' | 'equity-curve' | 'tag-pills' | 'calendar-
 
 export const RELEASES: Release[] = [
   {
+    version: '1.3.1',
+    date: '2026-09-05',
+    title: 'Settings tab',
+    summary: 'Settings moves out of a popup into its own tab, and gathers everything that was scattered elsewhere — accounts and theme included.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'Settings tab',
+        detail:
+          'Profile (name, theme), Accounts, Economic calendar, Obsidian vault sync, Shared journal, and a CSV export shortcut now live together in one Settings tab instead of a popup buried in the profile panel.',
+      },
+      {
+        kind: 'improved',
+        text: 'Theme toggle also lives in Settings now',
+        detail: 'Previously only reachable from the small icon in the header — the header toggle still works too.',
+      },
+    ],
+  },
+  {
+    version: '1.4.0',
+    date: '2026-09-04',
+    title: 'Shared journal',
+    summary:
+      'A new Shared tab lets you see a friend’s trades alongside your own, each of you still logging into your own local journal — powered by an opt-in mirror to Supabase.',
+    changes: [
+      {
+        kind: 'new',
+        text: 'Shared tab',
+        detail:
+          'Once you sign in and turn sharing on for a device, your accounts, strategies, trades and missed trades are mirrored to Supabase so a friend running the same app can see them, and you can see theirs — filterable to Mine / Theirs / All. Nothing about your existing local journal changes; this is a read-shared copy layered on top of it.',
+      },
+      {
+        kind: 'new',
+        text: 'Sign-in and sharing toggle in Settings',
+        detail:
+          'Create an account or sign in, then flip sharing on per device — off by default. A "Sync everything now" button does a one-time catch-up push of everything already logged locally.',
+      },
+    ],
+  },
+  {
     version: '1.3.0',
     date: '2026-09-04',
     title: 'Economic calendar',

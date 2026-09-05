@@ -606,6 +606,7 @@ export interface StrategyPerformance {
   planAdherence: number
   avgWin: number
   avgLoss: number
+  riskReward: number
 }
 
 type StrategyTradeRow = TradeRow & { r_multiple: number | null; name: string; pair: string | null }
@@ -619,6 +620,7 @@ function strategyStats(trades: StrategyTradeRow[]) {
   const losses = trades.filter((t) => t.pnl < 0)
   const avgWin = wins.length ? wins.reduce((s, t) => s + t.pnl, 0) / wins.length : 0
   const avgLoss = losses.length ? Math.abs(losses.reduce((s, t) => s + t.pnl, 0) / losses.length) : 0
+  const riskReward = avgLoss === 0 ? (avgWin > 0 ? 5 : 0) : avgWin / avgLoss
   const rTrades = trades.filter((t) => t.r_multiple !== null && t.r_multiple !== undefined)
   const avgRMultiple = rTrades.length ? rTrades.reduce((s, t) => s + (t.r_multiple ?? 0), 0) / rTrades.length : 0
   return {
@@ -631,6 +633,7 @@ function strategyStats(trades: StrategyTradeRow[]) {
     planAdherence: round1(planAdherenceOf(trades) * 100),
     avgWin: round2(avgWin),
     avgLoss: round2(avgLoss),
+    riskReward: round2(riskReward),
   }
 }
 

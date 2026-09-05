@@ -107,6 +107,9 @@ export function PlaybooksPage({ refreshKey, onStrategiesChanged }: { refreshKey:
                   <span style={{ color: 'var(--text-muted)' }}>Win Rate</span><span>{s.winRate ?? 0}%</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>R:R Ratio</span><span>1:{formatRatio(s.riskReward ?? 0)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ color: 'var(--text-muted)' }}>Profit Factor</span><span>{formatRatio(s.profitFactor ?? 0)}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>

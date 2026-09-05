@@ -22,6 +22,20 @@ export const TABS = [
     blurb: 'Backtested and agent-generated trades get their own tab, kept out of your live record.',
   },
   { key: 'missed', label: 'Missed' },
+  {
+    key: 'shared',
+    label: 'Shared',
+    since: '1.4.0',
+    blurb:
+      'See a friend’s trades alongside your own — each of you keeps your own local journal, this just mirrors both into one shared view. Opt-in, off until you sign in and turn it on in Settings.',
+  },
+  {
+    key: 'settings',
+    label: 'Settings',
+    since: '1.3.1',
+    blurb:
+      'Everything that used to live in the Settings popup — profile, accounts, theme, economic calendar, Obsidian sync, shared journal, and CSV export — now has its own tab.',
+  },
   { key: 'whatsnew', label: "What's New" },
 ] as const
 

@@ -92,6 +92,7 @@ export function StrategyDetailModal({
             <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 4 }}>Performance</div>
             <StatRow label="Trades" value={String(detail.stats.tradeCount)} />
             <StatRow label="Win Rate" value={`${detail.stats.winRate}%`} />
+            <StatRow label="R:R Ratio" value={`1:${formatRatio(detail.stats.riskReward)}`} />
             <StatRow label="Profit Factor" value={formatRatio(detail.stats.profitFactor)} />
             <StatRow label="Expectancy / trade" value={`$${detail.stats.expectancy.toFixed(2)}`} />
             <StatRow label="Avg R Multiple" value={detail.stats.avgRMultiple.toFixed(2)} />

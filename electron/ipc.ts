@@ -5,6 +5,7 @@ import { app } from 'electron'
 import { getDb } from './db'
 import * as obsidian from './obsidian'
 import * as calendar from './calendar'
+import * as sync from './sync'
 import {
   getSummary,
   getStrategyPerformance,
@@ -16,6 +17,7 @@ import {
   type FundedChallengeParams,
 } from './analytics'
 import { readCsvFile, importTrades, tradesToCsv, type ColumnMapping } from './csv'
+import type { AccountRow, StrategyRow, TradeRow, MissedTradeRow } from './sync'
 
 type EntityType = 'trade' | 'missed_trade'
 
@@ -133,18 +135,23 @@ export function registerIpcHandlers() {
       .prepare('INSERT INTO accounts (name, broker, starting_balance, currency, account_type) VALUES (?, ?, ?, ?, ?)')
       .run(payload.name, payload.broker ?? '', payload.starting_balance, payload.currency, payload.account_type ?? 'live')
     void obsidian.syncAccount(info.lastInsertRowid as number)
-    return db.prepare('SELECT * FROM accounts WHERE id = ?').get(info.lastInsertRowid)
+    const row = db.prepare('SELECT * FROM accounts WHERE id = ?').get(info.lastInsertRowid) as AccountRow
+    void sync.pushAccount(row)
+    return row
   })
   ipcMain.handle('accounts:update', (_e, id: number, payload: Record<string, unknown>) => {
     db.prepare('UPDATE accounts SET name = ?, broker = ?, starting_balance = ?, currency = ?, account_type = ? WHERE id = ?').run(
       payload.name, payload.broker ?? '', payload.starting_balance, payload.currency, payload.account_type ?? 'live', id
     )
     void obsidian.syncAccount(id)
-    return db.prepare('SELECT * FROM accounts WHERE id = ?').get(id)
+    const row = db.prepare('SELECT * FROM accounts WHERE id = ?').get(id) as AccountRow
+    void sync.pushAccount(row)
+    return row
   })
   ipcMain.handle('accounts:delete', (_e, id: number) => {
     db.prepare('DELETE FROM accounts WHERE id = ?').run(id)
     void obsidian.removeAccount(id)
+    void sync.deleteAccount(id)
     return true
   })
 
@@ -155,16 +162,21 @@ export function registerIpcHandlers() {
   ipcMain.handle('strategies:create', (_e, payload: { name: string; description?: string }) => {
     const info = db.prepare('INSERT INTO strategies (name, description) VALUES (?, ?)').run(payload.name, payload.description ?? '')
     void obsidian.syncStrategy(info.lastInsertRowid as number)
-    return db.prepare('SELECT * FROM strategies WHERE id = ?').get(info.lastInsertRowid)
+    const row = db.prepare('SELECT * FROM strategies WHERE id = ?').get(info.lastInsertRowid) as StrategyRow
+    void sync.pushStrategy(row)
+    return row
   })
   ipcMain.handle('strategies:update', (_e, id: number, payload: { name: string; description?: string }) => {
     db.prepare('UPDATE strategies SET name = ?, description = ? WHERE id = ?').run(payload.name, payload.description ?? '', id)
     void obsidian.syncStrategy(id)
-    return db.prepare('SELECT * FROM strategies WHERE id = ?').get(id)
+    const row = db.prepare('SELECT * FROM strategies WHERE id = ?').get(id) as StrategyRow
+    void sync.pushStrategy(row)
+    return row
   })
   ipcMain.handle('strategies:delete', (_e, id: number) => {
     db.prepare('DELETE FROM strategies WHERE id = ?').run(id)
     void obsidian.removeStrategy(id)
+    void sync.deleteStrategy(id)
     return true
   })
   ipcMain.handle('strategies:getPerformance', () => {
@@ -262,6 +274,7 @@ export function registerIpcHandlers() {
     setEntityConfluences(db, 'trade', id, payload.confluence_ids)
     void obsidian.syncTrade(id)
     const row = db.prepare('SELECT * FROM trades WHERE id = ?').get(id) as Record<string, unknown>
+    void sync.pushTrade(row as unknown as TradeRow)
     return { ...rowToTrade(row), confluence_ids: getConfluenceIds(db, 'trade', id) }
   })
 
@@ -297,6 +310,7 @@ export function registerIpcHandlers() {
     setEntityConfluences(db, 'trade', id, payload.confluence_ids)
     void obsidian.syncTrade(id)
     const row = db.prepare('SELECT * FROM trades WHERE id = ?').get(id) as Record<string, unknown>
+    void sync.pushTrade(row as unknown as TradeRow)
     return { ...rowToTrade(row), confluence_ids: getConfluenceIds(db, 'trade', id) }
   })
 
@@ -306,6 +320,7 @@ export function registerIpcHandlers() {
     deleteEntityConfluences(db, 'trade', id)
     db.prepare('DELETE FROM trades WHERE id = ?').run(id)
     void obsidian.removeTrade(id, existing?.date)
+    void sync.deleteTrade(id)
     return true
   })
 
@@ -350,6 +365,7 @@ export function registerIpcHandlers() {
     setEntityConfluences(db, 'missed_trade', id, payload.confluence_ids)
     void obsidian.syncMissedTrade(id)
     const row = db.prepare('SELECT * FROM missed_trades WHERE id = ?').get(id) as Record<string, unknown>
+    void sync.pushMissedTrade(row as unknown as MissedTradeRow)
     return { ...rowToMissedTrade(row), confluence_ids: getConfluenceIds(db, 'missed_trade', id) }
   })
   ipcMain.handle('missedTrades:update', (_e, id: number, payload: Record<string, unknown>) => {
@@ -370,6 +386,7 @@ export function registerIpcHandlers() {
     setEntityConfluences(db, 'missed_trade', id, payload.confluence_ids)
     void obsidian.syncMissedTrade(id)
     const row = db.prepare('SELECT * FROM missed_trades WHERE id = ?').get(id) as Record<string, unknown>
+    void sync.pushMissedTrade(row as unknown as MissedTradeRow)
     return { ...rowToMissedTrade(row), confluence_ids: getConfluenceIds(db, 'missed_trade', id) }
   })
   ipcMain.handle('missedTrades:delete', (_e, id: number) => {
@@ -378,6 +395,7 @@ export function registerIpcHandlers() {
     deleteEntityConfluences(db, 'missed_trade', id)
     db.prepare('DELETE FROM missed_trades WHERE id = ?').run(id)
     void obsidian.removeMissedTrade(id, existing?.date)
+    void sync.deleteMissedTrade(id)
     return true
   })
 
@@ -601,4 +619,35 @@ export function registerIpcHandlers() {
   ipcMain.handle('obsidian:openInObsidian', () => obsidian.openInObsidian())
 
   ipcMain.handle('obsidian:showFolder', () => obsidian.showVaultFolder())
+
+  // ---------- shared journal (Supabase) ----------
+  ipcMain.handle('auth:getStatus', () => sync.getStatus())
+
+  ipcMain.handle('auth:signUp', (_e, args: { email: string; password: string; displayName: string }) =>
+    sync.signUp(args.email, args.password, args.displayName)
+  )
+
+  ipcMain.handle('auth:signIn', (_e, args: { email: string; password: string }) =>
+    sync.signIn(args.email, args.password)
+  )
+
+  ipcMain.handle('auth:signOut', () => sync.signOut())
+
+  ipcMain.handle('sync:setEnabled', (_e, enabled: boolean) => sync.setEnabled(!!enabled))
+
+  ipcMain.handle('sync:getShared', () => sync.getShared())
+
+  ipcMain.handle('sync:pushAll', async () => {
+    const accounts = db.prepare('SELECT * FROM accounts').all() as AccountRow[]
+    const strategies = db.prepare('SELECT * FROM strategies').all() as StrategyRow[]
+    const trades = db.prepare('SELECT * FROM trades').all() as TradeRow[]
+    const missed = db.prepare('SELECT * FROM missed_trades').all() as MissedTradeRow[]
+    await Promise.all([
+      ...accounts.map((a) => sync.pushAccount(a)),
+      ...strategies.map((s) => sync.pushStrategy(s)),
+      ...trades.map((t) => sync.pushTrade(t)),
+      ...missed.map((m) => sync.pushMissedTrade(m)),
+    ])
+    return { count: accounts.length + strategies.length + trades.length + missed.length }
+  })
 }

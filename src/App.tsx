@@ -11,10 +11,11 @@ import { NewsPage } from './pages/NewsPage'
 import { TradesDbPage } from './pages/TradesDbPage'
 import { BacktestPage } from './pages/BacktestPage'
 import { MissedTradesPage } from './pages/MissedTradesPage'
+import { SharedPage } from './pages/SharedPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { WhatsNewPage } from './pages/WhatsNewPage'
 import { TradeFormModal } from './components/TradeFormModal'
 import { AccountsModal } from './components/AccountsModal'
-import { SettingsModal } from './components/SettingsModal'
 import { WelcomeModal } from './components/WelcomeModal'
 import { AmbientRoom } from './components/AmbientRoom'
 import { SpatialStage } from './components/SpatialStage'
@@ -54,7 +55,6 @@ function App() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [showNewTrade, setShowNewTrade] = useState(false)
   const [showAccounts, setShowAccounts] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
   const [reviewJumpDate, setReviewJumpDate] = useState<{ date: string; token: number } | null>(null)
   const [seenVersion, setSeenVersion] = useState<string | null>(getLastSeenVersion)
   const [dismissedFeature, setDismissedFeature] = useState<string | null>(getDismissedFeatureVersion)
@@ -118,6 +118,11 @@ function App() {
   const goTab = (k: string) => {
     setTab(k as TabKey)
     if (k === 'whatsnew') setSeenVersion(LATEST_VERSION)
+  }
+
+  const openSettingsTab = () => {
+    goTab('settings')
+    closePanels()
   }
 
   const dismissFeature = (version: string) => {
@@ -240,6 +245,16 @@ function App() {
                       bumpRefresh={bumpRefresh}
                     />
                   )}
+                  {tab === 'shared' && <SharedPage onOpenSettings={openSettingsTab} />}
+                  {tab === 'settings' && (
+                    <SettingsPage
+                      userName={userName}
+                      onUserNameChange={saveUserName}
+                      themeMode={themeMode}
+                      onToggleTheme={toggleTheme}
+                      onManageAccounts={() => setShowAccounts(true)}
+                    />
+                  )}
                   {tab === 'whatsnew' && <WhatsNewPage />}
                 </>
               )
@@ -276,7 +291,7 @@ function App() {
           section={utilitySection}
           onSectionChange={setUtilitySection}
           onManageAccounts={() => setShowAccounts(true)}
-          onOpenSettings={() => setShowSettings(true)}
+          onOpenSettings={openSettingsTab}
           accounts={accounts}
           strategies={strategies}
           refreshKey={refreshKey}
@@ -303,10 +318,6 @@ function App() {
           onClose={() => setShowAccounts(false)}
           onChanged={loadLookups}
         />
-      )}
-
-      {showSettings && (
-        <SettingsModal onClose={() => setShowSettings(false)} userName={userName} onUserNameChange={saveUserName} />
       )}
 
       {showWelcome && <WelcomeModal onSave={saveUserName} onSkip={dismissWelcome} />}

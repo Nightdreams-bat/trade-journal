@@ -1,6 +1,6 @@
 export {}
 
-import type { CalendarConfig, CalendarEvent, CalendarSyncResult } from './types'
+import type { CalendarConfig, CalendarEvent, CalendarSyncResult, SyncStatus, SharedTrade } from './types'
 
 export interface ObsidianConfig {
   enabled: boolean
@@ -106,6 +106,19 @@ declare global {
         rebuild: () => Promise<{ ok: boolean; count: number; error?: string }>
         openInObsidian: () => Promise<void>
         showFolder: () => Promise<void>
+      }
+      // Optional for the same reason as `obsidian`/`calendar` — absent in the
+      // browser dev-preview harness.
+      auth?: {
+        getStatus: () => Promise<SyncStatus>
+        signUp: (args: { email: string; password: string; displayName: string }) => Promise<SyncStatus>
+        signIn: (args: { email: string; password: string }) => Promise<SyncStatus>
+        signOut: () => Promise<SyncStatus>
+      }
+      sync?: {
+        setEnabled: (enabled: boolean) => Promise<SyncStatus>
+        getShared: () => Promise<SharedTrade[]>
+        pushAll: () => Promise<{ count: number }>
       }
     }
   }

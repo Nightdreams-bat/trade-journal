@@ -72,4 +72,15 @@ contextBridge.exposeInMainWorld('api', {
     openInObsidian: () => invoke('obsidian:openInObsidian'),
     showFolder: () => invoke('obsidian:showFolder'),
   },
+  auth: {
+    getStatus: () => invoke('auth:getStatus'),
+    signUp: (args: { email: string; password: string; displayName: string }) => invoke('auth:signUp', args),
+    signIn: (args: { email: string; password: string }) => invoke('auth:signIn', args),
+    signOut: () => invoke('auth:signOut'),
+  },
+  sync: {
+    setEnabled: (enabled: boolean) => invoke('sync:setEnabled', enabled),
+    getShared: () => invoke('sync:getShared'),
+    pushAll: () => invoke('sync:pushAll'),
+  },
 })

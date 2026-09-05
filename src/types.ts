@@ -85,6 +85,7 @@ export interface StrategyPerformance {
   planAdherence: number
   avgWin: number
   avgLoss: number
+  riskReward: number
 }
 
 export interface DrawdownPoint {
@@ -159,6 +160,7 @@ export interface StrategyDetail {
     planAdherence: number
     avgWin: number
     avgLoss: number
+    riskReward: number
   }
   equityCurve: { date: string; cumulativePnl: number }[]
   drawdown: { series: { date: string; drawdown: number }[]; maxDrawdown: number }
@@ -279,4 +281,36 @@ export interface CalendarSyncResult {
   inserted: number
   updated: number
   error?: string
+}
+
+// ---------------------------------------------------------------------------
+// Shared journal (Supabase) — see electron/sync.ts
+// ---------------------------------------------------------------------------
+
+export interface SyncStatus {
+  /** SUPABASE_URL/SUPABASE_ANON_KEY are set — the feature can be used at all. */
+  configured: boolean
+  signedIn: boolean
+  email: string | null
+  displayName: string | null
+  /** Whether this device pushes local changes up. Off by default, per-device. */
+  enabled: boolean
+  lastSync: string | null
+  lastError: string | null
+}
+
+export interface SharedTrade {
+  id: string
+  date: string
+  pair: string | null
+  direction: string | null
+  pnl: number
+  r_multiple: number | null
+  notes: string | null
+  source: string
+  ownerId: string
+  ownerName: string
+  isMine: boolean
+  accountName: string | null
+  strategyName: string | null
 }

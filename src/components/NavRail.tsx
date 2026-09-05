@@ -16,6 +16,7 @@ import {
   Sparkles,
   Table2,
   Target,
+  Users,
   Wallet,
 } from './icons'
 
@@ -49,6 +50,8 @@ const TAB_ICONS: Record<TabKey, ComponentType<{ size?: number; strokeWidth?: num
   trades: Table2,
   backtest: FlaskConical,
   missed: Crosshair,
+  shared: Users,
+  settings: Settings,
   whatsnew: Sparkles,
 }
 
