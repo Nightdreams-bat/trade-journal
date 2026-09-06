@@ -12,6 +12,7 @@ interface TradeRow {
   date: string
   pnl: number
   followed_plan: number
+  break_even: number
   session: string | null
 }
 
@@ -32,14 +33,25 @@ function fetchTrades(filters: SummaryFilters, monthScoped: boolean): TradeRow[] 
     p.push(`${filters.month}%`)
   }
   const finalWhere = clauses.length ? `WHERE ${clauses.join(' AND ')}` : ''
-  const stmt = db.prepare(`SELECT id, date, pnl, followed_plan, session FROM trades ${finalWhere} ORDER BY date ASC`)
+  const stmt = db.prepare(`SELECT id, date, pnl, followed_plan, break_even, session FROM trades ${finalWhere} ORDER BY date ASC`)
   return stmt.all(...p) as unknown as TradeRow[]
 }
 
+/**
+ * Break-even trades are excluded from BOTH sides of the ratio: a scratched trade is
+ * neither a win nor a loss, so counting it in the denominator quietly drags the rate
+ * down. A trade is break-even if it is flagged as such or closed at exactly zero —
+ * the same rule `tradingPlan.ts` uses. All-BE input has no rate to report, so 0.
+ */
+function decidedTrades(trades: TradeRow[]): TradeRow[] {
+  return trades.filter((t) => !t.break_even && t.pnl !== 0)
+}
+
 function winRateOf(trades: TradeRow[]): number {
-  if (!trades.length) return 0
-  const wins = trades.filter((t) => t.pnl > 0).length
-  return wins / trades.length
+  const decided = decidedTrades(trades)
+  if (!decided.length) return 0
+  const wins = decided.filter((t) => t.pnl > 0).length
+  return wins / decided.length
 }
 
 function profitFactorOf(trades: TradeRow[]): number {
@@ -313,16 +325,21 @@ export function getMonthlyBreakdown(filters: MonthlyBreakdownFilters) {
     clauses.push('strategy_id = ?')
     p.push(filters.strategyId)
   }
-  const rows = db.prepare(`SELECT date, pnl FROM trades WHERE ${clauses.join(' AND ')}`).all(...p) as {
+  const rows = db.prepare(`SELECT date, pnl, break_even FROM trades WHERE ${clauses.join(' AND ')}`).all(...p) as {
     date: string
     pnl: number
+    break_even: number
   }[]
-  const buckets = Array.from({ length: 12 }, () => ({ pnl: 0, count: 0, wins: 0 }))
+  // `decided` is the win-rate denominator (break-evens excluded); `count` stays every
+  // trade taken, which is what the trade-count column reports.
+  const buckets = Array.from({ length: 12 }, () => ({ pnl: 0, count: 0, decided: 0, wins: 0 }))
   for (const r of rows) {
     const m = Number(r.date.slice(5, 7)) - 1
     if (m < 0 || m > 11) continue
     buckets[m].pnl += r.pnl
     buckets[m].count += 1
+    if (r.break_even || r.pnl === 0) continue
+    buckets[m].decided += 1
     if (r.pnl > 0) buckets[m].wins += 1
   }
   return buckets.map((b, i) => ({
@@ -330,7 +347,7 @@ export function getMonthlyBreakdown(filters: MonthlyBreakdownFilters) {
     label: MONTH_LABELS[i],
     pnl: round2(b.pnl),
     tradeCount: b.count,
-    winRate: b.count ? round1((b.wins / b.count) * 100) : 0,
+    winRate: b.decided ? round1((b.wins / b.decided) * 100) : 0,
   }))
 }
 
@@ -446,7 +463,10 @@ export function simulateFundedChallenge(params: FundedChallengeParams): FundedCh
   const grossWinR = wins.reduce((s, r) => s + r, 0)
   const grossLossR = Math.abs(losses.reduce((s, r) => s + r, 0))
   const historicalProfitFactor = grossLossR === 0 ? (grossWinR > 0 ? 999 : 0) : grossWinR / grossLossR
-  const historicalWinRate = round1((wins.length / pooled.length) * 100)
+  // Break-even samples (r === 0) sit out of the ratio, matching `winRateOf`; they stay in
+  // `pooled` because the bootstrap still has to draw them as real outcomes.
+  const decidedCount = wins.length + losses.length
+  const historicalWinRate = decidedCount ? round1((wins.length / decidedCount) * 100) : 0
   const expectancyR = pooled.reduce((s, r) => s + r, 0) / pooled.length
   const expectancyPct = expectancyR * params.riskPerTradePct
 
@@ -646,7 +666,7 @@ export function getStrategyPerformance(): StrategyPerformance[] {
   }[]
   return strategies.map((s) => {
     const trades = db
-      .prepare('SELECT id, date, pnl, followed_plan, session, r_multiple, name, pair FROM trades WHERE strategy_id = ?')
+      .prepare('SELECT id, date, pnl, followed_plan, break_even, session, r_multiple, name, pair FROM trades WHERE strategy_id = ?')
       .all(s.id) as unknown as StrategyTradeRow[]
     return {
       id: s.id,
@@ -678,7 +698,7 @@ export function getStrategyDetail(strategyId: number): StrategyDetail | null {
 
   const trades = db
     .prepare(
-      'SELECT id, date, pnl, followed_plan, session, r_multiple, name, pair FROM trades WHERE strategy_id = ? ORDER BY date ASC'
+      'SELECT id, date, pnl, followed_plan, break_even, session, r_multiple, name, pair FROM trades WHERE strategy_id = ? ORDER BY date ASC'
     )
     .all(strategyId) as unknown as StrategyTradeRow[]
 
