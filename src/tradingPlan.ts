@@ -169,9 +169,17 @@ export function confluenceEdgeBreakdown(trades: Trade[], confluences: Confluence
   for (const [id, ts] of grouped) {
     const name = byId.get(id)
     if (!name) continue
-    const wins = ts.filter((t) => t.pnl > 0).length
+    // Break-evens count toward the tag's trade count and expectancy, but not its win rate.
+    const decided = ts.filter((t) => !t.break_even && t.pnl !== 0)
+    const wins = decided.filter((t) => t.pnl > 0).length
     const expectancy = ts.reduce((s, t) => s + t.pnl, 0) / ts.length
-    rows.push({ id, name, count: ts.length, winRate: Math.round((wins / ts.length) * 1000) / 10, expectancy: Math.round(expectancy * 100) / 100 })
+    rows.push({
+      id,
+      name,
+      count: ts.length,
+      winRate: decided.length ? Math.round((wins / decided.length) * 1000) / 10 : 0,
+      expectancy: Math.round(expectancy * 100) / 100,
+    })
   }
   return rows.sort((a, b) => b.expectancy - a.expectancy)
 }

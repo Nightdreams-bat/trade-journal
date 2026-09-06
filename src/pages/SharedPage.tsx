@@ -37,7 +37,9 @@ function groupByStrategy(trades: SharedTrade[]): StrategyGroupStats[] {
       return {
         name,
         tradeCount: group.length,
-        winRate: group.length ? Math.round((wins.length / group.length) * 1000) / 10 : 0,
+        // Break-evens are out of the ratio, as everywhere else. The shared mirror carries no
+        // `break_even` flag, so a zero P&L is the only signal available here.
+        winRate: wins.length + losses.length ? Math.round((wins.length / (wins.length + losses.length)) * 1000) / 10 : 0,
         riskReward: avgLoss === 0 ? (avgWin > 0 ? 5 : 0) : avgWin / avgLoss,
         avgRMultiple,
         totalPnl: group.reduce((s, t) => s + t.pnl, 0),
