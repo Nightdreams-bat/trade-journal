@@ -15,6 +15,9 @@ release
 *.local
 .env
 
+# Local Desktop-shortcut icon asset, not the packaged app icon (that's public/favicon.png)
+build/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
