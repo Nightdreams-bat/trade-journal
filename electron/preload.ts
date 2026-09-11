@@ -37,6 +37,7 @@ contextBridge.exposeInMainWorld('api', {
   },
   images: {
     add: (entityType: 'trade' | 'missed_trade', entityId: number) => invoke('images:add', entityType, entityId),
+    addFromClipboard: (entityType: 'trade' | 'missed_trade', entityId: number) => invoke('images:addFromClipboard', entityType, entityId),
     get: (entityType: 'trade' | 'missed_trade', entityId: number) => invoke('images:get', entityType, entityId),
     remove: (imageId: number) => invoke('images:remove', imageId),
     getAllForTrades: () => invoke('images:getAllForTrades'),

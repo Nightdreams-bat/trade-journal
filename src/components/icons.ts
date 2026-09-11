@@ -53,4 +53,6 @@ export {
   Users,
   Eye,
   EyeOff,
+  Clipboard,
+  ImageIcon,
 } from 'lucide-react'

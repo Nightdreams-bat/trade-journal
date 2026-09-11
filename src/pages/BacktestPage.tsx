@@ -40,6 +40,9 @@ export function BacktestPage({
 
   const strategyName = (id: number | null) => strategies.find((s) => s.id === id)?.name ?? '—'
   const accountName = (id: number | null) => accounts.find((a) => a.id === id)?.name ?? '—'
+  // Only dedicated backtest accounts show up here — real (live/demo/prop) accounts stay in the
+  // Trades tab's own account picker (see TradesDbPage).
+  const backtestAccounts = useMemo(() => accounts.filter((a) => a.account_type === 'backtest'), [accounts])
 
   const requestIdRef = useRef(0)
   const load = useCallback(() => {
@@ -90,7 +93,7 @@ export function BacktestPage({
             style={{ width: 220 }}
           />
           <FilterBar
-            accounts={accounts}
+            accounts={backtestAccounts}
             strategies={strategies}
             accountId={accountId}
             strategyId={strategyId}
@@ -179,7 +182,7 @@ export function BacktestPage({
       {editingTrade !== undefined && (
         <TradeFormModal
           trade={editingTrade ?? undefined}
-          accounts={accounts}
+          accounts={backtestAccounts}
           strategies={strategies}
           confluences={confluences}
           onConfluencesChanged={onConfluencesChanged}

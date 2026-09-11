@@ -1,4 +1,4 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron'
+import { ipcMain, dialog, BrowserWindow, clipboard } from 'electron'
 import fs from 'node:fs'
 import path from 'node:path'
 import { app } from 'electron'
@@ -411,10 +411,43 @@ export function registerIpcHandlers() {
     const destDir = path.join(app.getPath('userData'), 'screenshots')
     fs.mkdirSync(destDir, { recursive: true })
     for (const src of result.filePaths) {
-      const destName = `${entityType}_${entityId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}${path.extname(src)}`
+      const ext = path.extname(src).slice(1) || 'png'
+      const destName = `${entityType}_${entityId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`
       const dest = path.join(destDir, destName)
       fs.copyFileSync(src, dest)
-      db.prepare('INSERT INTO entity_images (entity_type, entity_id, path) VALUES (?, ?, ?)').run(entityType, entityId, dest)
+      const info = db.prepare('INSERT INTO entity_images (entity_type, entity_id, path) VALUES (?, ?, ?)').run(entityType, entityId, dest)
+      if (entityType === 'trade') {
+        void sync.pushTradeImage(info.lastInsertRowid as number, entityId, fs.readFileSync(dest), ext, `image/${ext === 'jpg' ? 'jpeg' : ext}`)
+      }
+    }
+    void obsidian.syncEntityImages(entityType, entityId)
+    return true
+  })
+
+  ipcMain.handle('images:addFromClipboard', async (_e, entityType: EntityType, entityId: number) => {
+    // Electron 44 dropped the old sync clipboard.readImage()/nativeImage API in favor of this
+    // async, W3C-Clipboard-API-shaped one — clipboard.read() returns ClipboardItems whose
+    // .types lists what's actually on the OS clipboard (a Windows screenshot-tool image lands
+    // as 'image/png'), and getType() hands back the bytes as a Blob.
+    let bytes: Buffer | null = null
+    let mime = 'image/png'
+    for (const item of await clipboard.read()) {
+      const imageType = item.types.find((t) => t.startsWith('image/'))
+      if (!imageType) continue
+      bytes = Buffer.from(await (await item.getType(imageType)).arrayBuffer())
+      mime = imageType
+      break
+    }
+    if (!bytes) return false
+    const ext = mime === 'image/jpeg' ? 'jpg' : mime.split('/')[1]
+    const destDir = path.join(app.getPath('userData'), 'screenshots')
+    fs.mkdirSync(destDir, { recursive: true })
+    const destName = `${entityType}_${entityId}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.${ext}`
+    const dest = path.join(destDir, destName)
+    fs.writeFileSync(dest, bytes)
+    const info = db.prepare('INSERT INTO entity_images (entity_type, entity_id, path) VALUES (?, ?, ?)').run(entityType, entityId, dest)
+    if (entityType === 'trade') {
+      void sync.pushTradeImage(info.lastInsertRowid as number, entityId, bytes, ext, mime)
     }
     void obsidian.syncEntityImages(entityType, entityId)
     return true
@@ -520,6 +553,7 @@ export function registerIpcHandlers() {
     }
     db.prepare('DELETE FROM entity_images WHERE id = ?').run(imageId)
     if (row) void obsidian.syncEntityImages(row.entity_type, row.entity_id)
+    if (row?.entity_type === 'trade') void sync.deleteTradeImage(imageId)
     return true
   })
 

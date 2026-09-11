@@ -25,7 +25,7 @@ export function UnderwaterChart({ detail, compact }: { detail: DrawdownDetail; c
   const fmt = (v: number) => (pct ? `${v.toFixed(2)}%` : `$${Math.round(v).toLocaleString()}`)
 
   return (
-    <div className="card" style={{ padding: 'var(--sp-4)', flex: 2, minWidth: 420 }}>
+    <div className="card" style={{ padding: 'var(--sp-4)', flex: 1, minWidth: 420, display: 'flex', flexDirection: 'column' }}>
       {!compact && (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4, gap: 10, flexWrap: 'wrap' }}>
           <div style={{ color: 'var(--text-muted)', fontSize: 12 }}>
@@ -37,48 +37,50 @@ export function UnderwaterChart({ detail, compact }: { detail: DrawdownDetail; c
         </div>
       )}
       {data.length < 2 ? (
-        <div style={{ height: chartHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}>
+        <div style={{ flex: 1, minHeight: chartHeight, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-dim)' }}>
           Not enough trades yet
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={chartHeight}>
-          <AreaChart data={data}>
-            <defs>
-              <linearGradient id="underwaterFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={colors.red} stopOpacity={0} />
-                <stop offset="100%" stopColor={colors.red} stopOpacity={0.42} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke={colors.border} strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="date" tick={{ fill: colors.textMuted, fontSize: 10 }} axisLine={{ stroke: colors.border }} tickLine={false} minTickGap={30} />
-            <YAxis
-              tick={{ fill: colors.textMuted, fontSize: 11 }}
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(v: number) => (pct ? `${v}%` : `$${v}`)}
-            />
-            <ReferenceLine y={0} stroke={colors.border} />
-            <Tooltip
-              contentStyle={TOOLTIP_STYLE}
-              labelStyle={TOOLTIP_LABEL_STYLE}
-              itemStyle={TOOLTIP_ITEM_STYLE}
-              formatter={(v, name) => [fmt(Number(v)), name === 'benchmark' ? 'Whole book' : 'Drawdown']}
-            />
-            {showBenchmark && (
-              <Area
-                type="monotone"
-                dataKey="benchmark"
-                stroke={colors.textDim}
-                strokeWidth={1.5}
-                strokeDasharray="4 3"
-                fill="none"
-                connectNulls
-                {...CHART_ANIM}
+        <div style={{ flex: 1, minHeight: chartHeight }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={data}>
+              <defs>
+                <linearGradient id="underwaterFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={colors.red} stopOpacity={0} />
+                  <stop offset="100%" stopColor={colors.red} stopOpacity={0.42} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke={colors.border} strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="date" tick={{ fill: colors.textMuted, fontSize: 10 }} axisLine={{ stroke: colors.border }} tickLine={false} minTickGap={30} />
+              <YAxis
+                tick={{ fill: colors.textMuted, fontSize: 11 }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v: number) => (pct ? `${v}%` : `$${v}`)}
               />
-            )}
-            <Area type="monotone" dataKey="drawdown" stroke={colors.red} strokeWidth={2} fill="url(#underwaterFill)" {...CHART_ANIM} />
-          </AreaChart>
-        </ResponsiveContainer>
+              <ReferenceLine y={0} stroke={colors.border} />
+              <Tooltip
+                contentStyle={TOOLTIP_STYLE}
+                labelStyle={TOOLTIP_LABEL_STYLE}
+                itemStyle={TOOLTIP_ITEM_STYLE}
+                formatter={(v, name) => [fmt(Number(v)), name === 'benchmark' ? 'Whole book' : 'Drawdown']}
+              />
+              {showBenchmark && (
+                <Area
+                  type="monotone"
+                  dataKey="benchmark"
+                  stroke={colors.textDim}
+                  strokeWidth={1.5}
+                  strokeDasharray="4 3"
+                  fill="none"
+                  connectNulls
+                  {...CHART_ANIM}
+                />
+              )}
+              <Area type="monotone" dataKey="drawdown" stroke={colors.red} strokeWidth={2} fill="url(#underwaterFill)" {...CHART_ANIM} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
       )}
     </div>
   )

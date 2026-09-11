@@ -38,6 +38,9 @@ export function TradesDbPage({
 
   const strategyName = (id: number | null) => strategies.find((s) => s.id === id)?.name ?? '—'
   const accountName = (id: number | null) => accounts.find((a) => a.id === id)?.name ?? '—'
+  // Real trades are logged against real (non-backtest) accounts — dedicated backtest accounts
+  // only show up in the Backtest tab's own account picker (see BacktestPage).
+  const selectableAccounts = useMemo(() => accounts.filter((a) => a.account_type !== 'backtest'), [accounts])
 
   const requestIdRef = useRef(0)
   const load = useCallback(() => {
@@ -93,7 +96,7 @@ export function TradesDbPage({
             style={{ width: 220 }}
           />
           <FilterBar
-            accounts={accounts}
+            accounts={selectableAccounts}
             strategies={strategies}
             accountId={accountId}
             strategyId={strategyId}
@@ -180,7 +183,7 @@ export function TradesDbPage({
       {editingTrade !== undefined && (
         <TradeFormModal
           trade={editingTrade ?? undefined}
-          accounts={accounts}
+          accounts={selectableAccounts}
           strategies={strategies}
           confluences={confluences}
           onConfluencesChanged={onConfluencesChanged}
@@ -198,7 +201,7 @@ export function TradesDbPage({
 
       {showImport && (
         <CsvImportModal
-          accounts={accounts}
+          accounts={selectableAccounts}
           onClose={() => setShowImport(false)}
           onImported={() => {
             load()

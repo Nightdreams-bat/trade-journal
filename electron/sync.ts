@@ -40,6 +40,7 @@ export interface SharedTrade {
   isMine: boolean
   accountName: string | null
   strategyName: string | null
+  imageUrls: string[]
 }
 
 export function isEnabled(): boolean {
@@ -243,17 +244,75 @@ export function deleteMissedTrade(localId: number): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// trade images: mirrors screenshots to Supabase Storage (bucket `trade-images`,
+// one object per local image at `<user_id>/<local_image_id>.<ext>`) plus a
+// `trade_images` row pointing at it, so getShared() can resolve a public URL.
+// Missed-trade screenshots are out of scope — the Shared tab never shows
+// missed trades either. Same fire-and-forget/never-throw contract as push().
+// ---------------------------------------------------------------------------
+
+export async function pushTradeImage(
+  localImageId: number,
+  localTradeId: number,
+  bytes: Uint8Array,
+  ext: string,
+  contentType: string,
+): Promise<void> {
+  if (!supabase || !isEnabled()) return
+  try {
+    const userId = await currentUserId()
+    if (!userId) return
+    const storagePath = `${userId}/${localImageId}.${ext}`
+    const { error: uploadError } = await supabase.storage
+      .from('trade-images')
+      .upload(storagePath, bytes, { contentType, upsert: true })
+    if (uploadError) throw uploadError
+    const { error } = await supabase
+      .from('trade_images')
+      .upsert(
+        { user_id: userId, local_trade_id: localTradeId, local_image_id: localImageId, storage_path: storagePath },
+        { onConflict: 'user_id,local_image_id' },
+      )
+    if (error) throw error
+    setSetting(LAST_SYNC_KEY, new Date().toISOString())
+    setSetting(LAST_ERROR_KEY, '')
+  } catch (err) {
+    setSetting(LAST_ERROR_KEY, err instanceof Error ? err.message : String(err))
+  }
+}
+
+export async function deleteTradeImage(localImageId: number): Promise<void> {
+  if (!supabase || !isEnabled()) return
+  try {
+    const userId = await currentUserId()
+    if (!userId) return
+    const { data } = await supabase
+      .from('trade_images')
+      .select('storage_path')
+      .eq('user_id', userId)
+      .eq('local_image_id', localImageId)
+      .maybeSingle()
+    if (data?.storage_path) await supabase.storage.from('trade-images').remove([data.storage_path])
+    const { error } = await supabase.from('trade_images').delete().eq('user_id', userId).eq('local_image_id', localImageId)
+    if (error) throw error
+  } catch (err) {
+    setSetting(LAST_ERROR_KEY, err instanceof Error ? err.message : String(err))
+  }
+}
+
+// ---------------------------------------------------------------------------
 // pull (Supabase -> Shared tab)
 // ---------------------------------------------------------------------------
 
 export async function getShared(): Promise<SharedTrade[]> {
   if (!supabase) return []
 
-  const [tradesRes, accountsRes, strategiesRes, profilesRes, sessionRes] = await Promise.all([
+  const [tradesRes, accountsRes, strategiesRes, profilesRes, imagesRes, sessionRes] = await Promise.all([
     supabase.from('trades').select('*').order('date', { ascending: false }),
     supabase.from('accounts').select('user_id, local_id, name'),
     supabase.from('strategies').select('user_id, local_id, name'),
     supabase.from('profiles').select('id, display_name'),
+    supabase.from('trade_images').select('user_id, local_trade_id, storage_path'),
     supabase.auth.getSession(),
   ])
   if (tradesRes.error) throw tradesRes.error
@@ -267,6 +326,14 @@ export async function getShared(): Promise<SharedTrade[]> {
   const displayName = new Map(
     (profilesRes.data ?? []).map((p) => [p.id as string, p.display_name as string])
   )
+  const imageUrls = new Map<string, string[]>()
+  for (const img of imagesRes.data ?? []) {
+    const key = `${img.user_id}:${img.local_trade_id}`
+    const url = supabase.storage.from('trade-images').getPublicUrl(img.storage_path).data.publicUrl
+    const list = imageUrls.get(key)
+    if (list) list.push(url)
+    else imageUrls.set(key, [url])
+  }
   const myId = sessionRes.data.session?.user.id ?? null
 
   return (tradesRes.data ?? []).map((t) => ({
@@ -285,5 +352,6 @@ export async function getShared(): Promise<SharedTrade[]> {
       t.account_local_id != null ? (accountName.get(`${t.user_id}:${t.account_local_id}`) ?? null) : null,
     strategyName:
       t.strategy_local_id != null ? (strategyName.get(`${t.user_id}:${t.strategy_local_id}`) ?? null) : null,
+    imageUrls: imageUrls.get(`${t.user_id}:${t.local_id}`) ?? [],
   }))
 }

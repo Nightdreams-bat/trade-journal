@@ -103,13 +103,29 @@ create table if not exists missed_trades (
 );
 
 -- ---------------------------------------------------------------------------
+-- trade_images: points at the actual bytes in the `trade-images` Storage
+-- bucket below. One row per local `entity_images` row for entity_type='trade'
+-- — missed-trade screenshots never sync, same as missed trades not appearing
+-- in the Shared tab at all.
+-- ---------------------------------------------------------------------------
+create table if not exists trade_images (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  local_trade_id integer not null,
+  local_image_id integer not null,
+  storage_path text not null,
+  created_at timestamptz not null default now(),
+  unique (user_id, local_image_id)
+);
+
+-- ---------------------------------------------------------------------------
 -- RLS: everyone signed in can read everything; you can only write your own.
 -- ---------------------------------------------------------------------------
 do $$
 declare
   t text;
 begin
-  for t in select unnest(array['accounts', 'strategies', 'trades', 'missed_trades'])
+  for t in select unnest(array['accounts', 'strategies', 'trades', 'missed_trades', 'trade_images'])
   loop
     execute format('alter table %I enable row level security', t);
 
@@ -124,3 +140,32 @@ begin
     );
   end loop;
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- Storage: a public bucket for trade screenshots, one object per image at
+-- `<user_id>/<local_image_id>.<ext>`. Public read means the Shared tab can
+-- just render the plain URL — no signed-URL plumbing needed for a private
+-- two-person tool. Writes are still locked to each user's own folder.
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('trade-images', 'trade-images', true)
+on conflict (id) do nothing;
+
+create policy "trade-images readable by anyone"
+  on storage.objects for select
+  using (bucket_id = 'trade-images');
+
+create policy "users upload their own trade images"
+  on storage.objects for insert
+  to authenticated
+  with check (bucket_id = 'trade-images' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "users update their own trade images"
+  on storage.objects for update
+  to authenticated
+  using (bucket_id = 'trade-images' and (storage.foldername(name))[1] = auth.uid()::text);
+
+create policy "users delete their own trade images"
+  on storage.objects for delete
+  to authenticated
+  using (bucket_id = 'trade-images' and (storage.foldername(name))[1] = auth.uid()::text);

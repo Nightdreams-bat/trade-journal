@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Stagger, Reveal } from '../anim'
-import { RefreshCw, Users, TriangleAlert } from '../components/icons'
+import { RefreshCw, Users, TriangleAlert, ImageIcon } from '../components/icons'
+import { SharedTradeDetailModal } from '../components/SharedTradeDetailModal'
 import { formatRatio } from '../format'
 import type { SharedTrade, SyncStatus } from '../types'
 
@@ -37,7 +38,9 @@ function groupByStrategy(trades: SharedTrade[]): StrategyGroupStats[] {
       return {
         name,
         tradeCount: group.length,
-        winRate: group.length ? Math.round((wins.length / group.length) * 1000) / 10 : 0,
+        // Break-evens are out of the ratio, as everywhere else. The shared mirror carries no
+        // `break_even` flag, so a zero P&L is the only signal available here.
+        winRate: wins.length + losses.length ? Math.round((wins.length / (wins.length + losses.length)) * 1000) / 10 : 0,
         riskReward: avgLoss === 0 ? (avgWin > 0 ? 5 : 0) : avgWin / avgLoss,
         avgRMultiple,
         totalPnl: group.reduce((s, t) => s + t.pnl, 0),
@@ -60,6 +63,7 @@ export function SharedPage({ onOpenSettings }: { onOpenSettings: () => void }) {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<OwnerFilter>('all')
   const [error, setError] = useState<string | null>(null)
+  const [openTrade, setOpenTrade] = useState<SharedTrade | null>(null)
 
   const load = async () => {
     if (!auth || !sync) {
@@ -215,11 +219,12 @@ export function SharedPage({ onOpenSettings }: { onOpenSettings: () => void }) {
                 <th>R</th>
                 <th>Account</th>
                 <th>Strategy</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((t) => (
-                <tr key={t.id}>
+                <tr key={t.id} onClick={() => setOpenTrade(t)}>
                   <td>{t.isMine ? 'Me' : t.ownerName}</td>
                   <td>{t.date}</td>
                   <td>{t.pair || '—'}</td>
@@ -231,12 +236,22 @@ export function SharedPage({ onOpenSettings }: { onOpenSettings: () => void }) {
                   <td>{t.r_multiple != null ? t.r_multiple.toFixed(2) : '—'}</td>
                   <td>{t.accountName || '—'}</td>
                   <td>{t.strategyName || '—'}</td>
+                  <td>
+                    {t.imageUrls.length > 0 && (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, color: 'var(--text-dim)', fontSize: 11 }}>
+                        <ImageIcon size={13} strokeWidth={1.75} />
+                        {t.imageUrls.length}
+                      </span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </Reveal>
+
+      {openTrade && <SharedTradeDetailModal trade={openTrade} onClose={() => setOpenTrade(null)} />}
     </Stagger>
   )
 }

@@ -2,10 +2,17 @@ import { compareVersions } from './changelog'
 
 export const TABS = [
   { key: 'home', label: 'Home' },
+  { key: 'trades', label: 'Trades' },
+  { key: 'missed', label: 'Missed' },
+  {
+    key: 'backtest',
+    label: 'Backtest',
+    since: '1.1.1',
+    blurb: 'Backtested and agent-generated trades get their own tab, kept out of your live record.',
+  },
+  { key: 'playbooks', label: 'Playbooks' },
   { key: 'analytics', label: 'Analytics' },
   { key: 'plan', label: 'Trading Plan' },
-  { key: 'payout', label: 'Payout Calculator' },
-  { key: 'playbooks', label: 'Playbooks' },
   { key: 'review', label: 'Review' },
   {
     key: 'news',
@@ -14,14 +21,7 @@ export const TABS = [
     blurb:
       'This week’s ForexFactory calendar with its red folders, today’s high-impact events on the dashboard, and an optional entry time that matches a trade to the news around it.',
   },
-  { key: 'trades', label: 'Trades' },
-  {
-    key: 'backtest',
-    label: 'Backtest',
-    since: '1.1.1',
-    blurb: 'Backtested and agent-generated trades get their own tab, kept out of your live record.',
-  },
-  { key: 'missed', label: 'Missed' },
+  { key: 'payout', label: 'Payout Calculator' },
   {
     key: 'shared',
     label: 'Shared',

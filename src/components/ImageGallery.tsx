@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Modal } from './Modal'
 import { ZoomableImage } from './ZoomableImage'
-import { Plus, X } from './icons'
+import { Plus, X, Clipboard } from './icons'
 
 export function ImageGallery({ entityType, entityId }: { entityType: 'trade' | 'missed_trade'; entityId: number }) {
   const [images, setImages] = useState<{ id: number; dataUrl: string }[]>([])
@@ -28,6 +28,34 @@ export function ImageGallery({ entityType, entityId }: { entityType: 'trade' | '
       setAdding(false)
     }
   }
+
+  const addFromClipboard = async () => {
+    setAdding(true)
+    try {
+      const added = await window.api.images.addFromClipboard(entityType, entityId)
+      if (added) load()
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  // Lets you screenshot a chart and hit Ctrl+V anywhere in this trade's form to attach it,
+  // instead of always going through the file-open dialog. Triggered on the raw keydown rather
+  // than the browser's 'paste' event: Chromium only dispatches 'paste' to a focused *editable*
+  // element, so with nothing focused (or focus on a plain button) it never fires at all — and
+  // even when it does, ClipboardEvent.clipboardData doesn't reliably surface a Windows
+  // screenshot-tool bitmap the way Electron's native clipboard.readImage() (called in
+  // images:addFromClipboard, main-process side) does. Keydown always fires regardless of focus;
+  // we don't preventDefault, so a real text paste into Notes etc. still goes through normally
+  // and this just does a harmless no-op image check alongside it.
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') addFromClipboard()
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- addFromClipboard closes over stable entityType/entityId
+  }, [entityType, entityId])
 
   const removeImage = async (id: number) => {
     await window.api.images.remove(id)
@@ -82,9 +110,14 @@ export function ImageGallery({ entityType, entityId }: { entityType: 'trade' | '
           ))}
         </div>
       )}
-      <button className="btn" onClick={addImages} disabled={adding} style={{ marginTop: images.length ? 0 : 6, width: 'fit-content', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-        <Plus size={16} />{adding ? 'Adding…' : 'Add Images'}
-      </button>
+      <div style={{ display: 'flex', gap: 8, marginTop: images.length ? 0 : 6 }}>
+        <button className="btn" onClick={addImages} disabled={adding} style={{ width: 'fit-content', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <Plus size={16} />{adding ? 'Adding…' : 'Add Images'}
+        </button>
+        <button className="btn" onClick={addFromClipboard} disabled={adding} title="Paste an image from the clipboard (Ctrl+V also works anywhere in this form)" style={{ width: 'fit-content', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <Clipboard size={16} />Paste
+        </button>
+      </div>
 
       {lightbox && (
         <Modal title="Image" onClose={() => setLightbox(null)} wide>

@@ -313,4 +313,5 @@ export interface SharedTrade {
   isMine: boolean
   accountName: string | null
   strategyName: string | null
+  imageUrls: string[]
 }

@@ -249,7 +249,7 @@
           confluences: { getAll: list(confluences), create: ok, update: ok, delete: ok },
           trades: { getAll: list(trades), create: ok, update: ok, delete: ok },
           missedTrades: { getAll: list([]), create: ok, update: ok, delete: ok },
-          images: { add: ok, get: list([]), remove: ok, getAllForTrades: list([]) },
+          images: { add: ok, addFromClipboard: ok, get: list([]), remove: ok, getAllForTrades: list([]) },
           reviews: { getAll: list([]), upsert: ok },
           analytics: {
             getSummary: async () => summary,

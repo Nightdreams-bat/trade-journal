@@ -49,6 +49,7 @@ declare global {
       }
       images: {
         add: (entityType: 'trade' | 'missed_trade', entityId: number) => Promise<boolean>
+        addFromClipboard: (entityType: 'trade' | 'missed_trade', entityId: number) => Promise<boolean>
         get: (entityType: 'trade' | 'missed_trade', entityId: number) => Promise<{ id: number; dataUrl: string }[]>
         remove: (imageId: number) => Promise<boolean>
         getAllForTrades: () => Promise<
