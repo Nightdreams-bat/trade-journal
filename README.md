@@ -6,11 +6,11 @@
 
 </div>
 
-| | |
-|---|---|
-| **Problem** | Prop-firm traders need two answers: why am I losing, and when can I get paid? A spreadsheet can't tell them, and most journals are subscriptions that upload your whole trade history to someone else's server. |
-| **Approach** | A desktop app that keeps everything in one SQLite file on your PC. It splits your losses into drawdown episodes, replays your real trading days against Apex and Lucid evaluation rules, and flags the day you're payout-eligible. |
-| **Result** | A Windows installer, now on version 1.3.3. It makes no network requests unless you turn on an optional feature. |
+<table>
+<tr><td><b>Problem</b></td><td>Prop-firm traders need two answers: why am I losing, and when can I get paid? A spreadsheet can't tell them, and most journals are subscriptions that upload your whole trade history to someone else's server.</td></tr>
+<tr><td><b>Approach</b></td><td>A desktop app that keeps everything in one SQLite file on your PC. It splits your losses into drawdown episodes, replays your real trading days against Apex and Lucid evaluation rules, and flags the day you're payout-eligible.</td></tr>
+<tr><td><b>Result</b></td><td>A Windows installer, now on version 1.3.3. It makes no network requests unless you turn on an optional feature.</td></tr>
+</table>
 
 ## What it does
 
