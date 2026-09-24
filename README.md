@@ -61,8 +61,3 @@ Needs Node 22+ (it uses the built-in `node:sqlite`). For the shared journal, cop
 to `.env`, add your Supabase URL and anon key, and apply `supabase/schema.sql`.
 
 Built with Electron, React, TypeScript, SQLite and Recharts.
-
-## Credits
-
-Built together with [@mateitodirel](https://github.com/mateitodirel). The original repo is
-[mateitodirel/TradeJournal](https://github.com/mateitodirel/TradeJournal).
