@@ -5,10 +5,11 @@ import { CsvImportModal } from '../components/CsvImportModal'
 import { TradeImageGallery } from '../components/TradeImageGallery'
 import { Upload, Download, Plus, Table2, LayoutGrid } from '../components/icons'
 import { Stagger, Reveal } from '../anim'
-import type { Account, Confluence, Strategy, Trade } from '../types'
+import type { Account, Confluence, SharedTrade, Strategy, Trade } from '../types'
 
 type SortKey = 'date' | 'pnl' | 'pair'
 type ViewMode = 'table' | 'gallery'
+type Row = { kind: 'local'; t: Trade } | { kind: 'shared'; t: SharedTrade }
 
 export function TradesDbPage({
   accounts,
@@ -26,6 +27,10 @@ export function TradesDbPage({
   bumpRefresh: () => void
 }) {
   const [trades, setTrades] = useState<Trade[]>([])
+  // Friend's trades pulled from the shared Supabase journal — read-only, merged into the table
+  // below. The local SQLite journal stays authoritative; this is best-effort and silently absent
+  // when signed out or offline.
+  const [shared, setShared] = useState<SharedTrade[]>([])
   const [loading, setLoading] = useState(true)
   const [accountId, setAccountId] = useState<number | null>(null)
   const [strategyId, setStrategyId] = useState<number | null>(null)
@@ -58,17 +63,58 @@ export function TradesDbPage({
     return () => clearTimeout(timer)
   }, [load, refreshKey, search])
 
-  const sorted = useMemo(() => {
-    const copy = [...trades]
-    copy.sort((a, b) => {
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const auth = window.api?.auth
+      const sync = window.api?.sync
+      if (!auth || !sync) return
+      try {
+        const s = await auth.getStatus()
+        if (!s.signedIn) return
+        const rows = await sync.getShared()
+        // Same rule as the local query: only real (manual) trades belong on this tab.
+        if (!cancelled) setShared(rows.filter((t) => !t.isMine && t.source === 'manual'))
+      } catch {
+        // shared trades are best-effort; the local journal is authoritative
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [refreshKey])
+
+  // Shared trades carry names, not local ids, so match the active account/strategy filters by name
+  // and the search box against the visible text fields.
+  const sharedFiltered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    const accName = accountId != null ? accounts.find((a) => a.id === accountId)?.name ?? null : null
+    const stratName = strategyId != null ? strategies.find((s) => s.id === strategyId)?.name ?? null : null
+    return shared.filter((t) => {
+      if (accName && t.accountName !== accName) return false
+      if (stratName && t.strategyName !== stratName) return false
+      if (q) {
+        const hay = `${t.pair ?? ''} ${t.direction ?? ''} ${t.ownerName} ${t.strategyName ?? ''} ${t.notes ?? ''}`.toLowerCase()
+        if (!hay.includes(q)) return false
+      }
+      return true
+    })
+  }, [shared, search, accountId, strategyId, accounts, strategies])
+
+  const sorted = useMemo<Row[]>(() => {
+    const combined: Row[] = [
+      ...trades.map((t) => ({ kind: 'local' as const, t })),
+      ...sharedFiltered.map((t) => ({ kind: 'shared' as const, t })),
+    ]
+    combined.sort((a, b) => {
       let cmp = 0
-      if (sortKey === 'date') cmp = a.date.localeCompare(b.date)
-      else if (sortKey === 'pnl') cmp = a.pnl - b.pnl
-      else if (sortKey === 'pair') cmp = (a.pair ?? '').localeCompare(b.pair ?? '')
+      if (sortKey === 'date') cmp = a.t.date.localeCompare(b.t.date)
+      else if (sortKey === 'pnl') cmp = a.t.pnl - b.t.pnl
+      else if (sortKey === 'pair') cmp = (a.t.pair ?? '').localeCompare(b.t.pair ?? '')
       return sortDir === 'asc' ? cmp : -cmp
     })
-    return copy
-  }, [trades, sortKey, sortDir])
+    return combined
+  }, [trades, sharedFiltered, sortKey, sortDir])
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
@@ -129,6 +175,12 @@ export function TradesDbPage({
         </div>
       </Reveal>
 
+      {view === 'table' && sharedFiltered.length > 0 && (
+        <Reveal style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          Includes {sharedFiltered.length} shared trade{sharedFiltered.length === 1 ? '' : 's'} from your shared journal (read-only).
+        </Reveal>
+      )}
+
       {view === 'gallery' ? (
         <Reveal><TradeImageGallery trades={trades} accounts={accounts} onOpenTrade={setEditingTrade} refreshKey={refreshKey} /></Reveal>
       ) : (
@@ -157,21 +209,37 @@ export function TradesDbPage({
               </tr>
             </thead>
             <tbody>
-              {sorted.map((t) => (
-                <tr key={t.id} onClick={() => setEditingTrade(t)}>
-                  <td>{t.name || '—'}</td>
-                  <td>{t.date}</td>
-                  <td>{t.pair || '—'}</td>
-                  <td>{t.session || '—'}</td>
-                  <td>{t.direction || '—'}</td>
-                  <td className={t.pnl >= 0 ? 'pnl-positive' : 'pnl-negative'}>{t.pnl >= 0 ? '+' : ''}{t.pnl.toFixed(2)}</td>
-                  <td className="checkbox-cell">{t.followed_plan ? '✅' : '—'}</td>
-                  <td className="checkbox-cell">{t.break_even ? '✅' : '—'}</td>
-                  <td className="checkbox-cell">{t.entry_win ? '✅' : '—'}</td>
-                  <td>{strategyName(t.strategy_id)}</td>
-                  <td>{t.positive_tags.map((tag) => <span key={tag} className="tag-pill positive" style={{ marginRight: 4 }}>{tag}</span>)}</td>
-                  <td>{t.negative_tags.map((tag) => <span key={tag} className="tag-pill negative" style={{ marginRight: 4 }}>{tag}</span>)}</td>
-                  <td>{accountName(t.account_id)}</td>
+              {sorted.map((row) => row.kind === 'local' ? (
+                <tr key={`l${row.t.id}`} onClick={() => setEditingTrade(row.t)}>
+                  <td>{row.t.name || '—'}</td>
+                  <td>{row.t.date}</td>
+                  <td>{row.t.pair || '—'}</td>
+                  <td>{row.t.session || '—'}</td>
+                  <td>{row.t.direction || '—'}</td>
+                  <td className={row.t.pnl >= 0 ? 'pnl-positive' : 'pnl-negative'}>{row.t.pnl >= 0 ? '+' : ''}{row.t.pnl.toFixed(2)}</td>
+                  <td className="checkbox-cell">{row.t.followed_plan ? '✅' : '—'}</td>
+                  <td className="checkbox-cell">{row.t.break_even ? '✅' : '—'}</td>
+                  <td className="checkbox-cell">{row.t.entry_win ? '✅' : '—'}</td>
+                  <td>{strategyName(row.t.strategy_id)}</td>
+                  <td>{row.t.positive_tags.map((tag) => <span key={tag} className="tag-pill positive" style={{ marginRight: 4 }}>{tag}</span>)}</td>
+                  <td>{row.t.negative_tags.map((tag) => <span key={tag} className="tag-pill negative" style={{ marginRight: 4 }}>{tag}</span>)}</td>
+                  <td>{accountName(row.t.account_id)}</td>
+                </tr>
+              ) : (
+                <tr key={`s${row.t.id}`} style={{ opacity: 0.7 }} title={`Shared by ${row.t.ownerName} — read-only`}>
+                  <td>{row.t.ownerName} <span className="tag-pill" style={{ marginLeft: 4 }}>shared</span></td>
+                  <td>{row.t.date}</td>
+                  <td>{row.t.pair || '—'}</td>
+                  <td>—</td>
+                  <td>{row.t.direction || '—'}</td>
+                  <td className={row.t.pnl >= 0 ? 'pnl-positive' : 'pnl-negative'}>{row.t.pnl >= 0 ? '+' : ''}{row.t.pnl.toFixed(2)}</td>
+                  <td className="checkbox-cell">—</td>
+                  <td className="checkbox-cell">—</td>
+                  <td className="checkbox-cell">—</td>
+                  <td>{row.t.strategyName || '—'}</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>{row.t.accountName || '—'}</td>
                 </tr>
               ))}
             </tbody>
