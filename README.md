@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/header.png" alt="Trade Journal" width="100%">
+<img src="assets/banner.png" alt="Trade Journal" width="100%">
 
 <img src="docs/screenshots/home-dark.png" alt="Trade Journal dashboard" width="100%">
 
