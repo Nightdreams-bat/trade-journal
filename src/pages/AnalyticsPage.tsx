@@ -16,6 +16,7 @@ import { PropFirmToolsPanel } from '../components/PropFirmToolsPanel'
 import { PropFirmFitPanel } from '../components/PropFirmFitPanel'
 import { LiveRiskPanel } from '../components/LiveRiskPanel'
 import { InsightsPanel } from '../components/InsightsPanel'
+import { ForwardTestPanel } from '../components/ForwardTestPanel'
 import { GlassRail } from '../components/GlassRail'
 import { FilterBar } from '../components/FilterBar'
 import { TradeFormModal } from '../components/TradeFormModal'
@@ -33,6 +34,7 @@ const SECTIONS = [
   { key: 'calendar', label: 'Calendar' },
   { key: 'propfirm', label: 'Firm & Risk' },
   { key: 'insights', label: 'Insights' },
+  { key: 'forward', label: 'Forward Test' },
 ] as const
 
 export function AnalyticsPage({
@@ -235,6 +237,12 @@ export function AnalyticsPage({
       <Reveal index={7}>
         <div ref={(el) => { sectionRefs.current.insights = el }}>
           <InsightsPanel insights={summary.insights} />
+        </div>
+      </Reveal>
+
+      <Reveal index={8}>
+        <div ref={(el) => { sectionRefs.current.forward = el }}>
+          <ForwardTestPanel refreshKey={refreshKey} />
         </div>
       </Reveal>
 

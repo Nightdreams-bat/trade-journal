@@ -124,6 +124,15 @@ export function TradesDbPage({
     }
   }
 
+  // Forward-test alerts (TradingView alert log or JSON lines) go into their own table; the
+  // summary says what was new, updated, already recorded or unreadable.
+  const importAlerts = async () => {
+    const res = await window.api.forward?.importAlerts()
+    if (!res) return
+    alert(`Forward-test alerts imported.\n\n${res.message}`)
+    bumpRefresh()
+  }
+
   const exportCsv = async () => {
     const path = await window.api.csv.export()
     if (path) alert(`Exported to ${path}`)
@@ -170,6 +179,11 @@ export function TradesDbPage({
             </button>
           </div>
           <button className="btn" onClick={() => setShowImport(true)}><Upload size={16} style={{ marginRight: 4 }} />Import CSV</button>
+          {window.api.forward && (
+            <button className="btn" onClick={importAlerts} title="Import the forward-test indicator's alerts (TradingView alert log CSV or JSON lines)">
+              <Upload size={16} style={{ marginRight: 4 }} />Import Alerts
+            </button>
+          )}
           <button className="btn" onClick={exportCsv}><Download size={16} style={{ marginRight: 4 }} />Export CSV</button>
           <button className="btn btn-primary" onClick={() => setEditingTrade(null)}><Plus size={16} style={{ marginRight: 4 }} />New Trade</button>
         </div>
