@@ -34,6 +34,20 @@ export type DemoId = 'whats-new-tab' | 'equity-curve' | 'tag-pills' | 'calendar-
 
 export const RELEASES: Release[] = [
   {
+    version: '1.4.0',
+    date: '2026-09-26',
+    title: 'Forward test log and corrected Lucid rules',
+    summary: 'Import the NQ forward-test indicator\'s alerts, link your fills to its signals, and track the test\'s stop/continue status; Lucid presets now follow the rulebook verified on 3 Sep 2026.',
+    changes: [
+      { kind: 'new', text: 'Import TradingView alert logs from the NQ Forward Test indicator', detail: 'Each signal, skip and exit is stored once; re-importing the same file changes nothing.' },
+      { kind: 'new', text: 'Forward Test panel with progress to 150 trades and the pre-registered stop/continue status' },
+      { kind: 'new', text: 'Link a trade or a missed trade to the day\'s signal; entry, stop and exit prices measure your slippage' },
+      { kind: 'fixed', text: 'LucidFlex payouts: $100/$150/$200/$250 qualifying days, no buffer, 50% of profit capped at $1,000/$2,000/$2,500/$3,000, 5 payouts' },
+      { kind: 'fixed', text: 'LucidPro payouts: no 3-day cycle; caps for payout 1 and payouts 2+' },
+      { kind: 'fixed', text: 'Evaluation simulator: an end-of-day drawdown is breached by an intraday touch, as the firms state' },
+    ],
+  },
+  {
     version: '1.3.1',
     date: '2026-09-05',
     title: 'Settings tab',
