@@ -17,6 +17,8 @@ import {
   type FundedChallengeParams,
 } from './analytics'
 import { readCsvFile, importTrades, tradesToCsv, type ColumnMapping } from './csv'
+import { importForwardAlerts, formatImportSummary, FORWARD_RULE } from './forward-import'
+import { loadForwardStats } from './forward-stats'
 import type { AccountRow, StrategyRow, TradeRow, MissedTradeRow } from './sync'
 
 type EntityType = 'trade' | 'missed_trade'
@@ -48,6 +50,21 @@ function normalizeEntryTime(value: unknown): string | null {
   const trimmed = value.trim()
   const match = /^([01]\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?$/.exec(trimmed)
   return match ? `${match[1]}:${match[2]}` : null
+}
+
+function numOrNull(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null
+}
+
+function signalIdOrNull(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() !== '' ? value : null
+}
+
+/** The rule's net R for a linked signal (null until its EXIT has been imported). */
+function signalRNet(db: ReturnType<typeof getDb>, signalId: string | null): number | null {
+  if (!signalId) return null
+  const row = db.prepare('SELECT r_net FROM forward_signals WHERE id = ?').get(signalId) as { r_net: number | null } | undefined
+  return row?.r_net ?? null
 }
 
 function rowToTrade(row: Record<string, unknown>) {
@@ -246,9 +263,11 @@ export function registerIpcHandlers() {
     const info = db
       .prepare(
         `INSERT INTO trades (name, date, entry_time, pair, session, direction, risk_per_trade, pnl, r_multiple,
-          followed_plan, break_even, entry_win, strategy_id, account_id, positive_tags, negative_tags, notes, source)
+          followed_plan, break_even, entry_win, strategy_id, account_id, positive_tags, negative_tags, notes, source,
+          signal_id, signal_px, entry_px, stop_px, exit_px)
          VALUES (@name, @date, @entry_time, @pair, @session, @direction, @risk_per_trade, @pnl, @r_multiple,
-          @followed_plan, @break_even, @entry_win, @strategy_id, @account_id, @positive_tags, @negative_tags, @notes, @source)`
+          @followed_plan, @break_even, @entry_win, @strategy_id, @account_id, @positive_tags, @negative_tags, @notes, @source,
+          @signal_id, @signal_px, @entry_px, @stop_px, @exit_px)`
       )
       .run({
         name: (payload.name as string) ?? '',
@@ -269,6 +288,11 @@ export function registerIpcHandlers() {
         negative_tags: tagsToJson(payload.negative_tags),
         notes: (payload.notes as string) ?? null,
         source: (payload.source as string) === 'agent' ? 'agent' : 'manual',
+        signal_id: signalIdOrNull(payload.signal_id),
+        signal_px: numOrNull(payload.signal_px),
+        entry_px: numOrNull(payload.entry_px),
+        stop_px: numOrNull(payload.stop_px),
+        exit_px: numOrNull(payload.exit_px),
       })
     const id = info.lastInsertRowid as number
     setEntityConfluences(db, 'trade', id, payload.confluence_ids)
@@ -284,7 +308,7 @@ export function registerIpcHandlers() {
         risk_per_trade=@risk_per_trade, pnl=@pnl, r_multiple=@r_multiple,
         followed_plan=@followed_plan, break_even=@break_even, entry_win=@entry_win, strategy_id=@strategy_id,
         account_id=@account_id, positive_tags=@positive_tags, negative_tags=@negative_tags, notes=@notes,
-        source=@source
+        source=@source, signal_id=@signal_id, signal_px=@signal_px, entry_px=@entry_px, stop_px=@stop_px, exit_px=@exit_px
        WHERE id=@id`
     ).run({
       id,
@@ -306,6 +330,11 @@ export function registerIpcHandlers() {
       negative_tags: tagsToJson(payload.negative_tags),
       notes: (payload.notes as string) ?? null,
       source: (payload.source as string) === 'agent' ? 'agent' : 'manual',
+      signal_id: signalIdOrNull(payload.signal_id),
+      signal_px: numOrNull(payload.signal_px),
+      entry_px: numOrNull(payload.entry_px),
+      stop_px: numOrNull(payload.stop_px),
+      exit_px: numOrNull(payload.exit_px),
     })
     setEntityConfluences(db, 'trade', id, payload.confluence_ids)
     void obsidian.syncTrade(id)
@@ -346,10 +375,13 @@ export function registerIpcHandlers() {
     return rows.map((r) => ({ ...rowToMissedTrade(r), confluence_ids: confluenceMap.get(r.id as number) ?? [] }))
   })
   ipcMain.handle('missedTrades:create', (_e, payload: Record<string, unknown>) => {
+    const missedSignalId = signalIdOrNull(payload.signal_id)
     const info = db
       .prepare(
-        `INSERT INTO missed_trades (date, pair, direction, would_be_pnl, reason_missed, strategy_id, tags, notes)
-         VALUES (@date, @pair, @direction, @would_be_pnl, @reason_missed, @strategy_id, @tags, @notes)`
+        `INSERT INTO missed_trades (date, pair, direction, would_be_pnl, reason_missed, strategy_id, tags, notes,
+          signal_id, would_be_r)
+         VALUES (@date, @pair, @direction, @would_be_pnl, @reason_missed, @strategy_id, @tags, @notes,
+          @signal_id, @would_be_r)`
       )
       .run({
         date: payload.date as string,
@@ -360,6 +392,8 @@ export function registerIpcHandlers() {
         strategy_id: (payload.strategy_id as number) ?? null,
         tags: tagsToJson(payload.tags),
         notes: (payload.notes as string) ?? null,
+        signal_id: missedSignalId,
+        would_be_r: signalRNet(db, missedSignalId),
       })
     const id = info.lastInsertRowid as number
     setEntityConfluences(db, 'missed_trade', id, payload.confluence_ids)
@@ -371,7 +405,8 @@ export function registerIpcHandlers() {
   ipcMain.handle('missedTrades:update', (_e, id: number, payload: Record<string, unknown>) => {
     db.prepare(
       `UPDATE missed_trades SET date=@date, pair=@pair, direction=@direction, would_be_pnl=@would_be_pnl,
-        reason_missed=@reason_missed, strategy_id=@strategy_id, tags=@tags, notes=@notes WHERE id=@id`
+        reason_missed=@reason_missed, strategy_id=@strategy_id, tags=@tags, notes=@notes,
+        signal_id=@signal_id, would_be_r=@would_be_r WHERE id=@id`
     ).run({
       id,
       date: payload.date as string,
@@ -382,6 +417,8 @@ export function registerIpcHandlers() {
       strategy_id: (payload.strategy_id as number) ?? null,
       tags: tagsToJson(payload.tags),
       notes: (payload.notes as string) ?? null,
+      signal_id: signalIdOrNull(payload.signal_id),
+      would_be_r: signalRNet(db, signalIdOrNull(payload.signal_id)),
     })
     setEntityConfluences(db, 'missed_trade', id, payload.confluence_ids)
     void obsidian.syncMissedTrade(id)
@@ -615,6 +652,38 @@ export function registerIpcHandlers() {
     if (result.canceled || !result.filePath) return null
     fs.writeFileSync(result.filePath, tradesToCsv(), 'utf-8')
     return result.filePath
+  })
+
+  // ---------- forward test (TradingView alert log) ----------
+  ipcMain.handle('forward:importAlerts', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const result = await dialog.showOpenDialog(win!, {
+      title: 'Import forward-test alerts (TradingView alert log CSV or JSON lines)',
+      properties: ['openFile'],
+      filters: [
+        { name: 'Alert log', extensions: ['csv', 'txt', 'jsonl', 'json', 'log'] },
+        { name: 'All files', extensions: ['*'] },
+      ],
+    })
+    if (result.canceled || !result.filePaths.length) return null
+    const text = fs.readFileSync(result.filePaths[0], 'utf-8')
+    const summary = importForwardAlerts(db, text)
+    return { summary, message: formatImportSummary(summary) }
+  })
+
+  ipcMain.handle('forward:getStats', () => loadForwardStats(db, FORWARD_RULE))
+
+  // Signals a trade or missed trade on `date` can be linked to (NOSIGNAL session markers excluded).
+  // `includeId` keeps an already-linked signal selectable after the entry's date was edited.
+  ipcMain.handle('forward:getSignalsForDate', (_e, date: string, includeId?: string | null) => {
+    return db
+      .prepare(
+        `SELECT id, rule, date, sym, tf, dir, sig_px, stop, risk_pts, status, exit_px, exit_reason, exit_time, r_net, skip_reason
+         FROM forward_signals
+         WHERE rule = ? AND ((date = ? AND status != 'nosignal') OR id = ?)
+         ORDER BY date ASC, id ASC`
+      )
+      .all(FORWARD_RULE, date ?? '', includeId ?? '')
   })
 
   // ---------- economic calendar ----------
