@@ -87,8 +87,8 @@ export function PropFirmToolsPanel({
             value={drawdownMode}
             onChange={(v) => setDrawdownMode(v as 'intraday' | 'eod')}
             options={[
-              { value: 'intraday', label: 'Continuous (intraday)' },
-              { value: 'eod', label: 'End-of-day only' },
+              { value: 'intraday', label: 'Trails intraday' },
+              { value: 'eod', label: 'Trails at close (touch = breach)' },
             ]}
           />
         </label>

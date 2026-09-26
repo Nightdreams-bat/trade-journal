@@ -2,7 +2,18 @@ import { useEffect, useMemo, useState } from 'react'
 import { Select } from '../components/Select'
 import { Plus, X } from '../components/icons'
 import { Stagger, Reveal, CountUpValue } from '../anim'
-import { PROP_FIRM_TIERS, PROP_FIRM_VARIANTS, getPreset, money, type PropTier, type PropVariantId } from '../propFirmPresets'
+import {
+  PROP_FIRM_TIERS,
+  PROP_FIRM_VARIANTS,
+  PROP_RULES_SOURCE,
+  FUNDED_MLL_LOCK_OFFSET,
+  getPreset,
+  money,
+  describePayoutCaps,
+  afterMaxPayoutsText,
+  type PropTier,
+  type PropVariantId,
+} from '../propFirmPresets'
 import { computeEligibility, type DailyLedgerRow } from '../payoutEligibility'
 import { loadPayoutCalcState, savePayoutCalcState, makeId, type PayoutCalcState } from '../payoutCalcStorage'
 import type { Account, Trade } from '../types'
@@ -116,10 +127,11 @@ export function PayoutCalculatorPage({ accounts }: { accounts: Account[] }) {
       <Reveal className="card" style={{ padding: 'var(--sp-4)' }}>
         <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 12 }}>
           Payout Calculator — checks a funded account's eligibility for its next payout against Apex's and Lucid's
-          actual current rules (verified against each firm's own site, 2026-09-01): safety net, consistency cap,
-          qualifying days or payout cycle, and the per-request payout cap. Pull real daily P&amp;L from a linked
-          journal account, or log it manually — the same idea as a spreadsheet payout tracker, updated to the
-          current rules instead of an old 30% consistency rule.
+          published rules ({PROP_RULES_SOURCE}, compiled from each firm's help centre): buffer / safety net,
+          consistency cap, qualifying days or profit goal, the per-request payout cap, and the funded max loss limit
+          (trails at the close, then locks at start + $100). Pull real daily P&amp;L from a linked journal account, or
+          log it manually. A payout dated on a day counts as taken after that day's close. Rules change without
+          notice: re-check the firm's help centre before requesting.
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-3)', alignItems: 'flex-end' }}>
           <label className="field" style={{ minWidth: 200 }}>
@@ -184,31 +196,35 @@ export function PayoutCalculatorPage({ accounts }: { accounts: Account[] }) {
           <Stat label="Profit Target" value={money(preset.profitTarget)} />
           <Stat label="Max Drawdown" value={money(preset.maxDrawdown)} />
           <Stat label="Daily Loss Limit" value={preset.dailyLossLimit != null ? money(preset.dailyLossLimit) : 'None'} />
-          <Stat label="Consistency Cap" value={`${preset.consistencyPct}%`} />
-          <Stat label="Safety Net" value={money(preset.payout.safetyNet)} />
-          <Stat label="Min Balance to Request" value={money(preset.payout.safetyNet + preset.payout.minPayoutRequest)} />
+          <Stat label="Eval Consistency" value={preset.evalConsistencyPct != null ? `${preset.evalConsistencyPct}%` : 'None'} />
+          <Stat label="Funded Consistency" value={preset.consistencyPct != null ? `${preset.consistencyPct}%` : 'None'} />
+          <Stat label="Buffer / Safety Net" value={preset.payout.safetyNet != null ? money(preset.payout.safetyNet) : 'None'} />
+          <Stat label="Min Balance to Request" value={money(Math.ceil(result.minBalanceToRequest))} />
           <Stat label="Min Payout Request" value={money(preset.payout.minPayoutRequest)} />
           <Stat label="Payout Split" value={`${preset.payoutSplitPct}% to you`} />
           <Stat label="Max Payouts" value={preset.maxPayouts != null ? String(preset.maxPayouts) : 'Not capped'} />
         </div>
         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          {preset.payout.cycleDays != null && preset.payout.minProfitGoalPerCycle != null
-            ? `Payout cycle: ${preset.payout.cycleDays} calendar days, ${money(preset.payout.minProfitGoalPerCycle)} profit goal per cycle.`
-            : preset.payout.minQualifyingDays != null
-              ? `Qualifying days: ${preset.payout.minQualifyingDays} day(s)${
-                  preset.payout.minDailyProfit != null ? ` with net profit ≥ ${money(preset.payout.minDailyProfit)}` : ' with any net-positive P&L'
-                } needed since the last payout.`
-              : 'Payout gating rules for this program are not fully documented — treat the safety net and consistency cap below as the reliable checks.'}
+          {preset.payout.minQualifyingDays != null
+            ? `Qualifying days: ${preset.payout.minQualifyingDays} day(s)${
+                preset.payout.minDailyProfit != null ? ` with net profit ≥ ${money(preset.payout.minDailyProfit)}` : ' with any net-positive P&L'
+              } since the last payout, and net profit above $0 for the cycle.`
+            : 'No minimum trading days and no fixed payout window: request any day once the gates are met.'}
+          {preset.payout.minProfitGoalPerCycle != null ? ` Profit goal: ${money(preset.payout.minProfitGoalPerCycle)} since the last payout.` : ''}
+          {preset.payout.safetyNet == null ? ' No buffer: the request size is limited by the cap below instead.' : ''}
         </div>
-        {preset.payoutCapSchedule ? (
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-            Payout cap by request #: {preset.payoutCapSchedule.map((c, i) => `#${i + 1} ${money(c)}`).join(' · ')} — the PA closes after the 6th.
-          </div>
-        ) : (
-          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
-            No per-request payout cap documented for this program — limited by balance above the safety net only.
-          </div>
-        )}
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+          {preset.payoutCapSchedule || preset.payout.maxRequestPctOfProfit != null
+            ? `Payout cap: ${describePayoutCaps(preset)}.`
+            : 'No per-request payout cap documented for this program — limited by balance above the buffer only.'}
+          {preset.maxPayouts != null ? ` ${afterMaxPayoutsText(preset).replace(/^./, (c) => c.toUpperCase())}.` : ''}
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6 }}>
+          Funded max loss limit: trails the highest closing balance by {money(preset.maxDrawdown)} until the balance passes{' '}
+          {money(result.mll.lockTriggerBalance)}, then locks at {money(state.tier + FUNDED_MLL_LOCK_OFFSET)}
+          {preset.payout.mllSnapsToLockOnPayout ? '; requesting a payout snaps it to the locked level straight away' : ''}.
+          {result.mll.estimatedFromCloses ? ' This program trails intraday on open P&L, so the real floor can be higher than the one computed here from daily closes.' : ''}
+        </div>
       </Reveal>
 
       <Reveal className="card" style={{ padding: 'var(--sp-4)' }}>
@@ -234,6 +250,14 @@ export function PayoutCalculatorPage({ accounts }: { accounts: Account[] }) {
             />
             <Stat label="Best Day (window)" value={money(Math.round(result.bestDaySinceLastPayout))} />
             <Stat label="Total Withdrawn" value={money(Math.round(result.totalWithdrawn))} />
+            <Stat
+              label={`Max Loss Limit${result.mll.locked ? ' (locked)' : ''}`}
+              value={money(Math.round(result.mll.level))}
+              color={result.mll.breachedOn != null ? 'var(--red)' : undefined}
+            />
+            {preset.payout.mllSnapsToLockOnPayout && !result.mll.locked && (
+              <Stat label="MLL After Request" value={money(Math.round(result.mll.afterRequest))} />
+            )}
           </div>
         </div>
 
@@ -258,17 +282,26 @@ export function PayoutCalculatorPage({ accounts }: { accounts: Account[] }) {
             alignItems: 'center',
           }}
         >
-          <Badge ok={result.safetyNetOk} text={`Safety net ${result.safetyNetOk ? 'held' : 'breached'}`} />
+          <Badge ok={result.mll.breachedOn == null} text={result.mll.breachedOn == null ? 'Max loss limit held' : `MLL breached ${result.mll.breachedOn}`} />
+          <Badge
+            ok={result.safetyNetOk}
+            text={result.safetyNetOk == null ? 'No buffer' : `Buffer ${result.safetyNetOk ? 'held' : 'not reached'}`}
+          />
           <Badge ok={result.minBalanceOk} text={`Balance to request ${result.minBalanceOk ? 'met' : 'short'}`} />
+          <Badge ok={result.cycleProfitOk} text={`Cycle net profit ${result.cycleProfitOk ? '> $0' : '≤ $0'}`} />
+          {result.profitGoal != null && (
+            <Badge ok={result.profitGoalOk} text={`Profit goal ${money(Math.round(result.profitSinceLastPayout))}/${money(result.profitGoal)}`} />
+          )}
           <Badge
             ok={result.consistencyOk}
-            text={`Consistency ${result.consistencyRatioPct != null ? result.consistencyRatioPct.toFixed(0) + '%' : '—'} / cap ${preset.consistencyPct}%`}
+            text={
+              preset.consistencyPct == null
+                ? 'No funded consistency rule'
+                : `Consistency ${result.consistencyRatioPct != null ? result.consistencyRatioPct.toFixed(0) + '%' : '—'} / cap ${preset.consistencyPct}%`
+            }
           />
           {result.qualifyingDaysNeeded != null && (
             <Badge ok={result.qualifyingOk} text={`Qualifying days ${result.qualifyingDaysCount}/${result.qualifyingDaysNeeded}`} />
-          )}
-          {result.cycleDaysNeeded != null && (
-            <Badge ok={result.cycleOk} text={`Payout cycle ${result.cycleDaysElapsed}/${result.cycleDaysNeeded}d`} />
           )}
           <Badge ok={result.minPayoutMet} text={`Min payout ${result.minPayoutMet ? 'met' : 'not met'}`} />
           {result.payoutsRemaining != null && <Badge ok={result.payoutsRemaining > 0} text={`Payouts left ${result.payoutsRemaining}`} />}

@@ -57,6 +57,11 @@ contextBridge.exposeInMainWorld('api', {
     import: (args: unknown) => invoke('csv:import', args),
     export: () => invoke('csv:export'),
   },
+  forward: {
+    importAlerts: () => invoke('forward:importAlerts'),
+    getStats: () => invoke('forward:getStats'),
+    getSignalsForDate: (date: string, includeId?: string | null) => invoke('forward:getSignalsForDate', date, includeId),
+  },
   calendar: {
     getConfig: () => invoke('calendar:getConfig'),
     setEnabled: (enabled: boolean) => invoke('calendar:setEnabled', enabled),

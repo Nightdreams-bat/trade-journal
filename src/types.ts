@@ -50,6 +50,12 @@ export interface Trade {
   created_at: string
   confluence_ids: number[]
   source: 'manual' | 'agent'
+  /** Forward-test link (forward_signals.id) and the trader's own prices, in points. Null when unlinked. */
+  signal_id?: string | null
+  signal_px?: number | null
+  entry_px?: number | null
+  stop_px?: number | null
+  exit_px?: number | null
 }
 
 export interface MissedTrade {
@@ -63,6 +69,9 @@ export interface MissedTrade {
   tags: string[]
   notes: string | null
   confluence_ids: number[]
+  /** Forward-test signal this missed trade refers to, and the rule's R_net for it (set by the app). */
+  signal_id?: string | null
+  would_be_r?: number | null
 }
 
 export interface DailyReview {
@@ -218,6 +227,7 @@ export interface FundedChallengeParams {
   drawdownMode?: 'intraday' | 'eod'
   dailyLossMode?: 'intraday' | 'eod'
   consistencyPct?: number | null
+  evalConsistencyPct?: number | null
 }
 
 export interface FundedChallengeResult {
@@ -315,3 +325,77 @@ export interface SharedTrade {
   strategyName: string | null
   imageUrls: string[]
 }
+
+// ---------------------------------------------------------------------------
+// Forward test (PREREG-005) — see electron/forward-import.ts and electron/forward-stats.ts
+// ---------------------------------------------------------------------------
+
+export type ForwardSignalStatus = 'open' | 'closed' | 'skipped_by_indicator' | 'closed_skipped' | 'nosignal'
+
+/** The RULE's signal and outcome as reported by the TradingView indicator (one row per alert id). */
+export interface ForwardSignal {
+  id: string
+  rule: string
+  date: string
+  sym: string | null
+  tf: string | null
+  dir: 'long' | 'short' | null
+  sig_px: number | null
+  stop: number | null
+  risk_pts: number | null
+  status: ForwardSignalStatus
+  exit_px: number | null
+  exit_reason: string | null
+  exit_time: string | null
+  r_net: number | null
+  skip_reason: string | null
+}
+
+export interface ForwardImportSummary {
+  lines: number
+  alerts: number
+  entries: number
+  exits: number
+  skips: number
+  nosignals: number
+  inserted: number
+  updated: number
+  unchanged: number
+  orphanExits: number
+  malformed: number
+  ignored: number
+}
+
+export interface ForwardImportResult {
+  summary: ForwardImportSummary
+  message: string
+}
+
+export type ForwardDecision = 'stop_edge' | 'stop_execution' | 'stop_research' | 'pass' | 'continue_unvalidated' | 'collecting'
+
+export interface ForwardStats {
+  n: number
+  skippedWithOutcome: number
+  avgR: number | null
+  tStat: number | null
+  winRate: number | null
+  cumR: number
+  target: number
+  progress: number
+  indicatorSkips: number
+  missedSignals: number
+  unlogged: number
+  linkedWithFills: number
+  avgSlippage: number | null
+  decision: ForwardDecision
+  status: string
+}
+
+/** Fixed reasons for not taking a forward-test ENTRY (pre-registered; discretionary skips go under 'other'). */
+export const MISSED_SIGNAL_REASONS = [
+  { value: 'not_at_screen', label: 'Not at screen' },
+  { value: 'platform_issue', label: 'Platform issue' },
+  { value: 'account_limit', label: 'Account limit' },
+  { value: 'news_personal_rule', label: 'News / personal rule' },
+  { value: 'other', label: 'Other (incl. discretionary skip)' },
+] as const

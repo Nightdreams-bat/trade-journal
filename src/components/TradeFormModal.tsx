@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { format } from 'date-fns'
 import { Modal } from './Modal'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -7,8 +7,9 @@ import { TagInput } from './TagInput'
 import { ImageGallery } from './ImageGallery'
 import { ConfluenceSelector } from './ConfluenceSelector'
 import { NewsNearEntry } from './NewsNearEntry'
-import type { Account, Confluence, Strategy, Trade } from '../types'
+import type { Account, Confluence, ForwardSignal, Strategy, Trade } from '../types'
 import { DIRECTIONS, SESSIONS } from '../types'
+import { signalHint, signalLabel } from '../forwardTest'
 
 export function TradeFormModal({
   trade,
@@ -53,8 +54,42 @@ export function TradeFormModal({
   const [negativeTags, setNegativeTags] = useState<string[]>(trade?.negative_tags ?? [])
   const [confluenceIds, setConfluenceIds] = useState<number[]>(trade?.confluence_ids ?? [])
   const [notes, setNotes] = useState(trade?.notes ?? '')
+  // Forward-test link: the day's indicator signal(s) and the trader's own prices against it.
+  const [signals, setSignals] = useState<ForwardSignal[]>([])
+  const [signalId, setSignalId] = useState(trade?.signal_id ?? '')
+  const [signalPx, setSignalPx] = useState(trade?.signal_px?.toString() ?? '')
+  const [entryPx, setEntryPx] = useState(trade?.entry_px?.toString() ?? '')
+  const [stopPx, setStopPx] = useState(trade?.stop_px?.toString() ?? '')
+  const [exitPx, setExitPx] = useState(trade?.exit_px?.toString() ?? '')
   const [saving, setSaving] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    const fetchSignals = window.api.forward?.getSignalsForDate
+    if (!fetchSignals || !date) return
+    fetchSignals(date, trade?.signal_id ?? null)
+      .then((rows) => {
+        if (!cancelled) setSignals(rows)
+      })
+      .catch(() => {
+        /* forward-test data is optional */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [date, trade?.signal_id])
+
+  const linkSignal = (id: string) => {
+    setSignalId(id)
+    const s = signals.find((x) => x.id === id)
+    if (!s) return
+    if (s.sig_px !== null) setSignalPx(String(s.sig_px))
+    if (s.dir) setDirection(s.dir === 'long' ? 'Long' : 'Short')
+    if (!pair && s.sym) setPair(s.sym)
+  }
+
+  const num = (v: string) => (v.trim() === '' || Number.isNaN(parseFloat(v)) ? null : parseFloat(v))
 
   const save = async () => {
     setSaving(true)
@@ -78,6 +113,11 @@ export function TradeFormModal({
       confluence_ids: confluenceIds,
       notes,
       source: trade?.source ?? defaultSource,
+      signal_id: signalId || null,
+      signal_px: signalId ? num(signalPx) : null,
+      entry_px: num(entryPx),
+      stop_px: num(stopPx),
+      exit_px: num(exitPx),
     }
     try {
       if (savedTrade) {
@@ -177,6 +217,38 @@ export function TradeFormModal({
             />
           </label>
         </div>
+
+        {(signals.length > 0 || signalId) && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' }}>
+            <label className="field">Forward-test signal
+              <Select
+                ariaLabel="Forward-test signal"
+                value={signalId}
+                onChange={linkSignal}
+                options={[
+                  { value: '', label: 'Not linked' },
+                  ...signals.map((s) => ({ value: s.id, label: signalLabel(s), hint: signalHint(s) })),
+                ]}
+              />
+            </label>
+            {signalId && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 'var(--sp-3)' }}>
+                <label className="field">Signal price
+                  <input className="input" type="number" step="any" value={signalPx} onChange={(e) => setSignalPx(e.target.value)} />
+                </label>
+                <label className="field">Your entry
+                  <input className="input" type="number" step="any" value={entryPx} onChange={(e) => setEntryPx(e.target.value)} />
+                </label>
+                <label className="field">Your stop
+                  <input className="input" type="number" step="any" value={stopPx} onChange={(e) => setStopPx(e.target.value)} />
+                </label>
+                <label className="field">Your exit
+                  <input className="input" type="number" step="any" value={exitPx} onChange={(e) => setExitPx(e.target.value)} />
+                </label>
+              </div>
+            )}
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 20 }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5 }}>
