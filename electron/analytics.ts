@@ -523,6 +523,16 @@ export function simulateFundedChallenge(params: FundedChallengeParams): FundedCh
             outcome = 'maxDrawdown'
             break dayLoop
           }
+        } else {
+          // EOD: the floor only re-bases at the close, but touching it during the session is still a
+          // breach (Prop Firm Rulebook §1.2, §2.6, §3.5). Closed-trade equity only, so open-trade
+          // excursions below the floor are not seen: this still flatters the pass rate.
+          const drawdownPct = eodPeakEquityPct - equityPct
+          pathMaxDrawdownPct = Math.max(pathMaxDrawdownPct, drawdownPct)
+          if (drawdownPct >= params.maxOverallDrawdownPct) {
+            outcome = 'maxDrawdown'
+            break dayLoop
+          }
         }
         if (dailyLossMode === 'intraday' && -dailyPnlPct >= params.maxDailyLossPct) {
           outcome = 'dailyLoss'
