@@ -41,33 +41,49 @@ export function qualifyingDayStats(dailyPnls: number[], payout: PayoutRules): Qu
 }
 
 export interface CycleStats {
+  /** % of bootstrapped cycles that cleared the profit goal and the consistency cap within `horizonDays` trading days. */
   successRate: number
-  avgPnlPerCycle: number
+  /** Median trading days to clear them, among the cycles that did. */
+  medianDaysToClear: number | null
+  horizonDays: number
 }
 
-/** Lucid Pro-style: bootstraps fixed-length payout cycles from real daily outcomes and checks profit-goal + consistency-cap together. */
+/**
+ * LucidPro-style: a payout cycle has no fixed length and no minimum days (Prop Firm Rulebook §3.8.1), so this
+ * bootstraps real daily outcomes day by day until the cycle's profit goal and the consistency cap are both met,
+ * giving up after `horizonDays` trading days. The buffer (balance above the initial trail balance) is a separate
+ * gate that this cadence estimate does not include.
+ */
 export function bootstrapCycleSuccess(
   dailyPnls: number[],
   payout: PayoutRules,
-  consistencyCapPct: number,
+  consistencyCapPct: number | null,
   paths = 3000,
+  horizonDays = 60,
 ): CycleStats | null {
-  if (payout.cycleDays == null || payout.minProfitGoalPerCycle == null || dailyPnls.length === 0) return null
-  let successes = 0
-  let total = 0
+  if (payout.minProfitGoalPerCycle == null || dailyPnls.length === 0) return null
+  const goal = payout.minProfitGoalPerCycle
+  const daysToClear: number[] = []
   for (let i = 0; i < paths; i++) {
-    const days: number[] = []
-    for (let d = 0; d < payout.cycleDays; d++) {
-      days.push(dailyPnls[Math.floor(Math.random() * dailyPnls.length)])
+    let cyclePnl = 0
+    let bestDay = 0
+    for (let d = 1; d <= horizonDays; d++) {
+      const pnl = dailyPnls[Math.floor(Math.random() * dailyPnls.length)]
+      cyclePnl += pnl
+      bestDay = Math.max(bestDay, pnl)
+      const consistencyOk = consistencyCapPct == null || (cyclePnl > 0 && bestDay / cyclePnl <= consistencyCapPct / 100)
+      if (cyclePnl > 0 && cyclePnl >= goal && consistencyOk) {
+        daysToClear.push(d)
+        break
+      }
     }
-    const cyclePnl = days.reduce((s, v) => s + v, 0)
-    total += cyclePnl
-    if (cyclePnl <= 0) continue
-    const bestDay = Math.max(...days)
-    const consistencyOk = bestDay / cyclePnl <= consistencyCapPct / 100
-    if (cyclePnl >= payout.minProfitGoalPerCycle && consistencyOk) successes++
   }
-  return { successRate: (successes / paths) * 100, avgPnlPerCycle: total / paths }
+  daysToClear.sort((a, b) => a - b)
+  return {
+    successRate: (daysToClear.length / paths) * 100,
+    medianDaysToClear: daysToClear.length ? daysToClear[Math.floor(daysToClear.length / 2)] : null,
+    horizonDays,
+  }
 }
 
 /** Minimum trade count before a stats-derived recommendation is trusted rather than shown as "still gathering data." */

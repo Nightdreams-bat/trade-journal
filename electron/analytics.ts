@@ -359,19 +359,27 @@ export interface FundedChallengeParams {
   tradingDaysRemaining: number
   accountId?: number | null
   strategyId?: number | null
-  /** How the drawdown ceiling is checked. 'intraday' trails every tick; 'eod' only re-bases at day close. Default 'intraday' (matches the old behavior / a manual, no-firm-picked run). */
+  /**
+   * How the drawdown floor moves. 'intraday' trails the running peak after every trade; 'eod' only
+   * re-bases the floor at the day's close. Either way a touch of the floor at any point is a breach
+   * (Prop Firm Rulebook §1.2 / §2.6 / §3.5). Default 'intraday' (matches a manual, no-firm-picked run).
+   */
   drawdownMode?: 'intraday' | 'eod'
   /** How the daily loss limit (if any) is checked. Default 'intraday'. */
   dailyLossMode?: 'intraday' | 'eod'
   /**
    * A firm's payout-stage consistency cap (largest single day's profit ÷ total profit, as a %),
-   * if you want passing paths checked against it too. Not an eval-stage gate for any currently
-   * modeled firm (RULES.md confirms consistency is only enforced at the funded/payout stage for
-   * both Apex and LucidPro) — so it never blocks a 'pass' outcome here. It only feeds
-   * `consistencyBreachRate`, which tells you how often a profit run that clears the eval would
-   * *also* fail to be payout-eligible on day one of being funded. Omit to skip this check.
+   * if you want passing paths checked against it too. It never blocks a 'pass' outcome here; it
+   * only feeds `consistencyBreachRate`, which tells you how often a profit run that clears the eval
+   * would *also* fail to be payout-eligible on day one of being funded. Omit to skip this check.
    */
   consistencyPct?: number | null
+  /**
+   * An evaluation-stage consistency cap, as a % (LucidFlex: 50%). When set, reaching the profit
+   * target only counts as a pass once the best day is within the cap; until then the path keeps
+   * trading and can still breach. Omit for programs with no eval consistency (Apex, LucidPro).
+   */
+  evalConsistencyPct?: number | null
 }
 
 export interface FundedChallengeResult {
@@ -521,11 +529,16 @@ export function simulateFundedChallenge(params: FundedChallengeParams): FundedCh
           break dayLoop
         }
         if (equityPct >= params.profitTargetPct) {
-          outcome = 'pass'
-          passDay = d
-          // The day (and the path) ends here — this trade's running total is that day's real close, not a peak to beat.
-          bestDayPct = Math.max(bestDayPct, dailyPnlPct)
-          break dayLoop
+          // Eval consistency (LucidFlex): the target only counts once the best day, today's running P&L
+          // included, is within the cap. Until then the path keeps trading.
+          const bestSoFarPct = Math.max(bestDayPct, dailyPnlPct)
+          if (params.evalConsistencyPct == null || (bestSoFarPct / equityPct) * 100 <= params.evalConsistencyPct) {
+            outcome = 'pass'
+            passDay = d
+            // The day (and the path) ends here — this trade's running total is that day's real close, not a peak to beat.
+            bestDayPct = bestSoFarPct
+            break dayLoop
+          }
         }
       }
       // The day traded to completion without an early stop — dailyPnlPct is now that day's closing P&L.

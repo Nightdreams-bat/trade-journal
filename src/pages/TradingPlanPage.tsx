@@ -7,6 +7,8 @@ import {
   PROP_FIRM_VARIANTS,
   getPreset,
   presetToSimParams,
+  describePayoutCaps,
+  afterMaxPayoutsText,
   money,
   type PropTier,
   type PropVariantId,
@@ -115,6 +117,7 @@ export function TradingPlanPage({
             drawdownMode: sim.drawdownMode,
             dailyLossMode: sim.dailyLossMode,
             consistencyPct: sim.consistencyPct,
+            evalConsistencyPct: sim.evalConsistencyPct,
           })
           return [s.id, res] as const
         }),
@@ -194,14 +197,22 @@ export function TradingPlanPage({
           {preset.dailyLossLimit != null ? ` · daily loss limit ${money(preset.dailyLossLimit)}` : ' · no daily loss limit'}
           {preset.maxDays ? ` · ${preset.maxDays}-day window` : ' · no stated day limit'}
         </div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 4 }}>
+          {preset.evalConsistencyPct != null ? `Eval consistency: best day ≤ ${preset.evalConsistencyPct}% of profit to pass.` : 'No eval consistency rule.'}
+        </div>
         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
           Payout:{' '}
-          {preset.payout.cycleDays != null
-            ? `${preset.payout.cycleDays}-day cycles, ${money(preset.payout.minProfitGoalPerCycle!)} profit goal per cycle, `
-            : preset.payout.minDailyProfit != null
-              ? `${preset.payout.minQualifyingDays} qualifying days (≥ ${money(preset.payout.minDailyProfit)} net) needed, `
-              : `${preset.payout.minQualifyingDays} profitable trading days needed, `}
-          consistency cap {preset.consistencyPct}% · min payout {money(preset.payout.minPayoutRequest)} · safety net {money(preset.payout.safetyNet)}
+          {preset.payout.minQualifyingDays != null
+            ? `${preset.payout.minQualifyingDays} qualifying days${preset.payout.minDailyProfit != null ? ` (≥ ${money(preset.payout.minDailyProfit)} net)` : ''} per cycle`
+            : 'no minimum trading days'}
+          {preset.payout.minProfitGoalPerCycle != null ? `, ${money(preset.payout.minProfitGoalPerCycle)} profit goal per cycle` : ''}
+          {' · '}
+          {preset.consistencyPct != null ? `consistency cap ${preset.consistencyPct}%` : 'no funded consistency rule'}
+          {' · '}min payout {money(preset.payout.minPayoutRequest)}
+          {' · '}
+          {preset.payout.safetyNet != null ? `buffer ${money(preset.payout.safetyNet)}` : 'no buffer'}
+          {' · '}cap {describePayoutCaps(preset)}
+          {preset.maxPayouts != null ? ` · ${afterMaxPayoutsText(preset)}` : ''}
         </div>
         {preset.caveat && <div style={{ fontSize: 10.5, color: 'var(--text-dim)', marginTop: 6 }}>{preset.caveat}</div>}
       </Reveal>
@@ -307,10 +318,17 @@ export function TradingPlanPage({
               </div>
             ) : cycle ? (
               <div style={{ fontSize: 12.5 }}>
-                Across {preset.payout.cycleDays}-day payout cycles, about <strong>{cycle.successRate.toFixed(0)}%</strong> of
-                cycles would clear both the {money(preset.payout.minProfitGoalPerCycle!)} profit goal and the{' '}
-                {preset.consistencyPct}% consistency cap at {risk}% risk on a {money(tier)} account — average cycle P&L{' '}
-                {money(Math.round(cycle.avgPnlPerCycle))}.
+                About <strong>{cycle.successRate.toFixed(0)}%</strong> of simulated payout cycles clear both the{' '}
+                {money(preset.payout.minProfitGoalPerCycle)} profit goal and the{' '}
+                {preset.consistencyPct != null ? `${preset.consistencyPct}% consistency cap` : 'cycle'} within {cycle.horizonDays} trading
+                days at {risk}% risk on a {money(tier)} account
+                {cycle.medianDaysToClear != null ? (
+                  <>
+                    {' '}— typically in <strong>{cycle.medianDaysToClear} trading days</strong>
+                  </>
+                ) : null}
+                . There is no fixed cycle length; the balance must also stay above the {money(preset.payout.safetyNet)} buffer,
+                which this estimate does not include.
               </div>
             ) : (
               <div style={{ fontSize: 11.5, color: 'var(--text-dim)' }}>Cadence rules not available for this program.</div>

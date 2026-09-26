@@ -218,6 +218,7 @@ export interface FundedChallengeParams {
   drawdownMode?: 'intraday' | 'eod'
   dailyLossMode?: 'intraday' | 'eod'
   consistencyPct?: number | null
+  evalConsistencyPct?: number | null
 }
 
 export interface FundedChallengeResult {
