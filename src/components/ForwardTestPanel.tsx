@@ -17,6 +17,7 @@ const DECISION_COLOR: Record<ForwardDecision, string> = {
   stop_execution: 'var(--red)',
   stop_research: 'var(--red)',
   pass: 'var(--green)',
+  continue_unvalidated: 'var(--accent)',
   collecting: 'var(--accent)',
 }
 

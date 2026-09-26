@@ -50,14 +50,14 @@ test('STOP: execution when average slippage > 2 pt (strict), at any N', () => {
   assert.equal(s.status, 'STOP: execution')
 })
 
-test('N >= 150: average <= 0 stops the research line, positive with t >= 2 passes, otherwise collecting', () => {
+test('N >= 150: average <= 0 stops the research line, positive with t >= 2 passes, positive with t < 2 continues unvalidated', () => {
   assert.equal(computeForwardStats({ ...base, rNets: repeat([1, -1], 150) }).status, 'STOP: research line ends')
   const pass = computeForwardStats({ ...base, rNets: repeat([1.3, -0.9], 150) }) // mean 0.2, sd ~1.1
   assert.ok((pass.tStat ?? 0) >= 2)
   assert.equal(pass.status, 'Forward sample passes (not proof of profitability)')
   const weak = computeForwardStats({ ...base, rNets: repeat([1.05, -1], 150) }) // mean 0.025, t < 2
   assert.ok((weak.tStat ?? 0) < 2)
-  assert.equal(weak.status, 'Collecting: 150/150')
+  assert.equal(weak.status, 'Continue at 1 contract: positive but not significant (still unvalidated)')
   assert.equal(weak.progress, 1)
 })
 
@@ -109,4 +109,11 @@ test('loadForwardStats: rule outcomes incl. SKIP->EXIT, skips, missed, slippage 
   assert.equal(s.linkedWithFills, 1)
   assert.equal(s.avgSlippage, 1.5)
   assert.equal(s.status, 'Collecting: 3/150')
+})
+
+test('150+ trades, positive but t < 2 -> continue, still unvalidated (PREREG-003)', () => {
+  const rs = Array.from({ length: 160 }, (_, i) => (i % 2 === 0 ? 1.0 : -0.98))
+  const s = computeForwardStats({ ...base, rNets: rs })
+  assert.ok(s.avgR !== null && s.avgR > 0 && s.tStat !== null && s.tStat < 2)
+  assert.equal(s.decision, 'continue_unvalidated')
 })

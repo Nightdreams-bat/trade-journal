@@ -370,7 +370,7 @@ export interface ForwardImportResult {
   message: string
 }
 
-export type ForwardDecision = 'stop_edge' | 'stop_execution' | 'stop_research' | 'pass' | 'collecting'
+export type ForwardDecision = 'stop_edge' | 'stop_execution' | 'stop_research' | 'pass' | 'continue_unvalidated' | 'collecting'
 
 export interface ForwardStats {
   n: number

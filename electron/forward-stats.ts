@@ -17,7 +17,7 @@ export const FORWARD_PASS_T = 2
 /** Absorbs floating-point noise so that an average of exactly -0.10 counts as "≤ -0.10". */
 const EPS = 1e-9
 
-export type ForwardDecision = 'stop_edge' | 'stop_execution' | 'stop_research' | 'pass' | 'collecting'
+export type ForwardDecision = 'stop_edge' | 'stop_execution' | 'stop_research' | 'pass' | 'continue_unvalidated' | 'collecting'
 
 export interface ForwardStatsInput {
   /** R_net of every rule outcome, in date order. */
@@ -104,6 +104,10 @@ export function forwardDecision(n: number, avgR: number | null, tStat: number | 
   } else if (n >= FORWARD_TARGET_N && avgR !== null && avgR > 0 && tStat !== null && tStat >= FORWARD_PASS_T) {
     decision = 'pass'
     status = 'Forward sample passes (not proof of profitability)'
+  } else if (n >= FORWARD_TARGET_N && avgR !== null && avgR > 0) {
+    // PREREG-003: after 150 trades with a positive but not significant average, keep going at 1 contract
+    decision = 'continue_unvalidated'
+    status = 'Continue at 1 contract: positive but not significant (still unvalidated)'
   }
   return { decision, status }
 }
