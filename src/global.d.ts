@@ -1,6 +1,15 @@
 export {}
 
-import type { CalendarConfig, CalendarEvent, CalendarSyncResult, SyncStatus, SharedTrade } from './types'
+import type {
+  CalendarConfig,
+  CalendarEvent,
+  CalendarSyncResult,
+  SyncStatus,
+  SharedTrade,
+  ForwardImportResult,
+  ForwardSignal,
+  ForwardStats,
+} from './types'
 
 export interface ObsidianConfig {
   enabled: boolean
@@ -89,6 +98,13 @@ declare global {
         openForImport: () => Promise<{ filePath: string; headers: string[]; sampleRows: string[][]; totalRows: number } | null>
         import: (args: any) => Promise<number>
         export: () => Promise<string | null>
+      }
+      // Forward-test logbook (TradingView alert import + PREREG-005 stats). Optional like the
+      // integrations below: the browser dev-preview harness does not provide it.
+      forward?: {
+        importAlerts: () => Promise<ForwardImportResult | null>
+        getStats: () => Promise<ForwardStats>
+        getSignalsForDate: (date: string, includeId?: string | null) => Promise<ForwardSignal[]>
       }
       // Optional for the same reason as `obsidian`: the browser dev-preview harness stubs
       // `window.api` and desktop-only integrations may be absent.
