@@ -6,6 +6,7 @@ import {
   getPreset,
   presetToSimParams,
   money,
+  PROP_RULES_SOURCE,
   type PropTier,
   type PropVariantId,
 } from '../propFirmPresets'
@@ -72,6 +73,7 @@ export function PropFirmFitPanel({ accountId, strategyId = null }: { accountId: 
             drawdownMode: sim.drawdownMode,
             dailyLossMode: sim.dailyLossMode,
             consistencyPct: sim.consistencyPct,
+            evalConsistencyPct: sim.evalConsistencyPct,
           })
           return [id, res] as const
         }),
@@ -85,15 +87,16 @@ export function PropFirmFitPanel({ accountId, strategyId = null }: { accountId: 
   return (
     <div className="card" style={{ padding: 'var(--sp-4)' }}>
       <div style={{ color: 'var(--text-muted)', fontSize: 12, marginBottom: 12 }}>
-        Prop Firm Fit — simulates this account's own trade history against Apex's and Lucid's real
-        published evaluation rules, side by side, so you can see which fits your edge before you pay
-        for an eval. Each program's drawdown and daily-loss checks are modeled the way that firm
-        actually enforces them (Apex Intraday checks continuously; Apex EOD and both Lucid programs
-        only re-base at the day's close), block-bootstrapped from your real trading days.
-        "Payout-Ready on Pass" checks the same simulated runs against that firm's payout-stage
-        consistency cap — a high pass rate with a low payout-ready number means you'd clear the
-        eval but still be blocked from your first payout until you trade more days. Not a
-        guarantee.
+        Prop Firm Fit — simulates this account's own trade history against Apex's and Lucid's
+        published evaluation rules ({PROP_RULES_SOURCE}), side by side, so you can see which fits your
+        edge before you pay for an eval. Each program's drawdown and daily-loss checks are modeled the
+        way that firm actually enforces them (Apex Intraday checks continuously; Apex EOD and both Lucid
+        programs only re-base at the day's close), block-bootstrapped from your real trading days.
+        LucidFlex's 50% consistency rule applies in the evaluation, so a Flex run only passes once its
+        best day is within 50% of profit. "Payout-Ready on Pass" checks the same simulated runs against
+        that firm's payout-stage consistency cap (Apex 50%, LucidPro 40%; LucidFlex has none once
+        funded) — a high pass rate with a low payout-ready number means you'd clear the eval but still
+        be blocked from your first payout until you trade more days. Not a guarantee.
       </div>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-3)', alignItems: 'flex-end', marginBottom: 14 }}>
@@ -192,6 +195,7 @@ export function PropFirmFitPanel({ accountId, strategyId = null }: { accountId: 
             <StatBox label="Best Day / Total" value={`${consistency.ratio!.toFixed(1)}%`} />
             {(['apex_intraday', 'lucid_pro'] as PropVariantId[]).map((id) => {
               const cap = getPreset(id, tier).consistencyPct
+              if (cap == null) return null
               const ok = consistency.ratio! <= cap
               return (
                 <div
@@ -204,10 +208,11 @@ export function PropFirmFitPanel({ accountId, strategyId = null }: { accountId: 
                     color: ok ? 'var(--green)' : 'var(--red)',
                   }}
                 >
-                  {PROP_FIRM_VARIANTS[id].firm} cap {cap}% — {ok ? 'within' : 'exceeds'}
+                  {id === 'lucid_pro' ? PROP_FIRM_VARIANTS[id].program : PROP_FIRM_VARIANTS[id].firm} cap {cap}% — {ok ? 'within' : 'exceeds'}
                 </div>
               )
             })}
+            <span style={{ fontSize: 11, color: 'var(--text-dim)' }}>LucidFlex: no funded consistency rule</span>
           </div>
         )}
       </div>
